@@ -25,10 +25,12 @@
 
 #define GAUSSIAN_NOISE_STDDEV 1.0
 
+#define USE_DESCRIPTOR_MATCHING_FOR_ANGLE_DIFF 0
+
 // TODO ENABLE ME
 // TODO ENABLE ME
 // TODO ENABLE ME
-#define ENABLE_MY_SIFT_TESTING 0
+#define ENABLE_MY_SIFT_TESTING 1
 
 #define DENY_CREATE_REF_DATA 1
 
@@ -239,12 +241,27 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
 
                 ptrdiff_t closest_j = -1; // будем искать ближайшую точку детектированную на искаженном изображении
                 double min_error = std::numeric_limits<float>::max();
+#if USE_DESCRIPTOR_MATCHING_FOR_ANGLE_DIFF
+                ptrdiff_t best_angle_j = -1; // лучший по дескриптору кандидат среди геометрически допустимых
+                double best_angle_desc_dist = std::numeric_limits<double>::max();
+                cv::Mat angle_d0 = desc0.rowRange(cv::Range(i, i + 1));
+#endif
                 for (ptrdiff_t j = 0; j < kps1.size(); ++j) {
                     double error = cv::norm(kps1[j].pt - p01);
                     if (error < min_error) {
                         min_error = error;
                         closest_j = j;
                     }
+#if USE_DESCRIPTOR_MATCHING_FOR_ANGLE_DIFF
+                    if (error <= MAX_ACCEPTED_PIXEL_ERROR * width) {
+                        cv::Mat angle_d1 = desc1.rowRange(cv::Range(j, j + 1));
+                        double angle_desc_dist = cv::norm(angle_d0, angle_d1, (method_name == "ORB") ? cv::NORM_HAMMING : cv::NORM_L2);
+                        if (angle_desc_dist < best_angle_desc_dist) {
+                            best_angle_desc_dist = angle_desc_dist;
+                            best_angle_j = j;
+                        }
+                    }
+#endif
                 }
                 if (closest_j != -1 && min_error <= MAX_ACCEPTED_PIXEL_ERROR * width) {
                     // мы нашли что-то достаточно близкое - успех!
@@ -258,7 +275,11 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
                     if (kps0[i].size != 0.0) {
                         size_ratio_sum += kps1[closest_j].size / kps0[i].size;
                     }
+#if USE_DESCRIPTOR_MATCHING_FOR_ANGLE_DIFF
+                    angle_diff_sum += diffAngles(kps0[i].angle, kps1[best_angle_j].angle);
+#else
                     angle_diff_sum += diffAngles(kps0[i].angle, kps1[closest_j].angle);
+#endif
 
                     cv::Mat d0 = desc0.rowRange(cv::Range(i, i + 1));
                     cv::Mat d1 = desc1.rowRange(cv::Range(closest_j, closest_j + 1));
