@@ -16,6 +16,8 @@
 // 3) https://github.com/opencv/opencv/blob/1834eed8098aa2c595f4d1099eeaa0992ce8b321/modules/features2d/src/sift.dispatch.cpp
 // 4) https://github.com/opencv/opencv/blob/1834eed8098aa2c595f4d1099eeaa0992ce8b321/modules/features2d/src/sift.simd.hpp
 
+#define ENABLE_EXACT_NFEATURES_RECOVERY 1
+
 namespace {
 
 cv::Mat upsample2x(const cv::Mat& src)
@@ -743,6 +745,75 @@ void phg::SIFT::detectAndCompute(const cv::Mat& img, const cv::Mat& mask, std::v
     savePyramid("pyramidDoG/03_dog_octave", dog, true);
 
     kpts = findScaleSpaceExtrema(dog, p, verbose_level);
+
+#if ENABLE_EXACT_NFEATURES_RECOVERY
+    // Почему раньше могли вернуть меньше чем nfeatures:
+    // 1) в computeOrientations() часть точек может отброситься по условию в строке 408 (если окно вышло за границы слоя),
+    // 2) в computeDescriptors() часть точек может отброситься по условию в строке 564 (патч дескриптора вышел за границы слоя),
+    // 3) а у нас пайплайн был такой: 
+    //      - находим space-scale экстремумы;
+    //      - в selectTopKeypoints() берём топ-nfeatures из них;
+    //      - делаем computeOrientations(), после чего у нас уже может стать меньше чем nfeatures точек (но могло стать и больше,
+    //        если пиков ориентаций было взято несколько для одного и того же кандидата);
+    //      - делаем selectTopKeypoints() - опять имеем <= nfeatures точек;
+    //      - делаем computeDescriptors(), после которого у нас также может стать меньше чем nfeatures точек.
+    // 
+    // Получаем, что если заранее жестко отрезать до nfeatures, "резервных" кандидатов не остается и финальный набор недобирается.
+    //
+    // Что делаем: не отрезаем :)
+    // Но гоняем computeOrientations() и computeDescriptors() батчами, начиная с самых сильных, чтобы не просесть по производительности.
+    // Если после очередного батча все еще недобор, добираем следующую порцию.
+    // Так мы обычно считаем почти столько же, сколько раньше, но при необходимости можем добрать до ровно nfeatures
+    // (если в принципе хватит валидных точек после всех фильтраций).
+    
+    std::vector<cv::KeyPoint> extrema_kpts = std::move(kpts);
+    if (p.nfeatures > 0) {
+        std::vector<int> ranked_idx(extrema_kpts.size());
+        std::iota(ranked_idx.begin(), ranked_idx.end(), 0);
+        std::sort(ranked_idx.begin(), ranked_idx.end(), [&extrema_kpts](const int& a, const int& b) {
+            float ra = std::abs(extrema_kpts[a].response);
+            float rb = std::abs(extrema_kpts[b].response);
+            if (ra != rb)
+                return ra > rb;
+            return a < b;
+        });
+        kpts.clear();
+        desc.release();
+
+        size_t processed = 0;
+        size_t batch_size = std::max(32, p.nfeatures);
+        while (kpts.size() < p.nfeatures && processed < ranked_idx.size()) {
+            size_t next_processed = std::min(ranked_idx.size(), processed + batch_size);
+            std::vector<cv::KeyPoint> batch_extrema;
+            batch_extrema.reserve(next_processed - processed);
+            for (size_t i = processed; i < next_processed; ++i) {
+                batch_extrema.push_back(extrema_kpts[ranked_idx[i]]);
+            }
+
+            std::vector<cv::KeyPoint> batch_oriented = computeOrientations(batch_extrema, octaves, p, verbose_level);
+            cv::Mat batch_desc;
+            std::vector<cv::KeyPoint> batch_valid_kpts;
+            std::tie(batch_desc, batch_valid_kpts) = computeDescriptors(batch_oriented, octaves, p, verbose_level);
+            if (!batch_desc.empty()) {
+                desc.push_back(batch_desc);
+            }
+
+            kpts.insert(kpts.end(), batch_valid_kpts.begin(), batch_valid_kpts.end());
+            processed = next_processed;
+            if (kpts.size() < p.nfeatures) {
+                batch_size = std::max<size_t>(32, 2 * (p.nfeatures - kpts.size()));
+            }
+        }
+
+        if (kpts.size() > p.nfeatures) {
+            kpts.resize(p.nfeatures);
+            desc = desc.rowRange(0, p.nfeatures).clone();
+        }
+    } else {
+        kpts = computeOrientations(extrema_kpts, octaves, p, verbose_level);
+        std::tie(desc, kpts) = computeDescriptors(kpts, octaves, p, verbose_level);
+    }
+#else
     // ориентация ключевых точек это довольно дорогая операция
     // в случае если пользователь просит малое количество лучших точек (например, 1000, а без порога нашлось 20000),
     // то по производительности очень оправдано сразу их здесь и выбрать, чтобы не тащить до самого конца где все равно отбросим
@@ -752,6 +823,7 @@ void phg::SIFT::detectAndCompute(const cv::Mat& img, const cv::Mat& mask, std::v
     // после подсчета ориентаций количество могло возрасти (и скорее всего возросло)
     // нужно снова выбрать лучшие точки чтобы уложиться в бюджет
     kpts = selectTopKeypoints(kpts, p, verbose_level);
+#endif
 
     if (verbose_level >= 2) {
         cv::Mat kpts_img;
@@ -759,10 +831,10 @@ void phg::SIFT::detectAndCompute(const cv::Mat& img, const cv::Mat& mask, std::v
         saveImg("04_keypoints.jpg", kpts_img);
     }
 
+#if !ENABLE_EXACT_NFEATURES_RECOVERY
     std::tie(desc, kpts) = computeDescriptors(kpts, octaves, p, verbose_level);
+#endif
 
-    // TODO всегда ли мы получаем ровно столько точек сколько запросили в параметре nfeatures? в каких случаях это не так и в какую сторону?
-    //   как подкрутить алгоритм, чтобы всегда выдавать ровно запрошенное количество точек (когда это в принципе возможно) но не сильно просесть в производительности?
 }
 
 void phg::SIFT::saveImg(const std::string& name, const cv::Mat& img) const
