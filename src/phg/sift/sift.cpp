@@ -17,6 +17,7 @@
 // 4) https://github.com/opencv/opencv/blob/1834eed8098aa2c595f4d1099eeaa0992ce8b321/modules/features2d/src/sift.simd.hpp
 
 #define ENABLE_EXACT_NFEATURES_RECOVERY 1
+#define ENABLE_INCREMENTAL_OCTAVE_GAUSSIAN_BLUR 0
 
 namespace {
 
@@ -111,9 +112,15 @@ std::vector<phg::SIFT::Octave> phg::buildOctaves(const cv::Mat& img, const phg::
         //  это будет немного быстрее, тк нужно более маленькое ядро свертки на каждый шаг
         for (int i = 1; i < n_layers; i++) {
             double sigma_layer = sigma0 * std::pow(2.0, (double)i / s);
+#if ENABLE_INCREMENTAL_OCTAVE_GAUSSIAN_BLUR
+            double prev_sigma_layer = sigma0 * std::pow(2.0, (double)(i - 1) / s);
+            sigma_layer = std::sqrt(sigma_layer * sigma_layer - prev_sigma_layer * prev_sigma_layer);
+            cv::GaussianBlur(oct.layers[i - 1], oct.layers[i], cv::Size(), sigma_layer, sigma_layer);
+#else
             // вычтем sigma0 чтобы размыть ровно до нужной суммарной сигмы
             sigma_layer = std::sqrt(sigma_layer * sigma_layer - sigma0 * sigma0);
             cv::GaussianBlur(oct.layers[0], oct.layers[i], cv::Size(), sigma_layer, sigma_layer);
+#endif
         }
 
         // подготавливаем базовый слой для следующей октавы
