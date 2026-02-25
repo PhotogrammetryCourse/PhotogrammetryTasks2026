@@ -3,7 +3,7 @@
 #include <opencv2/core.hpp>
 
 namespace phg {
-
+// rotation 30 :: [ORB_OCV] average angle difference between matched points: 25.313 degrees
 struct SIFTParams {
     int nfeatures = 0;
     int n_octave_layers = 3;
@@ -11,7 +11,7 @@ struct SIFTParams {
     double edge_threshold = 10;
     double sigma = 1.6;
 
-    double orient_peak_ratio = 0.8;
+    double orient_peak_ratio = 0.5;
     int orient_nbins = 36;
     bool upscale_first = true;
 
@@ -30,7 +30,7 @@ public:
         std::vector<cv::Mat> layers;
     };
 
-    explicit SIFT(const SIFTParams& p = SIFTParams(), int verbose_level = 0, const std::string& debug_folder = "")
+    explicit SIFT(const SIFTParams& p = SIFTParams(), int verbose_level = 0, const std::string& debug_folder = "/mnt/c/Users/irady/GitHub/ITMO/2026-фотграмметрия/homeworks_wsl/task01/PhotogrammetryTasks2026/data/debug/test_sift/debug/")
         : p(p)
         , verbose_level(verbose_level)
         , debug_folder(debug_folder)
