@@ -128,9 +128,7 @@ std::vector<phg::SIFT::Octave> phg::buildOctaves(const cv::Mat& img, const phg::
         if (o + 1 < n_octaves) {
             // используется в opencv, формула для пересчета ключевых точек: pt_upscaled = 2^o * pt_downscaled
             //            TODO cv::resize(даунскейлим текущий слой в два раза, без интерполяции, просто сабсепмлинг);
-            cv::Mat downscaled;
-            cv::resize(oct.layers[s], downscaled, cv::Size(), 0.5, 0.5, cv::INTER_NEAREST);
-            base = std::move(downscaled);
+            cv::resize(oct.layers[s], base, cv::Size(), 0.5, 0.5, cv::INTER_NEAREST);
             // можно использовать и downsample2x_avg(oct.layers[s]), это позволяет потом заапскейлить слои обратно до оригинального разрешения без сдвига
             // но потребуется везде изменить формулу для пересчета ключевых точек: pt_upscaled = (pt_downscaled + 0.5) * 2^o - 0.5
 
