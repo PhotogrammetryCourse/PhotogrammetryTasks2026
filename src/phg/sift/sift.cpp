@@ -621,7 +621,7 @@ std::pair<cv::Mat, std::vector<cv::KeyPoint>> phg::computeDescriptors(const std:
 //                    weight = 1.f;
 //                }
 //                float weighted_mag = mag * weight;
-                float weight = std::exp(-(dx * dx + dy * dy) / (2.f * sigma_desc * sigma_desc));
+                float weight = std::exp(-(rot_x * rot_x + rot_y * rot_y) / (2.f * sigma_desc * sigma_desc));
                 if (!params.enable_descriptor_gaussian_weighting) {
                     weight = 1.f;
                 }
