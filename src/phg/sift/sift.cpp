@@ -100,31 +100,33 @@ std::vector<phg::SIFT::Octave> phg::buildOctaves(const cv::Mat& img, const phg::
     cv::GaussianBlur(img, base, cv::Size(), sigma_base, sigma_base);
 
     std::vector<phg::SIFT::Octave> octaves(n_octaves);
+   
 
     for (int o = 0; o < n_octaves; o++) {
         phg::SIFT::Octave& oct = octaves[o];
         oct.layers.resize(n_layers);
 
         oct.layers[0] = base.clone();
+        double sigma_layer = sigma0;
 
         // для простоты в каждой октаве будем каждый раз блюрить базовую картинку с полной сигмой
         //  можно подумать, как сделать эффективнее - для построения n+1 слоя доблюревать уже поблюренный n-ый слой, так чтобы в итоге получилась такая же сигма
         //  это будет немного быстрее, тк нужно более маленькое ядро свертки на каждый шаг
         for (int i = 1; i < n_layers; i++) {
             double k = std::pow(2.0, 1.0 / s);
-            double sigma_layer = sigma0 * std::pow(k, i);
-            double sigma_prev = sigma0 * std::pow(k, i - 1);
-            double sigma_adjusted = std::sqrt(sigma_layer * sigma_layer - sigma_prev * sigma_prev); // Incremental sigma
+            double sigma_curr = sigma_layer * k;
+            double sigma_adjusted = std::sqrt(sigma_curr*sigma_curr - sigma_layer*sigma_layer ); // Incremental sigma
 
             oct.layers[i] = base.clone();
             cv::GaussianBlur(oct.layers[i - 1], oct.layers[i], cv::Size(), sigma_adjusted, sigma_adjusted);
+            sigma_layer = sigma_curr;
         }
 
         // подготавливаем базовый слой для следующей октавы
         if (o + 1 < n_octaves) {
             
             cv::Mat base_;
-            cv::resize(oct.layers[n_layers-1], base_, cv::Size(), 0.5, 0.5, cv::INTER_NEAREST);
+            cv::resize(oct.layers[n_layers-3], base_, cv::Size(), 0.5, 0.5, cv::INTER_NEAREST);
             base = base_;
             // используется в opencv, формула для пересчета ключевых точек: pt_upscaled = 2^o * pt_downscaled
             //            T1ODO cv::resize(даунскейлим текущий слой в два раза, без интерполяции, просто сабсепмлинг);
@@ -148,22 +150,9 @@ std::vector<phg::SIFT::Octave> phg::buildDoG(const std::vector<phg::SIFT::Octave
         const phg::SIFT::Octave& octave = octaves[o];
 
         dog[o].layers.resize(octave.layers.size() - 1);
-        for (size_t i = 0; i+1 < octave.layers.size(); ++i) {
-            cv::Mat& dog_layer = dog[o].layers[i];
-            const cv::Mat& layer1 = octave.layers[i];
-            const cv::Mat& layer2 = octave.layers[i + 1];
 
-            dog_layer.create(layer1.size(), CV_32F);
-
-            for (int y = 0; y < layer1.rows; y++) {
-                const float* r1 = layer1.ptr<float>(y);
-                const float* r2 = layer2.ptr<float>(y);
-                float* rd = dog_layer.ptr<float>(y);
-                for (int x = 0; x < layer1.cols; x++) {
-                    rd[x] = r2[x] - r1[x];
-                }
-            }
-
+        for (int layer = 0; layer < octave.layers.size() - 1; layer++) {
+            dog[o].layers[layer] = octave.layers[layer + 1] - octave.layers[layer];
         }
 
 
@@ -240,24 +229,27 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
                     // check within current layer if val is max
                     check(c[x - 1]);
                     check(c[x + 1]);
+                    check(cp[x]);
                     check(cp[x - 1]);
                     check(cp[x + 1]);
+                    check(cn[x]);
                     check(cn[x - 1]);
                     check(cn[x + 1]);
 
                     // std::cout << "val: " << val << ", is_max: " << is_max << ", is_min: " << is_min << std::endl;
                     // std::cout << "neighbors: " << c[x - 1] << ", " << c[x + 1] << ", " << cp[x - 1] << ", " << cp[x + 1] << ", " << cn[x - 1] << ", " << cn[x + 1] << std::endl;
 
-                    // T1ODO проверить локальный максимум на текущем скейле
-
                     if (!is_max && !is_min)
                         continue;
 
                     // T1ODO проверить локальный максимум на предыдущем скейле
+                    check(p[x]);
                     check(p[x - 1]);
                     check(p[x + 1]);
+                    check(pp[x]);
                     check(pp[x - 1]);
                     check(pp[x + 1]);
+                    check(pn[x]);
                     check(pn[x - 1]);
                     check(pn[x + 1]);
 
@@ -265,11 +257,13 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
                         continue;
 
                     // T1ODO проверить локальный максимум на следующем скейле
-
+                    check(n[x]);
                     check(n[x - 1]);
                     check(n[x + 1]);
+                    check(np[x]);
                     check(np[x - 1]);
                     check(np[x + 1]);
+                    check(nn[x]);
                     check(nn[x - 1]);
                     check(nn[x + 1]);
 
@@ -292,7 +286,7 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
                         float ds = (nL.at<float>(yi, xi) - pL.at<float>(yi, xi)) * 0.5f;
 
                         // гессиан
-                    //    float dxx, dxy, dyy, dxs, dys, dss;
+                        //    float dxx, dxy, dyy, dxs, dys, dss;
                        float dxx = cL.at<float>(yi, xi + 1) + cL.at<float>(yi, xi - 1) - 2.f * resp_center;
                        float dyy = cL.at<float>(yi + 1, xi) + cL.at<float>(yi - 1, xi) - 2.f * resp_center;
                        float dss = nL.at<float>(yi, xi) + pL.at<float>(yi, xi) - 2.f * resp_center;
@@ -700,7 +694,7 @@ std::pair<cv::Mat, std::vector<cv::KeyPoint>> phg::computeDescriptors(const std:
 
                 // семплы вблизи края патча взвешиваем с меньшим весом
             
-               float weight = std::exp(-(dx*dx + dy*dy) / (2.f * sigma_desc * sigma_desc));
+               float weight = std::exp(-(rot_x * rot_x + rot_y * rot_y) / (2.f * sigma_desc * sigma_desc));
                if (!params.enable_descriptor_gaussian_weighting) {
                    weight = 1.f;
                }
