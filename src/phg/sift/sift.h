@@ -8,10 +8,10 @@ struct SIFTParams {
     int nfeatures = 0;
     int n_octave_layers = 3;
     double contrast_threshold = 0.04;
-    double edge_threshold = 10;
+    double edge_threshold = 15;
     double sigma = 1.6;
 
-    double orient_peak_ratio = 0.8;
+    double orient_peak_ratio = 0.84;
     int orient_nbins = 36;
     bool upscale_first = true;
 
