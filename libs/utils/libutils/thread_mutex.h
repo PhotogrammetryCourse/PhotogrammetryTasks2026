@@ -91,6 +91,7 @@ public:
 	bool acquire ()
 	{
 		_locked = _mutex.tryLock();
+		return _locked;
 	}
 
 	void release ()

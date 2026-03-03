@@ -107,6 +107,7 @@ std::vector<phg::SIFT::Octave> phg::buildOctaves(const cv::Mat& img, const phg::
         // для простоты в каждой октаве будем каждый раз блюрить базовую картинку с полной сигмой
         //  можно подумать, как сделать эффективнее - для построения n+1 слоя доблюревать уже поблюренный n-ый слой, так чтобы в итоге получилась такая же сигма
         //  это будет немного быстрее, тк нужно более маленькое ядро свертки на каждый шаг
+        #pragma omp parallel for if (n_layers > 3)
         for (int i = 1; i < n_layers; i++) {
             //            TODO double sigma_layer = sigma0 * корень из двух нужной степени, чтобы при i==s получали удвоение базового блюра;
             //            // вычтем sigma0 чтобы размыть ровно до нужной суммарной сигмы
@@ -137,6 +138,7 @@ std::vector<phg::SIFT::Octave> phg::buildDoG(const std::vector<phg::SIFT::Octave
 {
     std::vector<phg::SIFT::Octave> dog(octaves.size());
 
+    #pragma omp parallel for if (octaves.size() > 1)
     for (size_t o = 0; o < octaves.size(); o++) {
         const phg::SIFT::Octave& octave = octaves[o];
         dog[o].layers.resize(octave.layers.size() - 1);
@@ -166,14 +168,16 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
 
     const int first_octave = params.upscale_first ? -1 : 0;
 
-    std::vector<cv::KeyPoint> keypoints;
+    std::vector<std::vector<cv::KeyPoint>> keypoints_by_octave(dog.size());
 
+    #pragma omp parallel for if (dog.size() > 1)
     for (int o = 0; o < (int)dog.size(); o++) {
         int real_octave = o + first_octave;
 
         const std::vector<cv::Mat>& dog_layers = dog[o].layers;
         const int n_dog_layers = (int)dog_layers.size();
         rassert(n_dog_layers == s + 2, 2138971238612312);
+        std::vector<cv::KeyPoint>& keypoints = keypoints_by_octave[o];
 
         // итерируемся по внутренним слоям пирамиды, у нас всегда есть предыдущий и следующий сосед
         for (int layer = 1; layer <= s; layer++) {
@@ -384,7 +388,16 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
         }
 
         if (verbose_level)
-            std::cout << "octave " << o << ": " << keypoints.size() << " keypoints so far" << std::endl;
+            std::cout << "octave " << o << ": " << keypoints.size() << " keypoints" << std::endl;
+    }
+
+    std::vector<cv::KeyPoint> keypoints;
+    size_t total_keypoints = 0;
+    for (const auto& octave_keypoints : keypoints_by_octave)
+        total_keypoints += octave_keypoints.size();
+    keypoints.reserve(total_keypoints);
+    for (const auto& octave_keypoints : keypoints_by_octave) {
+        keypoints.insert(keypoints.end(), octave_keypoints.begin(), octave_keypoints.end());
     }
 
     if (verbose_level)
@@ -400,13 +413,13 @@ std::vector<cv::KeyPoint> phg::computeOrientations(const std::vector<cv::KeyPoin
     const int n_bins = params.orient_nbins;
     const double peak_ratio = params.orient_peak_ratio;
 
-    std::vector<float> histogram(n_bins);
-
-    std::vector<cv::KeyPoint> oriented_kpts;
+    std::vector<std::vector<cv::KeyPoint>> oriented_by_kpt(kpts.size());
 
     const int first_octave = params.upscale_first ? -1 : 0;
 
-    for (const cv::KeyPoint& kp : kpts) {
+    #pragma omp parallel for if (kpts.size() > 32)
+    for (int kp_idx = 0; kp_idx < (int)kpts.size(); kp_idx++) {
+        const cv::KeyPoint& kp = kpts[kp_idx];
         int layer = kp.class_id;
         int real_octave = kp.octave;
         int o = real_octave - first_octave; // индекс в массиве octaves
@@ -428,6 +441,7 @@ std::vector<cv::KeyPoint> phg::computeOrientations(const std::vector<cv::KeyPoin
         if (xi - radius <= 0 || xi + radius >= img.cols - 1 || yi - radius <= 0 || yi + radius >= img.rows - 1)
             continue;
 
+        std::vector<float> histogram(n_bins);
         histogram.assign(n_bins, 0.0);
 
         for (int dy = -radius; dy <= radius; dy++) {
@@ -522,9 +536,18 @@ std::vector<cv::KeyPoint> phg::computeOrientations(const std::vector<cv::KeyPoin
 
                 cv::KeyPoint new_kp = kp;
                 new_kp.angle = angle;
-                oriented_kpts.push_back(new_kp);
+                oriented_by_kpt[kp_idx].push_back(new_kp);
             }
         }
+    }
+
+    std::vector<cv::KeyPoint> oriented_kpts;
+    size_t total_oriented = 0;
+    for (const auto& kp_orientations : oriented_by_kpt)
+        total_oriented += kp_orientations.size();
+    oriented_kpts.reserve(total_oriented);
+    for (const auto& kp_orientations : oriented_by_kpt) {
+        oriented_kpts.insert(oriented_kpts.end(), kp_orientations.begin(), kp_orientations.end());
     }
 
     if (verbose_level)
@@ -555,7 +578,12 @@ std::pair<cv::Mat, std::vector<cv::KeyPoint>> phg::computeDescriptors(const std:
 
     const int first_octave = params.upscale_first ? -1 : 0;
 
-    for (const cv::KeyPoint& kp : kpts) {
+    std::vector<std::vector<float>> descriptor_rows(kpts.size());
+    std::vector<unsigned char> descriptor_valid(kpts.size(), 0);
+
+    #pragma omp parallel for if (kpts.size() > 32)
+    for (int kp_idx = 0; kp_idx < (int)kpts.size(); kp_idx++) {
+        const cv::KeyPoint& kp = kpts[kp_idx];
         int layer = kp.class_id;
         int real_octave = kp.octave;
         int o = real_octave - first_octave; // индекс в массиве octaves
@@ -707,13 +735,26 @@ std::pair<cv::Mat, std::vector<cv::KeyPoint>> phg::computeDescriptors(const std:
         for (float& v : desc)
             v /= norm;
 
-        if (descriptors.empty()) {
-            descriptors.create(0, n_dims, CV_32F);
-        }
+        descriptor_rows[kp_idx] = std::move(desc);
+        descriptor_valid[kp_idx] = 1;
+    }
 
-        cv::Mat row(1, n_dims, CV_32F, desc.data());
+    size_t valid_count = 0;
+    for (unsigned char is_valid : descriptor_valid)
+        valid_count += is_valid;
+
+    if (valid_count > 0) {
+        descriptors.create(0, n_dims, CV_32F);
+        valid_kpts.reserve(valid_count);
+    }
+
+    for (int kp_idx = 0; kp_idx < (int)kpts.size(); kp_idx++) {
+        if (!descriptor_valid[kp_idx])
+            continue;
+
+        cv::Mat row(1, n_dims, CV_32F, descriptor_rows[kp_idx].data());
         descriptors.push_back(row.clone());
-        valid_kpts.push_back(kp);
+        valid_kpts.push_back(kpts[kp_idx]);
     }
 
     if (verbose_level)
