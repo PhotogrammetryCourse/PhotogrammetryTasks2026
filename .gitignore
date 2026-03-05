@@ -3,5 +3,6 @@
 build
 cmake-build*
 
-/root/uni/photo/PhotogrammetryTasks2026/4.11.0.zip
-/root/uni/photo/PhotogrammetryTasks2026/opencv-4.11.0
+4.11.0.zip
+opencv-4.11.0
+.vscode
