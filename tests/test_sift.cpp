@@ -25,10 +25,7 @@
 
 #define GAUSSIAN_NOISE_STDDEV 1.0
 
-// TODO ENABLE ME
-// TODO ENABLE ME
-// TODO ENABLE ME
-#define ENABLE_MY_SIFT_TESTING 0
+#define ENABLE_MY_SIFT_TESTING 1
 
 #define DENY_CREATE_REF_DATA 1
 
@@ -914,6 +911,7 @@ TEST(SIFT, PairMatching)
 
     phg::SIFTParams params;
     params.nfeatures = 10000;
+    params.orient_peak_ratio = 0.625;
 
     std::cout << "matching using opencv orb..." << std::endl;
     auto orb_cv = cv::ORB::create(params.nfeatures);
