@@ -1,6 +1,11 @@
 name: CMake
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - task01
+  pull_request:
+
 
 env:
   BUILD_TYPE: RelWithDebInfo
