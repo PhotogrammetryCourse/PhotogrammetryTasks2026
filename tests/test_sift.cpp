@@ -28,7 +28,7 @@
 // TODO ENABLE ME
 // TODO ENABLE ME
 // TODO ENABLE ME
-#define ENABLE_MY_SIFT_TESTING 0
+#define ENABLE_MY_SIFT_TESTING 1
 
 #define DENY_CREATE_REF_DATA 1
 
@@ -331,7 +331,7 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
 
             // отладочную визуализацию сохраняем в папку чтобы легко было посмотреть на любой промежуточный результат
             // или в данном случае - на любой результат любого теста
-            cv::imwrite("data/debug/test_sift/" + getTestSuiteName() + "/" + getTestName() + "_" + method_name + ".png", result);
+            cv::imwrite("data/debug/test_sift/" + getTestSuiteName() + "/OK_" + getTestName() + "_" + method_name + ".png", result);
 
             if (SHOW_RESULTS) {
                 // показать результат сразу в диалоге удобно если вы запускаете один и тот же тест раз за разом
