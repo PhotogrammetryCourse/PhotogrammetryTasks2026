@@ -155,7 +155,6 @@ std::vector<phg::SIFT::Octave> phg::buildDoG(const std::vector<phg::SIFT::Octave
 {
     std::vector<phg::SIFT::Octave> dog(octaves.size());
 
-    #pragma omp parallel for
     for (size_t o = 0; o < octaves.size(); o++) {
         const phg::SIFT::Octave& octave = octaves[o];
         int n_layers = octave.layers.size() - 1;
@@ -189,7 +188,6 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
     const int first_octave = params.upscale_first ? -1 : 0;
 
     std::vector<cv::KeyPoint> keypoints;
-    #pragma omp parallel for
     for (int o = 0; o < (int)dog.size(); o++) {
         int real_octave = o + first_octave;
 
@@ -370,12 +368,7 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
                             kp.octave = real_octave;
                             kp.class_id = li; // в настоящей opencv имплементации и слой и октава запихиваются в поле octave битовыми операциями
                             kp.response = std::abs(response_optimized);
-
-                            #pragma omp critical (keypoints) 
-                            {
-                                keypoints.push_back(kp); 
-                            }
-
+                            keypoints.push_back(kp);
                             break;
                         }
 
@@ -415,7 +408,6 @@ std::vector<cv::KeyPoint> phg::computeOrientations(const std::vector<cv::KeyPoin
 
     const int first_octave = params.upscale_first ? -1 : 0;
 
-    #pragma omp parallel for
     for (const cv::KeyPoint& kp : kpts) {
         std::vector<float> histogram(n_bins);
 
@@ -532,12 +524,8 @@ std::vector<cv::KeyPoint> phg::computeOrientations(const std::vector<cv::KeyPoin
 
                 cv::KeyPoint new_kp = kp;
                 new_kp.angle = angle;
-
-                #pragma omp critical(oriented_kpts) 
-                {
-                    oriented_kpts.push_back(new_kp);
-                }
-        }
+                oriented_kpts.push_back(new_kp);
+            }
         }
     }
 
@@ -571,7 +559,6 @@ std::pair<cv::Mat, std::vector<cv::KeyPoint>> phg::computeDescriptors(const std:
 
     const int first_octave = params.upscale_first ? -1 : 0;
     
-    #pragma omp parallel for
     for (const cv::KeyPoint& kp : kpts) {
         int layer = kp.class_id;
         int real_octave = kp.octave;
@@ -722,16 +709,14 @@ std::pair<cv::Mat, std::vector<cv::KeyPoint>> phg::computeDescriptors(const std:
         norm = std::sqrt(norm) + 1e-7f;
         for (float& v : desc)
             v /= norm;
-        #pragma omp critical(descriptors)
-        {
-            if (descriptors.empty()) {
-                descriptors.create(0, n_dims, CV_32F);
-            }
-
-            cv::Mat row(1, n_dims, CV_32F, desc.data());
-            descriptors.push_back(row.clone());
-            valid_kpts.push_back(kp);
+            
+        if (descriptors.empty()) {
+            descriptors.create(0, n_dims, CV_32F);
         }
+
+        cv::Mat row(1, n_dims, CV_32F, desc.data());
+        descriptors.push_back(row.clone());
+        valid_kpts.push_back(kp);
     }
 
     if (verbose_level)
@@ -835,7 +820,6 @@ void phg::SIFT::savePyramid(const std::string& name, const std::vector<Octave>& 
 
     cv::Size size = pyramid.front().layers.front().size();
 
-    #pragma omp parallel for
     for (size_t o = 0; o < pyramid.size(); ++o) {
         std::cout << "saving octave " << o << std::endl;
 
