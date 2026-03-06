@@ -110,8 +110,7 @@ std::vector<phg::SIFT::Octave> phg::buildOctaves(const cv::Mat& img, const phg::
         //  это будет немного быстрее, тк нужно более маленькое ядро свертки на каждый шаг
         for (int i = 1; i < n_layers; i++) {
             // sigma_layer = sigma0 * корень из двух нужной степени, чтобы при i==s получали удвоение базового блюра;
-            const double sqrt_two = std::sqrt(2);
-            double sigma_layer = sigma0 * std::pow(sqrt_two, (double)i / s);
+            double sigma_layer = sigma0 * std::pow(2.0, (double)i / s);
             // вычтем sigma0 чтобы размыть ровно до нужной суммарной сигмы
             sigma_layer = std::sqrt(sigma_layer * sigma_layer - sigma0 * sigma0);
 
@@ -143,7 +142,7 @@ std::vector<phg::SIFT::Octave> phg::buildDoG(const std::vector<phg::SIFT::Octave
         dog[o].layers.resize(octave.layers.size() - 1);
 
         // разница n+1 и n-й гауссианы
-        for (size_t i = 0; i < octaves.size() - 1; i++) { 
+        for (size_t i = 0; i < octave.layers.size() - 1; i++) { 
             dog[o].layers[i] = octave.layers[i + 1] - octave.layers[i];
         }
     }
@@ -213,32 +212,40 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
                         if (v <= val)
                             is_min = false;
                     };
-                    auto checkLocal = [&](const float* v) {
-                        for(int d = -1; d <= 1; ++d) {
-                            check(c[x + d]);
-                        }
-                    };
-
-                    // проверяем локальный максимум на текущем скейле
-                    checkLocal(c);
-                    checkLocal(cp);
-                    checkLocal(cn);
+                    check(cp[x - 1]);
+                    check(cp[x]);
+                    check(cp[x + 1]);
+                    check(c[x - 1]);
+                    check(c[x + 1]);
+                    check(cn[x - 1]);
+                    check(cn[x]);
+                    check(cn[x + 1]);
 
                     if (!is_max && !is_min)
                         continue;
 
-                    // проверяем локальный максимум на предыдущем скейле
-                    checkLocal(p);
-                    checkLocal(pp);
-                    checkLocal(pn);
+                    check(pp[x - 1]);
+                    check(pp[x]);
+                    check(pp[x + 1]);
+                    check(p[x - 1]);
+                    check(p[x]);
+                    check(p[x + 1]);
+                    check(pn[x - 1]);
+                    check(pn[x]);
+                    check(pn[x + 1]);
 
                     if (!is_max && !is_min)
                         continue;
 
-                    // проверяем локальный максимум на следующем скейле
-                    checkLocal(n);
-                    checkLocal(np);
-                    checkLocal(nn);
+                    check(np[x - 1]);
+                    check(np[x]);
+                    check(np[x + 1]);
+                    check(n[x - 1]);
+                    check(n[x]);
+                    check(n[x + 1]);
+                    check(nn[x - 1]);
+                    check(nn[x]);
+                    check(nn[x + 1]);
 
                     if (!is_max && !is_min)
                         continue;
@@ -305,8 +312,8 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
                                 // функция растущая по r, так что если наше фактическое значение trace * trace / det выше (r + 1) ^ 2 / r, то и наше отношение кривизн больше порога, значит плохая зацепистость
                                 float r = edge_threshold;
                                 float form = trace * trace / det;
-                                float threshold_form = std::pow(r + 1, 2) / r;
-                                if(form > threshold_form) {
+                                float threshold_form = (r + 1.0) * (r + 1.0) / r;
+                                if(form >= threshold_form) {
                                     break;
                                 }
                             }
@@ -407,7 +414,7 @@ std::vector<cv::KeyPoint> phg::computeOrientations(const std::vector<cv::KeyPoin
                 float gx = img.at<float>(py, px + 1) - img.at<float>(py, px - 1);
                 float gy = img.at<float>(py + 1, px) - img.at<float>(py - 1, px);
 
-                float magSq = gx * gx + gy * gy;
+                float mag = std::sqrt(gx * gx + gy * gy);
                 float angle = std::atan2(gy, gx); // [-pi, pi]
 
                 float angle_deg = angle * 180.f / (float) CV_PI;
@@ -431,8 +438,8 @@ std::vector<cv::KeyPoint> phg::computeOrientations(const std::vector<cv::KeyPoin
                     frac = 0.f;
                 }
 
-                histogram[bin0] += weight * std::sqrt(magSq) * frac;
-                histogram[bin1] += weight * std::sqrt(magSq) * (1.0 - frac);
+                histogram[bin0] += weight * mag * frac;
+                histogram[bin1] += weight * mag * (1.0 - frac);
             }
         }
 
@@ -470,8 +477,12 @@ std::vector<cv::KeyPoint> phg::computeOrientations(const std::vector<cv::KeyPoin
                 //  f(-1) = a - b + c = left
                 //  f(1) + f(-1) = 2a + 2c -> a = (left + right - 2 * center) / 2
                 //  f(1) - f(-1) = 2b -> b = (right - left) / 2
+                float offset = 0.f;
+                float denom = left + right - 2.0 * center;
+                if(std::abs(denom) > 1e-7f) {
+                    offset = (left - right) / denom;
+                }
 
-                float offset = (right - left) / (2 * (left + right - 2 * center));
                 if (!params.enable_orientation_subpixel_localization) {
                     offset = 0.f;
                 }
