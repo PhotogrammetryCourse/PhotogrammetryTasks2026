@@ -25,10 +25,7 @@
 
 #define GAUSSIAN_NOISE_STDDEV 1.0
 
-// TODO ENABLE ME
-// TODO ENABLE ME
-// TODO ENABLE ME
-#define ENABLE_MY_SIFT_TESTING 0
+#define ENABLE_MY_SIFT_TESTING 1
 
 #define DENY_CREATE_REF_DATA 1
 
@@ -278,7 +275,7 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
                         // что за числа в дескрипторах двух сопоставленных точек, насколько они похожи,
                         // и сверить что расстояние между дескрипторами - это действительно расстояние
                         // между точками в пространстве высокой размерности:
-#if 0
+#if 1
                         if (i % 100 == 0) {
                             #pragma omp critical
                             {
@@ -291,6 +288,7 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
                                 std::cout << "sum((d1-d0)^2): " << cv::sum(mul) << std::endl;
                                 std::cout << "sqrt(sum((d1-d0)^2)): " << sqrt(cv::sum(mul)[0]) << std::endl;
                                 std::cout << "norm: " << cv::norm(d0, d1, cv::NORM_L2) << std::endl;
+                                std::cout << std::endl;
                             }
                         }
 #endif
