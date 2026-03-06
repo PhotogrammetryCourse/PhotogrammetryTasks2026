@@ -215,10 +215,7 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
                     ps0[i] = kps0[i].pt;
                 }
 
-                std::cout << "before" <<std::endl;
                 cv::transform(ps0, ps01, M); // преобразовываем все точки с исходного изображения в систему координат его искаженной версии с учетом матрицы M, эти точки - эталон
-
-                std::cout << "afterre" <<std::endl;
             }
 
             double error_sum = 0.0; // считаем суммарную ошибку координат сопоставлений точек чтобы найти среднюю ошибку (в пикселях)
@@ -362,193 +359,193 @@ cv::Mat createTranslationMatrix(double dx, double dy)
     return M;
 }
 
-// TEST(SIFT, MovedTheSameImage)
-// {
-//     double minRecall = 0.75;
-//     evaluateDetection(createTranslationMatrix(0.0, 0.0), minRecall);
-// }
+TEST(SIFT, MovedTheSameImage)
+{
+    double minRecall = 0.75;
+    evaluateDetection(createTranslationMatrix(0.0, 0.0), minRecall);
+}
 
-// TEST(SIFT, MovedImageRight)
-// {
-//     double minRecall = 0.75;
-//     evaluateDetection(createTranslationMatrix(50.0, 0.0), minRecall);
-// }
+TEST(SIFT, MovedImageRight)
+{
+    double minRecall = 0.75;
+    evaluateDetection(createTranslationMatrix(50.0, 0.0), minRecall);
+}
 
-// TEST(SIFT, MovedImageLeft)
-// {
-//     double minRecall = 0.75;
-//     evaluateDetection(createTranslationMatrix(-50.0, 0.0), minRecall);
-// }
+TEST(SIFT, MovedImageLeft)
+{
+    double minRecall = 0.75;
+    evaluateDetection(createTranslationMatrix(-50.0, 0.0), minRecall);
+}
 
-// TEST(SIFT, MovedImageUpHalfPixel)
-// {
-//     double minRecall = 0.75;
-//     evaluateDetection(createTranslationMatrix(0.0, -50.5), minRecall);
-// }
+TEST(SIFT, MovedImageUpHalfPixel)
+{
+    double minRecall = 0.75;
+    evaluateDetection(createTranslationMatrix(0.0, -50.5), minRecall);
+}
 
-// TEST(SIFT, MovedImageDownHalfPixel)
-// {
-//     double minRecall = 0.75;
-//     evaluateDetection(createTranslationMatrix(0.0, 50.5), minRecall);
-// }
+TEST(SIFT, MovedImageDownHalfPixel)
+{
+    double minRecall = 0.75;
+    evaluateDetection(createTranslationMatrix(0.0, 50.5), minRecall);
+}
 
-// TEST(SIFT, Rotate10)
-// {
-//     double angleDegreesClockwise = 10;
-//     double scale = 1.0;
-//     double minRecall = 0.60;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Rotate10)
+{
+    double angleDegreesClockwise = 10;
+    double scale = 1.0;
+    double minRecall = 0.60;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Rotate20)
-// {
-//     double angleDegreesClockwise = 20;
-//     double scale = 1.0;
-//     double minRecall = 0.60;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Rotate20)
+{
+    double angleDegreesClockwise = 20;
+    double scale = 1.0;
+    double minRecall = 0.60;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Rotate30)
-// {
-//     double angleDegreesClockwise = 30;
-//     double scale = 1.0;
-//     double minRecall = 0.60;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Rotate30)
+{
+    double angleDegreesClockwise = 30;
+    double scale = 1.0;
+    double minRecall = 0.60;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Rotate40)
-// {
-//     double angleDegreesClockwise = 40;
-//     double scale = 1.0;
-//     double minRecall = 0.60;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Rotate40)
+{
+    double angleDegreesClockwise = 40;
+    double scale = 1.0;
+    double minRecall = 0.60;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Rotate45)
-// {
-//     double angleDegreesClockwise = 45;
-//     double scale = 1.0;
-//     double minRecall = 0.60;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Rotate45)
+{
+    double angleDegreesClockwise = 45;
+    double scale = 1.0;
+    double minRecall = 0.60;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Rotate90)
-// {
-//     double angleDegreesClockwise = 90;
-//     double scale = 1.0;
-//     double minRecall = 0.75;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Rotate90)
+{
+    double angleDegreesClockwise = 90;
+    double scale = 1.0;
+    double minRecall = 0.75;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Scale50)
-// {
-//     double angleDegreesClockwise = 0;
-//     double scale = 0.5;
-//     double minRecall = 0.40;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Scale50)
+{
+    double angleDegreesClockwise = 0;
+    double scale = 0.5;
+    double minRecall = 0.40;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Scale70)
-// {
-//     double angleDegreesClockwise = 0;
-//     double scale = 0.7;
-//     double minRecall = 0.40;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Scale70)
+{
+    double angleDegreesClockwise = 0;
+    double scale = 0.7;
+    double minRecall = 0.40;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Scale90)
-// {
-//     double angleDegreesClockwise = 0;
-//     double scale = 0.9;
-//     double minRecall = 0.60;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Scale90)
+{
+    double angleDegreesClockwise = 0;
+    double scale = 0.9;
+    double minRecall = 0.60;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Scale110)
-// {
-//     double angleDegreesClockwise = 0;
-//     double scale = 1.1;
-//     double minRecall = 0.60;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Scale110)
+{
+    double angleDegreesClockwise = 0;
+    double scale = 1.1;
+    double minRecall = 0.60;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Scale130)
-// {
-//     double angleDegreesClockwise = 0;
-//     double scale = 1.3;
-//     double minRecall = 0.50;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Scale130)
+{
+    double angleDegreesClockwise = 0;
+    double scale = 1.3;
+    double minRecall = 0.50;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Scale150)
-// {
-//     double angleDegreesClockwise = 0;
-//     double scale = 1.5;
-//     double minRecall = 0.50;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Scale150)
+{
+    double angleDegreesClockwise = 0;
+    double scale = 1.5;
+    double minRecall = 0.50;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Scale175)
-// {
-//     double angleDegreesClockwise = 0;
-//     double scale = 1.75;
-//     double minRecall = 0.40;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Scale175)
+{
+    double angleDegreesClockwise = 0;
+    double scale = 1.75;
+    double minRecall = 0.40;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Scale200)
-// {
-//     double angleDegreesClockwise = 0;
-//     double scale = 2.0;
-//     double minRecall = 0.20;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Scale200)
+{
+    double angleDegreesClockwise = 0;
+    double scale = 2.0;
+    double minRecall = 0.20;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Rotate10Scale90)
-// {
-//     double angleDegreesClockwise = 10;
-//     double scale = 0.9;
-//     double minRecall = 0.65;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Rotate10Scale90)
+{
+    double angleDegreesClockwise = 10;
+    double scale = 0.9;
+    double minRecall = 0.65;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, Rotate30Scale75)
-// {
-//     double angleDegreesClockwise = 30;
-//     double scale = 0.75;
-//     double minRecall = 0.50;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
-// }
+TEST(SIFT, Rotate30Scale75)
+{
+    double angleDegreesClockwise = 30;
+    double scale = 0.75;
+    double minRecall = 0.50;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(200, 256), -angleDegreesClockwise, scale), minRecall);
+}
 
-// TEST(SIFT, HerzJesu19RotateM40)
-// {
-//     cv::Mat jesu19 = cv::imread("data/src/test_sift/herzjesu19.png");
+TEST(SIFT, HerzJesu19RotateM40)
+{
+    cv::Mat jesu19 = cv::imread("data/src/test_sift/herzjesu19.png");
 
-//     ASSERT_FALSE(jesu19.empty()); // проверка что картинка была загружена
-//     // убедитесь что рабочая папка (Edit Configurations...->Working directory) указывает на корневую папку проекта
+    ASSERT_FALSE(jesu19.empty()); // проверка что картинка была загружена
+    // убедитесь что рабочая папка (Edit Configurations...->Working directory) указывает на корневую папку проекта
 
-//     double angleDegreesClockwise = -40;
-//     double scale = 1.0;
-//     double minRecall = 0.75;
-//     evaluateDetection(cv::getRotationMatrix2D(cv::Point(jesu19.cols / 2, jesu19.rows / 2), -angleDegreesClockwise, scale), minRecall, jesu19);
-// }
+    double angleDegreesClockwise = -40;
+    double scale = 1.0;
+    double minRecall = 0.75;
+    evaluateDetection(cv::getRotationMatrix2D(cv::Point(jesu19.cols / 2, jesu19.rows / 2), -angleDegreesClockwise, scale), minRecall, jesu19);
+}
 
-// TEST(SIFT, DetectionSmokeTest)
-// {
-// #if ENABLE_MY_SIFT_TESTING
-//     phg::SIFTParams p;
-//     phg::SIFT sift(p, 2, "data/debug/test_sift/debug/");
+TEST(SIFT, DetectionSmokeTest)
+{
+#if ENABLE_MY_SIFT_TESTING
+    phg::SIFTParams p;
+    phg::SIFT sift(p, 2, "data/debug/test_sift/debug/");
 
-//     cv::Mat img = cv::imread("data/src/test_sift/mysh1.jpg");
-//     cv::resize(img, img, img.size() / 4, 0, 0, cv::INTER_AREA);
+    cv::Mat img = cv::imread("data/src/test_sift/mysh1.jpg");
+    cv::resize(img, img, img.size() / 4, 0, 0, cv::INTER_AREA);
 
-//     std::vector<cv::KeyPoint> kpts;
-//     cv::Mat desc;
-//     sift.detectAndCompute(img, kpts, desc);
-// #else
-//     std::cout << "ENABLE_MY_SIFT_TESTING is disabled, test skipped" << std::endl;
-// #endif
-// }
+    std::vector<cv::KeyPoint> kpts;
+    cv::Mat desc;
+    sift.detectAndCompute(img, kpts, desc);
+#else
+    std::cout << "ENABLE_MY_SIFT_TESTING is disabled, test skipped" << std::endl;
+#endif
+}
 
 namespace fs = std::filesystem;
 
@@ -905,42 +902,42 @@ TEST(SIFT, DetectionDescriptionSteps)
 #endif
 }
 
-// TEST(SIFT, PairMatching)
-// {
-// #if ENABLE_MY_SIFT_TESTING
-//     cv::Mat img1 = cv::imread("data/src/test_sift/mysh2.jpg");
-//     ASSERT_FALSE(img1.empty());
+TEST(SIFT, PairMatching)
+{
+#if ENABLE_MY_SIFT_TESTING
+    cv::Mat img1 = cv::imread("data/src/test_sift/mysh2.jpg");
+    ASSERT_FALSE(img1.empty());
 
-//     cv::Mat img2 = cv::imread("data/src/test_sift/mysh3.jpg");
-//     ASSERT_FALSE(img2.empty());
+    cv::Mat img2 = cv::imread("data/src/test_sift/mysh3.jpg");
+    ASSERT_FALSE(img2.empty());
 
-//     cv::resize(img1, img1, img1.size() / 2, 0, 0, cv::INTER_AREA);
-//     cv::resize(img2, img2, img2.size() / 2, 0, 0, cv::INTER_AREA);
-//     std::cout << "image sizes: " << img1.size() << ", " << img2.size() << std::endl;
+    cv::resize(img1, img1, img1.size() / 2, 0, 0, cv::INTER_AREA);
+    cv::resize(img2, img2, img2.size() / 2, 0, 0, cv::INTER_AREA);
+    std::cout << "image sizes: " << img1.size() << ", " << img2.size() << std::endl;
 
-//     phg::SIFTParams params;
-//     params.nfeatures = 10000;
+    phg::SIFTParams params;
+    params.nfeatures = 10000;
 
-//     std::cout << "matching using opencv orb..." << std::endl;
-//     auto orb_cv = cv::ORB::create(params.nfeatures);
-//     evaluateMatching(*orb_cv, img1, img2, "data/debug/test_sift/SIFT/Matches_ORB.jpg");
+    std::cout << "matching using opencv orb..." << std::endl;
+    auto orb_cv = cv::ORB::create(params.nfeatures);
+    evaluateMatching(*orb_cv, img1, img2, "data/debug/test_sift/SIFT/Matches_ORB.jpg");
 
-//     std::cout << "matching using opencv sift..." << std::endl;
-//     auto sift_cv = cv::SIFT::create(params.nfeatures, params.n_octave_layers, params.contrast_threshold, params.edge_threshold);
-//     MatchingPairData data_cv = evaluateMatching(*sift_cv, img1, img2, "data/debug/test_sift/SIFT/Matches_SIFTOCV.jpg");
+    std::cout << "matching using opencv sift..." << std::endl;
+    auto sift_cv = cv::SIFT::create(params.nfeatures, params.n_octave_layers, params.contrast_threshold, params.edge_threshold);
+    MatchingPairData data_cv = evaluateMatching(*sift_cv, img1, img2, "data/debug/test_sift/SIFT/Matches_SIFTOCV.jpg");
 
-//     std::cout << "matching using my sift..." << std::endl;
-//     phg::SIFT sift(params);
-//     MatchingPairData data = evaluateMatching(sift, img1, img2, "data/debug/test_sift/SIFT/Matches_SIFT_MY.jpg");
+    std::cout << "matching using my sift..." << std::endl;
+    phg::SIFT sift(params);
+    MatchingPairData data = evaluateMatching(sift, img1, img2, "data/debug/test_sift/SIFT/Matches_SIFT_MY.jpg");
 
-//     double thresh = 0.8; // expect at least 80% of opencv sift points & matches
-//     EXPECT_GE(data.npoints1, thresh * data_cv.npoints1);
-//     EXPECT_GE(data.npoints2, thresh * data_cv.npoints2);
-//     EXPECT_GE(data.nmatches, thresh * data_cv.nmatches);
+    double thresh = 0.8; // expect at least 80% of opencv sift points & matches
+    EXPECT_GE(data.npoints1, thresh * data_cv.npoints1);
+    EXPECT_GE(data.npoints2, thresh * data_cv.npoints2);
+    EXPECT_GE(data.nmatches, thresh * data_cv.nmatches);
 
-//     std::cout << "Final score: " << data.nmatches << std::endl;
-// #else
-//     std::cout << "ENABLE_MY_SIFT_TESTING is disabled, test skipped" << std::endl;
-//     std::cout << "Final score: UNKNOWN" << std::endl;
-// #endif
-// }
+    std::cout << "Final score: " << data.nmatches << std::endl;
+#else
+    std::cout << "ENABLE_MY_SIFT_TESTING is disabled, test skipped" << std::endl;
+    std::cout << "Final score: UNKNOWN" << std::endl;
+#endif
+}

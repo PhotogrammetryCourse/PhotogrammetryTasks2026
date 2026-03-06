@@ -109,11 +109,13 @@ std::vector<phg::SIFT::Octave> phg::buildOctaves(const cv::Mat& img, const phg::
         //  это будет немного быстрее, тк нужно более маленькое ядро свертки на каждый шаг
         double sigma_cur = sigma0;
         for (int i = 1; i < n_layers; i++) {
-            double sigma_layer_full = sigma_cur * pow(2.0, 1.0/s);
+            double k =  pow(2.0, 1.0/s);
+            double sigma_layer_full = sigma_cur *k ;
             double sigma_layer = std::sqrt(sigma_layer_full * sigma_layer_full - sigma_cur * sigma_cur); // можно использовать дальше как идею для инкрементального блюра слоев
             //            TODO sigma_layer = ... (вычитаем как в sigma base);
-            cv::GaussianBlur(oct.layers[0], oct.layers[i], cv::Size(), sigma_layer, sigma_layer);
-            sigma_cur = sigma_layer;
+            oct.layers[i] = base.clone();
+            cv::GaussianBlur(oct.layers[i-1], oct.layers[i], cv::Size(), sigma_layer, sigma_layer);
+            sigma_cur = sigma_layer_full;
         }
 
         // подготавливаем базовый слой для следующей октавы
@@ -141,7 +143,7 @@ std::vector<phg::SIFT::Octave> phg::buildDoG(const std::vector<phg::SIFT::Octave
         dog[o].layers.resize(octave.layers.size() - 1);
 
         for(int layer =0; layer <octave.layers.size() -1 ; layer++){
-            dog[o].layers[layer] = octave.layers[layer+1] +octave.layers[layer];
+            dog[o].layers[layer] = octave.layers[layer+1] -octave.layers[layer];
         }
     }
 
@@ -307,8 +309,8 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
                                 // в случае гессиана (пространственной части: (dxx dxy, dxy, dyy)), собственные числа lambda1, lambda2 - силы кривизны в направлении максимальной кривизны и в ортогональном
                                   float trace = dxx+dyy;
                                   float det = dxx *dyy -dxy*dxy ;
-//                                if (det <= 0)
-//                                    break; // если произведение кривизн отрицательное, то мы находимся в седловой точке, а не в максимуме/минимуме. если нулевое, то это ровная граница вообще
+                               if (det <= 0)
+                                   break; // если произведение кривизн отрицательное, то мы находимся в седловой точке, а не в максимуме/минимуме. если нулевое, то это ровная граница вообще
 //
 //                                // если граница незацепистая = грань, то одна кривизна сильно больше чем другая. хотим, чтобы обе кривизны были примерно сопоставимы
 //                                // тогда их отношение r = lambda1/lambda2 будет не очень большим
@@ -426,7 +428,7 @@ std::vector<cv::KeyPoint> phg::computeOrientations(const std::vector<cv::KeyPoin
                if (angle_deg < 0.f) angle_deg += 360.f;
 
                // гауссово взвешивание голоса точки с затуханием к краям
-               float weight = std::exp(dx*dx+dy*dy/ (2.f * sigma_win * sigma_win));
+               float weight = std::exp(-(dx*dx+dy*dy)/ (2.f * sigma_win * sigma_win));
                if (!params.enable_orientation_gaussian_weighting) {
                    weight = 1.f;
                }
