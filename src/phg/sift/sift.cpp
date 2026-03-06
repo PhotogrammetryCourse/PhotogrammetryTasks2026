@@ -138,8 +138,8 @@ std::vector<phg::SIFT::Octave> phg::buildDoG(const std::vector<phg::SIFT::Octave
         const phg::SIFT::Octave& octave = octaves[o];
         dog[o].layers.resize(octave.layers.size() - 1);
 
-        for (size_t n = 0; n < dog[o].layers.size(); n++) {
-            dog[0].layers[n] = octave.layers[n + 1] - octave.layers[n];
+        for (size_t n = 0; n + 1 < octave.layers.size(); n++) {
+            dog[o].layers[n] = octave.layers[n + 1] - octave.layers[n];
         }
     }
 
@@ -268,14 +268,13 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
                         float ds = (nL.at<float>(yi, xi) - pL.at<float>(yi, xi)) * 0.5f;
 
                         // гессиан
-                        float dxx, dxy, dyy, dxs, dys, dss;
-                        dxx = cL.at<float>(yi, xi + 1) + cL.at<float>(yi, xi - 1) - 2.f * resp_center;
-                        dyy = cL.at<float>(yi + 1, xi) + cL.at<float>(yi - 1, xi) - 2.f * resp_center;
-                        dss = nL.at<float>(yi, xi) + pL.at<float>(yi, xi) - 2.f * resp_center;
+                        float dxx = cL.at<float>(yi, xi + 1) + cL.at<float>(yi, xi - 1) - 2.f * resp_center;
+                        float dyy = cL.at<float>(yi + 1, xi) + cL.at<float>(yi - 1, xi) - 2.f * resp_center;
+                        float dss = nL.at<float>(yi, xi) + pL.at<float>(yi, xi) - 2.f * resp_center;
 
-                        dxy = (cL.at<float>(yi + 1, xi + 1) - cL.at<float>(yi + 1, xi - 1) - cL.at<float>(yi - 1, xi + 1) + cL.at<float>(yi - 1, xi - 1)) * 0.25f;
-                        dxs = (nL.at<float>(yi, xi + 1) - nL.at<float>(yi, xi - 1) - pL.at<float>(yi, xi + 1) + pL.at<float>(yi, xi - 1)) * 0.25f;
-                        dys = (nL.at<float>(yi + 1, xi) - nL.at<float>(yi - 1, xi) - pL.at<float>(yi + 1, xi) + pL.at<float>(yi - 1, xi)) * 0.25f;
+                        float dxy = ((cL.at<float>(yi + 1, xi + 1) - cL.at<float>(yi + 1, xi - 1)) - (cL.at<float>(yi - 1, xi + 1) - cL.at<float>(yi - 1, xi - 1))) * 0.25f;
+                        float dxs = ((nL.at<float>(yi, xi + 1) - nL.at<float>(yi, xi - 1)) - (pL.at<float>(yi, xi + 1) - pL.at<float>(yi, xi - 1))) * 0.25f;
+                        float dys = ((nL.at<float>(yi + 1, xi) - nL.at<float>(yi - 1, xi)) - (pL.at<float>(yi + 1, xi) - pL.at<float>(yi - 1, xi))) * 0.25f;
 
                         cv::Matx33f H(dxx, dxy, dxs, dxy, dyy, dys, dxs, dys, dss);
 
@@ -308,17 +307,17 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
                                 float det = dxx * dyy - dxy * dxy; // = lambda1 * lambda2
                                 if (det <= 0)
                                     break; // если произведение кривизн отрицательное, то мы находимся в седловой точке, а не в максимуме/минимуме. если нулевое, то это ровная граница вообще
-                                //
-                                //                                // если граница незацепистая = грань, то одна кривизна сильно больше чем другая. хотим, чтобы обе кривизны были примерно сопоставимы
-                                //                                // тогда их отношение r = lambda1/lambda2 будет не очень большим
-                                //                                // если расписать trace * trace / det через r, то получится (r + 1) ^ 2 / r
-                                //                                // функция растущая по r, так что если наше фактическое значение trace * trace / det выше (r + 1) ^ 2 / r, то и наше отношение кривизн больше порога, значит плохая
-                                //                                зацепистость
-                                //                                // и просто как интуиция, при больших r это выражение просто до r сокращается
-                                //
-                                //                                // в итоге получается что порог edge_threshold в отличие от response_threshold наоборот, чем больше тем расслабленнее
+
+                                // если граница незацепистая = грань, то одна кривизна сильно больше чем другая. хотим, чтобы обе кривизны были примерно сопоставимы
+                                // тогда их отношение r = lambda1/lambda2 будет не очень большим
+                                // если расписать trace * trace / det через r, то получится (r + 1) ^ 2 / r
+                                // функция растущая по r, так что если наше фактическое значение trace * trace / det выше (r + 1) ^ 2 / r, то и наше отношение кривизн больше порога, значит плохая
+                                // зацепистость
+                                // и просто как интуиция, при больших r это выражение просто до r сокращается
+
+                                // в итоге получается что порог edge_threshold в отличие от response_threshold наоборот, чем больше тем расслабленнее
                                 float r = edge_threshold;
-                                if (trace * trace / det > (r + 1.f) * (r + 1.f) / 2)
+                                if (trace * trace / det > (r + 1.f) * (r + 1.f) / r)
                                     break;
                             }
 
@@ -487,7 +486,8 @@ std::vector<cv::KeyPoint> phg::computeOrientations(const std::vector<cv::KeyPoin
                 float b = (right - left) / 2.f;
                 float a2 = left + right - 2.f * center;
                 float offset = 0.f;
-                if (std::fabs(offset) > 1e-6) {
+                constexpr float EPS = 1e-6;
+                if (std::fabs(a2) > EPS) {
                     offset = -b / a2;
                 }
                 if (!params.enable_orientation_subpixel_localization) {
