@@ -1,10 +1,6 @@
 name: CMake
 
-on:
-  push:
-    branches:
-      - task01
-  pull_request:
+on: [push, pull_request]
 
 
 env:

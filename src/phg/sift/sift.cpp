@@ -114,10 +114,8 @@ std::vector<phg::SIFT::Octave> phg::buildOctaves(const cv::Mat& img, const phg::
         //  можно подумать, как сделать эффективнее - для построения n+1 слоя доблюревать уже поблюренный n-ый слой, так чтобы в итоге получилась такая же сигма
         //  это будет немного быстрее, тк нужно более маленькое ядро свертки на каждый шаг
         for (int i = 1; i < n_layers; i++) {
-            //            TODO double sigma_layer = sigma0 * корень из двух нужной степени, чтобы при i==s получали удвоение базового блюра;
             double sigma_layer = sigma0 * std::pow(2.0, (double) i / s);
-            //            // вычтем sigma0 чтобы размыть ровно до нужной суммарной сигмы
-            //            TODO sigma_layer = ... (вычитаем как в sigma base);
+            // вычтем sigma0 чтобы размыть ровно до нужной суммарной сигмы
             sigma_layer = std::sqrt(sigma_layer * sigma_layer - sigma0 * sigma0);
             cv::GaussianBlur(oct.layers[0], oct.layers[i], cv::Size(), sigma_layer, sigma_layer);
         }
@@ -125,7 +123,6 @@ std::vector<phg::SIFT::Octave> phg::buildOctaves(const cv::Mat& img, const phg::
         // подготавливаем базовый слой для следующей октавы
         if (o + 1 < n_octaves) {
             // используется в opencv, формула для пересчета ключевых точек: pt_upscaled = 2^o * pt_downscaled
-            //            TODO cv::resize(даунскейлим текущий слой в два раза, без интерполяции, просто сабсепмлинг);
                 base = downsample2x(oct.layers[s]);
 
             // можно использовать и downsample2x_avg(oct.layers[s]), это позволяет потом заапскейлить слои обратно до оригинального разрешения без сдвига
@@ -147,7 +144,6 @@ phg::buildDoG(const std::vector<phg::SIFT::Octave>& octaves, const phg::SIFTPara
         const phg::SIFT::Octave& octave = octaves[o];
         dog[o].layers.resize(octave.layers.size() - 1);
 
-        // TODO каждый слой дога это разница n+1 и n-й гауссианы
         for (size_t i = 0; i < dog[o].layers.size(); i++) {
             dog[o].layers[i] = octave.layers[i + 1] - octave.layers[i];
         }
@@ -221,19 +217,18 @@ phg::findScaleSpaceExtrema(const std::vector<phg::SIFT::Octave>& dog, const phg:
                     };
 
                     auto check_layer = [&](const float* row) {
-                        for (int i = -1; i < 2; i += 1)
-                            check(row[x] + (float) i);
+                        for (int i = -1; i < 2; ++i)
+                            check(row[x + i]);
                     };
 
-                    // TODO проверить локальный максимум на текущем скейле
                     check_layer(cp);
-                    check_layer(c);
+                    check(c[x - 1]);
+                    check(c[x + 1]);
                     check_layer(cn);
 
                     if (!is_max && !is_min)
                         continue;
 
-                    // TODO проверить локальный максимум на предыдущем скейле
                     check_layer(pp);
                     check_layer(p);
                     check_layer(pn);
@@ -242,7 +237,6 @@ phg::findScaleSpaceExtrema(const std::vector<phg::SIFT::Octave>& dog, const phg:
                     if (!is_max && !is_min)
                         continue;
 
-                    // TODO проверить локальный максимум на следующем скейле
                     check_layer(np);
                     check_layer(n);
                     check_layer(nn);
@@ -658,7 +652,6 @@ phg::computeDescriptors(const std::vector<cv::KeyPoint>& kpts, const std::vector
 
                     if (ix_nearest >= 0 && ix_nearest < n_spatial_bins && iy_nearest >= 0 &&
                         iy_nearest < n_spatial_bins) {
-                        // TODO uncomment
                         int idx = (iy_nearest * n_spatial_bins + ix_nearest) * n_orient_bins + io_nearest;
                         desc[idx] += weighted_mag;
                     }
