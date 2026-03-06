@@ -142,7 +142,7 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
     #include <filesystem>
     std::cout << std::filesystem::current_path() << std::endl;
     if (img0.empty()) {
-        img0 = cv::imread("/data/src/test_sift/unicorn.png"); // грузим картинку по умолчанию
+        img0 = cv::imread("data/src/test_sift/unicorn.png"); // грузим картинку по умолчанию
     }
 
     ASSERT_FALSE(img0.empty()); // проверка что картинка была загружена
