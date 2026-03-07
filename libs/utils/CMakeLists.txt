@@ -1,8 +1,9 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.1)
 
 project(libutils)
 
 set(HEADERS
+        libutils/bbox2.h
         libutils/fast_random.h
         libutils/misc.h
         libutils/rasserts.h

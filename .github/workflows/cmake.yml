@@ -60,9 +60,9 @@ jobs:
       - name: Build (any OS)
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-      - name: Run test_sift (Linux/macOS)
+      - name: Run test_matching (Linux/macOS)
         if: runner.os != 'Windows'
-        run: ./build/test_sift
+        run: ./build/test_matching
 
       - name: Copy OpenCV/gtest DLLs (Windows)
         if: runner.os == 'Windows'
@@ -81,7 +81,7 @@ jobs:
             Group-Object Name |
             ForEach-Object { Copy-Item $_.Group[0].FullName $exeDir -Force }
 
-      - name: Run test_sift (Windows)
+      - name: Run test_matching (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: .\build\${{ env.BUILD_TYPE }}\test_sift.exe
+        run: .\build\${{ env.BUILD_TYPE }}\test_matching.exe

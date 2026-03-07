@@ -37,13 +37,34 @@ find_package(OpenCV 4.11.0 REQUIRED)
 set(SOURCES
         src/phg/sift/sift.cpp
         src/phg/sift/sift.h
-)
+        src/phg/matching/descriptor_matcher.cpp
+        src/phg/matching/descriptor_matcher.h
+        src/phg/matching/bruteforce_matcher.cpp
+        src/phg/matching/bruteforce_matcher.h
+        src/phg/matching/bruteforce_matcher_gpu.cpp
+        src/phg/matching/bruteforce_matcher_gpu.h
+        src/phg/matching/gms_matcher.cpp
+        src/phg/matching/gms_matcher.h
+        src/phg/matching/gms_matcher_impl.h
+        src/phg/matching/flann_matcher.cpp
+        src/phg/matching/flann_matcher.h
+        src/phg/matching/flann_factory.h
+        src/phg/sfm/homography.cpp
+        src/phg/sfm/homography.h
+        src/phg/sfm/panorama_stitcher.h
+        src/phg/sfm/panorama_stitcher.cpp
+        )
+
+# convertIntoHeader CMake-функция объявлена в libs/gpu/CMakeLists.txt:71
+# Она считывает все байты из файла bruteforce_matcher.cl (т.е. весь исходный код кернела) и преобразует их в массив байтов в файле bruteforce_matcher_cl.h bruteforce_matcher_kernel
+convertIntoHeader(src/phg/matching/cl/bruteforce_matcher.cl src/phg/matching/cl/bruteforce_matcher_cl.h bruteforce_matcher_kernel)
+# Обратите внимание что это происходит на этапе компиляции, кроме того необходимо чтобы файл bruteforce_matcher_cl.h был перечислен среди исходников для компиляции при вызове add_executable
+set(SOURCES ${SOURCES} src/phg/matching/cl/bruteforce_matcher_cl.h)
 
 set(LIBRARIES
         libutils
         ${OpenCV_LIBS}
-        OpenMP::OpenMP_CXX
-)
+        )
 
 add_library(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
@@ -52,12 +73,15 @@ target_include_directories(${PROJECT_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/src)
 set(TEST_SOURCES
         tests/utils/test_utils.cpp
         tests/utils/test_utils.h
-)
+        )
 
 set(TEST_LIBRARIES
         gtest
         gtest_main
-)
+        )
 
 add_executable(test_sift tests/test_sift.cpp ${TEST_SOURCES})
+add_executable(test_matching tests/test_matching.cpp ${TEST_SOURCES})
+
 target_link_libraries(test_sift ${PROJECT_NAME} ${LIBRARIES} ${TEST_LIBRARIES})
+target_link_libraries(test_matching ${PROJECT_NAME} ${LIBRARIES} ${TEST_LIBRARIES})
