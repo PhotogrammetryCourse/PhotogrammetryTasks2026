@@ -4,14 +4,14 @@
 
 В этом репозитории предложены задания курса по Фотограмметрии для очень хороших студентов.
 
-Задания (даты будущих заданий указаны примерно):
+Задания:
 
-- **17.02** [Задание 1:](https://github.com/PhotogrammetryCourse/PhotogrammetryTasks2026/tree/task01) Локальные ключевые точки SIFT (детектор и дескриптор).
-- **24.02** Задание 2: Сопоставление ключевых точек и подсчет гомографии.
-- **10.03** Задание 3: SFM. Оценка взаимной ориентации и положения камер, построение облака точек.
-- **17.03** Задание 4: SFM. Ceres Solver и Bundle Adjustment.
-- **31.03** Задание 5: MVS. Depth Maps. Patch Match.
-- **21.04** Задание 6: MVS. Build model. Triangulation Delaunay + Graph Min-Cut.
+- [Задание 1:](https://github.com/PhotogrammetryCourse/PhotogrammetryTasks2026/tree/task01) Локальные ключевые точки SIFT (детектор и дескриптор).
+- [Задание 2:](https://github.com/PhotogrammetryCourse/PhotogrammetryTasks2026/tree/task02) Сопоставление ключевых точек и подсчет гомографии.
+- Задание 3: SFM. Оценка взаимной ориентации и положения камер, построение облака точек.
+- Задание 4: SFM. Ceres Solver и Bundle Adjustment.
+- Задание 5: MVS. Depth Maps. Patch Match.
+- Задание 6: MVS. Build model. Triangulation Delaunay + Graph Min-Cut.
 
 Другое:
 
