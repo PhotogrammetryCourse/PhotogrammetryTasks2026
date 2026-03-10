@@ -23,6 +23,14 @@
 #define ENABLE_MY_MATCHING 1
 #define ENABLE_GPU_BRUTEFORCE_MATCHER 1
 
+// TODO disable for local testing but do not commit
+#define SERVER_TESTING 1
+
+#if SERVER_TESTING && !defined(__linux__)
+#undef ENABLE_GPU_BRUTEFORCE_MATCHER
+#define ENABLE_GPU_BRUTEFORCE_MATCHER 0
+#endif
+
 #if ENABLE_MY_MATCHING
 const double max_keypoints_rmse_px = 1.0;
 #else
