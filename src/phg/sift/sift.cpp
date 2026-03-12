@@ -107,17 +107,19 @@ std::vector<phg::SIFT::Octave> phg::buildOctaves(const cv::Mat& img, const phg::
         // для простоты в каждой октаве будем каждый раз блюрить базовую картинку с полной сигмой
         //  можно подумать, как сделать эффективнее - для построения n+1 слоя доблюревать уже поблюренный n-ый слой, так чтобы в итоге получилась такая же сигма
         //  это будет немного быстрее, тк нужно более маленькое ядро свертки на каждый шаг
+        double k = std::pow(2., 1. / s);
         for (int i = 1; i < n_layers; i++) {
-            //            TODO double sigma_layer = sigma0 * корень из двух нужной степени, чтобы при i==s получали удвоение базового блюра;
-            //            // вычтем sigma0 чтобы размыть ровно до нужной суммарной сигмы
-            //            TODO sigma_layer = ... (вычитаем как в sigma base);
-            //            cv::GaussianBlur(oct.layers[0], oct.layers[i], cv::Size(), sigma_layer, sigma_layer);
+            double sigma_p = std::pow(k, (double)(i - 1)) * sigma0;
+            double sigma_layer = sigma_p * k;
+            // вычтем sigma0 чтобы размыть ровно до нужной суммарной сигмы
+            sigma_layer = std::sqrt(sigma_layer * sigma_layer - sigma_p * sigma_p);
+            cv::GaussianBlur(oct.layers[i - 1], oct.layers[i], cv::Size(), sigma_layer, sigma_layer);
         }
 
         // подготавливаем базовый слой для следующей октавы
         if (o + 1 < n_octaves) {
             // используется в opencv, формула для пересчета ключевых точек: pt_upscaled = 2^o * pt_downscaled
-            //            TODO cv::resize(даунскейлим текущий слой в два раза, без интерполяции, просто сабсепмлинг);
+            base = downsample2x(oct.layers[s]);
 
             // можно использовать и downsample2x_avg(oct.layers[s]), это позволяет потом заапскейлить слои обратно до оригинального разрешения без сдвига
             // но потребуется везде изменить формулу для пересчета ключевых точек: pt_upscaled = (pt_downscaled + 0.5) * 2^o - 0.5
@@ -137,7 +139,9 @@ std::vector<phg::SIFT::Octave> phg::buildDoG(const std::vector<phg::SIFT::Octave
     for (size_t o = 0; o < octaves.size(); o++) {
         const phg::SIFT::Octave& octave = octaves[o];
         dog[o].layers.resize(octave.layers.size() - 1);
-
+        for (int i = 0; i < octave.layers.size() - 1; i++){
+          cv::subtract(octave.layers[i + 1], octave.layers[i], dog[o].layers[i]);
+        }
         // TODO каждый слой дога это разница n+1 и n-й гауссианы
     }
 
@@ -208,17 +212,42 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
                     };
 
                     // TODO проверить локальный максимум на текущем скейле
+                    
+                    check(c[x - 1]);
+                    check(c[x + 1]);
+                    check(cp[x - 1]);
+                    check(cp[x]);
+                    check(cp[x + 1]);
+                    check(cn[x - 1]);
+                    check(cn[x]);
+                    check(cn[x + 1]);
 
                     if (!is_max && !is_min)
                         continue;
 
                     // TODO проверить локальный максимум на предыдущем скейле
-
+                    check(p[x - 1]);
+                    check(p[x]);
+                    check(p[x + 1]);
+                    check(pp[x - 1]);
+                    check(pp[x]);
+                    check(pp[x + 1]);
+                    check(pn[x - 1]);
+                    check(pn[x]);
+                    check(pn[x + 1]);
                     if (!is_max && !is_min)
                         continue;
-
+          
                     // TODO проверить локальный максимум на следующем скейле
-
+                    check(n[x - 1]);
+                    check(n[x]);
+                    check(n[x + 1]);
+                    check(np[x - 1]);
+                    check(np[x]);
+                    check(np[x + 1]);
+                    check(nn[x - 1]);
+                    check(nn[x]);
+                    check(nn[x + 1]);
                     if (!is_max && !is_min)
                         continue;
 
@@ -238,13 +267,13 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
 
                         // гессиан
                         float dxx, dxy, dyy, dxs, dys, dss;
-//                        float dxx = cL.at<float>(yi, xi + 1) + cL.at<float>(yi, xi - 1) - 2.f * resp_center;
-//                        float dyy = TODO;
-//                        float dss = TODO;
-//
-//                        float dxy = (cL.at<float>(yi + 1, xi + 1) - cL.at<float>(yi + 1, xi - 1) - cL.at<float>(yi - 1, xi + 1) + cL.at<float>(yi - 1, xi - 1)) * 0.25f;
-//                        float dxs = TODO;
-//                        float dys = TODO;
+                        dxx = cL.at<float>(yi, xi + 1) + cL.at<float>(yi, xi - 1) - 2.f * resp_center;
+                        dyy = cL.at<float>(yi + 1, xi) + cL.at<float>(yi - 1, xi) - 2.f * resp_center;
+                        dss = nL.at<float>(yi, xi) + pL.at<float>(yi, xi) - 2.f * resp_center;
+
+                        dxy = (cL.at<float>(yi + 1, xi + 1) - cL.at<float>(yi + 1, xi - 1) - cL.at<float>(yi - 1, xi + 1) + cL.at<float>(yi - 1, xi - 1)) * 0.25f;
+                        dxs = (nL.at<float>(yi, xi + 1) - nL.at<float>(yi, xi - 1) - pL.at<float>(yi, xi + 1) + pL.at<float>(yi, xi - 1)) * 0.25f;
+                        dys = (nL.at<float>(yi + 1, xi) - pL.at<float>(yi + 1, xi) - nL.at<float>(yi - 1, xi) + pL.at<float>(yi - 1, xi)) * 0.25f;
 
                         cv::Matx33f H(dxx, dxy, dxs, dxy, dyy, dys, dxs, dys, dss);
 
@@ -273,10 +302,10 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
                                 // из линейной алгебры, сумма диагональных элементов матрицы (след) равна сумме собственных чисел
                                 // определитель матрицы равен произведению собственных чисел
                                 // в случае гессиана (пространственной части: (dxx dxy, dxy, dyy)), собственные числа lambda1, lambda2 - силы кривизны в направлении максимальной кривизны и в ортогональном
-//                                float trace = //TODO ; // = lambda1 + lambda2
-//                                float det = // TODO ; // = lambda1 * lambda2
-//                                if (det <= 0)
-//                                    break; // если произведение кривизн отрицательное, то мы находимся в седловой точке, а не в максимуме/минимуме. если нулевое, то это ровная граница вообще
+                                float trace = dxx + dyy ; // = lambda1 + lambda2
+                                float det = dxx * dyy - dxy * dxy; // = lambda1 * lambda2
+                                if (det <= 0)
+                                    break; // если произведение кривизн отрицательное, то мы находимся в седловой точке, а не в максимуме/минимуме. если нулевое, то это ровная граница вообще
 //
 //                                // если граница незацепистая = грань, то одна кривизна сильно больше чем другая. хотим, чтобы обе кривизны были примерно сопоставимы
 //                                // тогда их отношение r = lambda1/lambda2 будет не очень большим
@@ -285,9 +314,9 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
 //                                // и просто как интуиция, при больших r это выражение просто до r сокращается
 //
 //                                // в итоге получается что порог edge_threshold в отличие от response_threshold наоборот, чем больше тем расслабленнее
-//                                float r = edge_threshold;
-//                                if (TODO)
-//                                    break;
+                                float r = edge_threshold;
+                                if (trace * trace / det > (r + 1) * (r + 1) / r)
+                                    break;
                             }
 
                             // скейлим координаты точек обратно до родных размеров картинки
@@ -379,39 +408,39 @@ std::vector<cv::KeyPoint> phg::computeOrientations(const std::vector<cv::KeyPoin
 
         for (int dy = -radius; dy <= radius; dy++) {
             for (int dx = -radius; dx <= radius; dx++) {
-//                int px = xi + dx;
-//                int py = yi + dy;
+                int px = xi + dx;
+                int py = yi + dy;
 //
 //                // градиент
-//                float gx = img.at<float>(py, px + 1) - img.at<float>(py, px - 1);
-//                float gy = img.at<float>(py + 1, px) - img.at<float>(py - 1, px);
+                float gx = img.at<float>(py, px + 1) - img.at<float>(py, px - 1);
+                float gy = img.at<float>(py + 1, px) - img.at<float>(py - 1, px);
 //
-//                float mag = TODO;
-//                float angle = std::atan2(TODO); // [-pi, pi]
+                float mag = std::sqrt(gx * gx + gy * gy);
+                float angle = std::atan2(gy, gx); // [-pi, pi]
 //
-//                float angle_deg = angle * 180.f / (float) CV_PI;
-//                if (angle_deg < 0.f) angle_deg += 360.f;
+                float angle_deg = angle * 180.f / (float) CV_PI;
+                if (angle_deg < 0.f) angle_deg += 360.f;
 //
 //                // гауссово взвешивание голоса точки с затуханием к краям
-//                float weight = std::exp(-(TODO) / (2.f * sigma_win * sigma_win));
-//                if (!params.enable_orientation_gaussian_weighting) {
-//                    weight = 1.f;
-//                }
+                float weight = std::exp(-(dx * dx + dy * dy) / (2.f * sigma_win * sigma_win));
+                if (!params.enable_orientation_gaussian_weighting) {
+                    weight = 1.f;
+                }
 //
 //                // голосуем в гистограмме направлений. находим два ближайших бина и гладко распределяем голос между ними
 //                //  в таком случае, голос попавший близко к границе между бинами, проголосует поровну за оба бина
-//                float bin = TODO;
-//                if (bin >= n_bins) bin -= n_bins;
-//                int bin0 = (int) bin;
-//                int bin1 = (bin0 + 1) % n_bins;
+                float bin = angle_deg / 360 * n_bins;
+                if (bin >= n_bins) bin -= n_bins;
+                int bin0 = (int) bin;
+                int bin1 = (bin0 + 1) % n_bins;
 //
-//                float frac = bin - bin0;
-//                if (!params.enable_orientation_bin_interpolation) {
-//                    frac = 0.f;
-//                }
+                float frac = bin - bin0;
+                if (!params.enable_orientation_bin_interpolation) {
+                    frac = 0.f;
+                }
 //
-//                histogram[bin0] += TODO;
-//                histogram[bin1] += TODO;
+                histogram[bin0] += (1.f - frac) * mag * weight;
+                histogram[bin1] += frac * weight * mag;
             }
         }
 
@@ -450,20 +479,20 @@ std::vector<cv::KeyPoint> phg::computeOrientations(const std::vector<cv::KeyPoin
                 //  f(1) + f(-1) = 2a + 2c -> a = (left + right - 2 * center) / 2
                 //  f(1) - f(-1) = 2b -> b = (right - left) / 2
 
-//                float offset = TODO;
-//                if (!params.enable_orientation_subpixel_localization) {
-//                    offset = 0.f;
-//                }
+                float offset = 0.5 * (left - right) / (left + right - 2. * center);
+                if (!params.enable_orientation_subpixel_localization) {
+                    offset = 0.f;
+                }
 //
-//                float bin_real = i + offset;
-//                if (bin_real < 0.f) bin_real += n_bins;
-//                if (bin_real >= n_bins) bin_real -= n_bins;
+                float bin_real = i + offset;
+                if (bin_real < 0.f) bin_real += n_bins;
+                if (bin_real >= n_bins) bin_real -= n_bins;
 //
-//                float angle = bin_real * 360.f / n_bins;
+                float angle = bin_real * 360.f / n_bins;
 //
-//                cv::KeyPoint new_kp = kp;
-//                new_kp.angle = angle;
-//                oriented_kpts.push_back(new_kp);
+                cv::KeyPoint new_kp = kp;
+                new_kp.angle = angle;
+                oriented_kpts.push_back(new_kp);
             }
         }
     }
@@ -529,7 +558,7 @@ std::pair<cv::Mat, std::vector<cv::KeyPoint>> phg::computeDescriptors(const std:
         float sin_a = std::sin(kp_angle_rad);
 
         // для гауссового взвешивания: затухающий вклад градиентов с краев картинки
-        float sigma_desc = (float)n_spatial_bins * 0.5f;
+        float sigma_desc = (float)n_spatial_bins * 0.4f;
 
         std::vector<float> desc(n_dims, 0.f);
 
@@ -570,15 +599,17 @@ std::pair<cv::Mat, std::vector<cv::KeyPoint>> phg::computeDescriptors(const std:
 
                 // подсчет бина в гистограммке градиентов внутри пространственного бина
                 float bin_o = angle_invariant * n_orient_bins / CV_2PI;
+                if (bin_o < 0.f)
+                    bin_o += n_orient_bins;
                 if (bin_o >= n_orient_bins)
                     bin_o -= n_orient_bins;
 
                 // семплы вблизи края патча взвешиваем с меньшим весом
-//                float weight = std::exp(-(TODO) / (2.f * sigma_desc * sigma_desc));
-//                if (!params.enable_descriptor_gaussian_weighting) {
-//                    weight = 1.f;
-//                }
-//                float weighted_mag = mag * weight;
+                float weight = std::exp(-(rot_x * rot_x + rot_y * rot_y) / (2.f * sigma_desc * sigma_desc));
+                if (!params.enable_descriptor_gaussian_weighting) {
+                    weight = 1.f;
+                }
+                float weighted_mag = mag * weight;
 
                 if (params.enable_descriptor_bin_interpolation) {
                     // размажем вклад weighted_mag по пространственным бинам и по бинам гистограммок трилинейной интерполяцией
@@ -609,8 +640,8 @@ std::pair<cv::Mat, std::vector<cv::KeyPoint>> phg::computeDescriptors(const std:
                                     io += n_orient_bins;
                                 float wo = (dio == 0) ? (1.f - fo) : fo;
 
-//                                int idx = TODO;
-//                                desc[idx] += TODO;
+                                int idx = (iy * n_spatial_bins + ix) * n_orient_bins + io;
+                                desc[idx] += wy * wx * wo * weighted_mag;
                             }
                         }
                     }
@@ -621,8 +652,8 @@ std::pair<cv::Mat, std::vector<cv::KeyPoint>> phg::computeDescriptors(const std:
 
                     if (ix_nearest >= 0 && ix_nearest < n_spatial_bins && iy_nearest >= 0 && iy_nearest < n_spatial_bins) {
                         // TODO uncomment
-//                        int idx = (iy_nearest * n_spatial_bins + ix_nearest) * n_orient_bins + io_nearest;
-//                        desc[idx] += weighted_mag;
+                        int idx = (iy_nearest * n_spatial_bins + ix_nearest) * n_orient_bins + io_nearest;
+                        desc[idx] += weighted_mag;
                     }
                 }
             }
@@ -783,3 +814,5 @@ void phg::SIFT::savePyramid(const std::string& name, const std::vector<Octave>& 
         }
     }
 }
+
+
