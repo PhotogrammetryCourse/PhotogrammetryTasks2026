@@ -18,6 +18,7 @@ namespace phg {
         std::shared_ptr<cv::flann::IndexParams> index_params;
         std::shared_ptr<cv::flann::SearchParams> search_params;
         std::shared_ptr<cv::flann::Index> flann_index;
+        std::size_t train_size;
     };
 
 }
