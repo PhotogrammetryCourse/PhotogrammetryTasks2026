@@ -2,6 +2,7 @@
 
 #include <opencv2/calib3d/calib3d.hpp>
 #include <iostream>
+#include <opencv2/imgproc.hpp>
 
 namespace {
 
@@ -84,8 +85,16 @@ namespace {
             double w1 = ws1[i];
 
             // 8 elements of matrix + free term as needed by gauss routine
-//            A.push_back({TODO});
-//            A.push_back({TODO});
+            A.push_back({
+                x0, y0, 1,
+                0, 0, 0,
+                -x1*x0, -x1*y0, x1
+            });
+            A.push_back({
+                0, 0, 0,
+                x0, y0, 1,
+                -y1*x0, -y1*y0, y1
+            });
         }
 
         int res = gauss(A, H);
@@ -168,57 +177,61 @@ namespace {
         // * (простое описание для понимания)
         // * [3] http://ikrisoft.blogspot.com/2015/01/ransac-with-contrario-approach.html
 
-//        const int n_matches = points_lhs.size();
-//
-//        // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
-//        const int n_trials = TODO;
-//
-//        const int n_samples = TODO;
-//        uint64_t seed = 1;
-//        const double reprojection_error_threshold_px = 2;
-//
-//        int best_support = 0;
-//        cv::Mat best_H;
-//
-//        std::vector<int> sample;
-//        for (int i_trial = 0; i_trial < n_trials; ++i_trial) {
-//            randomSample(sample, n_matches, n_samples, &seed);
-//
-//            cv::Mat H = estimateHomography4Points(points_lhs[sample[0]], points_lhs[sample[1]], points_lhs[sample[2]], points_lhs[sample[3]],
-//                                                  points_rhs[sample[0]], points_rhs[sample[1]], points_rhs[sample[2]], points_rhs[sample[3]]);
-//
-//            int support = 0;
-//            for (int i_point = 0; i_point < n_matches; ++i_point) {
-//                try {
-//                    cv::Point2d proj = phg::transformPoint(points_lhs[i_point], H);
-//                    if (cv::norm(proj - cv::Point2d(points_rhs[i_point])) < reprojection_error_threshold_px) {
-//                        ++support;
-//                    }
-//                } catch (const std::exception &e)
-//                {
-//                    std::cerr << e.what() << std::endl;
-//                }
-//            }
-//
-//            if (support > best_support) {
-//                best_support = support;
-//                best_H = H;
-//
-//                std::cout << "estimateHomographyRANSAC : support: " << best_support << "/" << n_matches << std::endl;
-//
-//                if (best_support == n_matches) {
-//                    break;
-//                }
-//            }
-//        }
-//
-//        std::cout << "estimateHomographyRANSAC : best support: " << best_support << "/" << n_matches << std::endl;
-//
-//        if (best_support == 0) {
-//            throw std::runtime_error("estimateHomographyRANSAC : failed to estimate homography");
-//        }
-//
-//        return best_H;
+        const int n_matches = points_lhs.size();
+
+        const int n_samples = 4;
+        uint64_t seed = 1;
+        const double reprojection_error_threshold_px = 2;
+
+        // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
+        const double desired_p = 0.95;
+        const double filtered_matches_ratio = 0.35;
+        const double actual_p = std::pow(filtered_matches_ratio, n_samples);
+        const double standard_deviation = std::sqrt(1 - actual_p) / actual_p;
+        const int n_trials = std::log(1 - desired_p) / std::log(1 - actual_p) + standard_deviation;
+
+        int best_support = 0;
+        cv::Mat best_H;
+
+        std::vector<int> sample;
+        for (int i_trial = 0; i_trial < n_trials; ++i_trial) {
+            randomSample(sample, n_matches, n_samples, &seed);
+
+            cv::Mat H = estimateHomography4Points(points_lhs[sample[0]], points_lhs[sample[1]], points_lhs[sample[2]], points_lhs[sample[3]],
+                                                  points_rhs[sample[0]], points_rhs[sample[1]], points_rhs[sample[2]], points_rhs[sample[3]]);
+
+            int support = 0;
+            for (int i_point = 0; i_point < n_matches; ++i_point) {
+                try {
+                    cv::Point2d proj = phg::transformPoint(points_lhs[i_point], H);
+                    if (cv::norm(proj - cv::Point2d(points_rhs[i_point])) < reprojection_error_threshold_px) {
+                        ++support;
+                    }
+                } catch (const std::exception &e)
+                {
+                    std::cerr << e.what() << std::endl;
+                }
+            }
+
+            if (support > best_support) {
+                best_support = support;
+                best_H = H;
+
+                std::cout << "estimateHomographyRANSAC : support: " << best_support << "/" << n_matches << std::endl;
+
+                if (best_support == n_matches) {
+                    break;
+                }
+            }
+        }
+
+        std::cout << "estimateHomographyRANSAC : best support: " << best_support << "/" << n_matches << std::endl;
+
+        if (best_support == 0) {
+            throw std::runtime_error("estimateHomographyRANSAC : failed to estimate homography");
+        }
+
+        return best_H;
     }
 
 }
@@ -238,7 +251,13 @@ cv::Mat phg::findHomographyCV(const std::vector<cv::Point2f> &points_lhs, const 
 // таким преобразованием внутри занимается функции cv::perspectiveTransform и cv::warpPerspective
 cv::Point2d phg::transformPoint(const cv::Point2d &pt, const cv::Mat &T)
 {
-    throw std::runtime_error("not implemented yet");
+    double x = T.at<double>(0, 0) * pt.x + T.at<double>(0, 1) * pt.y + T.at<double>(0, 2) * 1;
+    double y = T.at<double>(1, 0) * pt.x + T.at<double>(1, 1) * pt.y + T.at<double>(1, 2) * 1;
+    double w = T.at<double>(2, 0) * pt.x + T.at<double>(2, 1) * pt.y + T.at<double>(2, 2) * 1;
+
+    x /= w;
+    y /= w;
+    return {x, y};
 }
 
 cv::Point2d phg::transformPointCV(const cv::Point2d &pt, const cv::Mat &T) {
