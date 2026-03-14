@@ -88,14 +88,12 @@ namespace {
             A.push_back({
                 x0, y0, 1,
                 0, 0, 0,
-                -x1*x0, -x1*y0,
-                x1
+                -x1*x0, -x1*y0, x1
             });
             A.push_back({
                 0, 0, 0,
                 x0, y0, 1,
-                -y1*x0, -y1*y0,
-                y1
+                -y1*x0, -y1*y0, y1
             });
         }
 
