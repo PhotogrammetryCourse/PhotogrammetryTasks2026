@@ -121,11 +121,11 @@ std::vector<phg::SIFT::Octave> phg::buildOctaves(const cv::Mat& img, const phg::
         // подготавливаем базовый слой для следующей октавы
         if (o + 1 < n_octaves) {
             // используется в opencv, формула для пересчета ключевых точек: pt_upscaled = 2^o * pt_downscaled
-            cv::resize(oct.layers[s], base, cv::Size(), 0.5, 0.5, cv::INTER_NEAREST);
+            // cv::resize(oct.layers[s], base, cv::Size(), 0.5, 0.5, cv::INTER_NEAREST);
 
             // можно использовать и downsample2x_avg(oct.layers[s]), это позволяет потом заапскейлить слои обратно до оригинального разрешения без сдвига
             // но потребуется везде изменить формулу для пересчета ключевых точек: pt_upscaled = (pt_downscaled + 0.5) * 2^o - 0.5
-            // base = downsample2x_avg(oct.layers[s]);
+            base = downsample2x_avg(oct.layers[s]);
 
             if (verbose_level)
                 std::cout << "new octave base size: " << base.size().width << std::endl;
@@ -331,10 +331,10 @@ std::vector<cv::KeyPoint> phg::findScaleSpaceExtrema(const std::vector<phg::SIFT
                             // скейлим координаты точек обратно до родных размеров картинки
                             // !!! если выбираем при даунскейле другую политику, с усреднением вместо ресемплинга, то надо здесь применять формулу со сдвигами на полпикселя
                             float scale = (real_octave >= 0) ? (float)(1 << real_octave) : (1.f / (float)(1 << (-real_octave)));
-                            // float real_x = (xi + offset[0] + 0.5f) * scale - 0.5f;
-                            // float real_y = (yi + offset[1] + 0.5f) * scale - 0.5f;
-                            float real_x = (xi + offset[0]) * scale;
-                            float real_y = (yi + offset[1]) * scale;
+                            float real_x = (xi + offset[0] + 0.5f) * scale - 0.5f;
+                            float real_y = (yi + offset[1] + 0.5f) * scale - 0.5f;
+                            // float real_x = (xi + offset[0]) * scale;
+                            // float real_y = (yi + offset[1]) * scale;
                             float real_layer = li + offset[2];
 
                             if (!params.enable_subpixel_localization) {
