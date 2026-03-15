@@ -7,7 +7,7 @@
 #include <set>
 
  /* @TUNABLE */
-static constexpr float RATIO_THRESHOLD = 0.7;
+static constexpr float RATIO_THRESHOLD = 0.75;
 static constexpr int SEARCH_CHECKS = 10;
 
 void phg::DescriptorMatcher::filterMatchesRatioTest(const std::vector<std::vector<cv::DMatch>>& matches, std::vector<cv::DMatch>& filtered_matches)

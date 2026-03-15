@@ -7,6 +7,7 @@
 #include <opencv2/core.hpp>
 
 namespace {
+    constexpr float MIN_DST2 = 1e-6f;
 
     // источник: https://e-maxx.ru/algo/linear_systems_gauss
     // очень важно при выполнении метода гаусса использовать выбор опорного элемента: об этом можно почитать в источнике кода
@@ -171,7 +172,6 @@ namespace {
         // * (простое описание для понимания)
         // * [3] http://ikrisoft.blogspot.com/2015/01/ransac-with-contrario-approach.html
 
-       constexpr float min_dst2 = 1e-6f;
        const int n_matches = points_lhs.size();
 
        // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
@@ -189,10 +189,10 @@ namespace {
            randomSample(sample, n_matches, n_samples, &seed, [&sample, &points_lhs, &points_rhs](int x) {
                 for (int prev : sample) {
                     auto left_vec = (points_lhs[prev] - points_lhs[x]);
-                    if (std::hypot(left_vec.x, left_vec.y) < min_dst2)
+                    if (std::hypot(left_vec.x, left_vec.y) < MIN_DST2)
                         return false;
                     auto right_vec = (points_rhs[prev] - points_rhs[x]);
-                    if (std::hypot(right_vec.x, right_vec.y) < min_dst2)
+                    if (std::hypot(right_vec.x, right_vec.y) < MIN_DST2)
                         return false;
                 }
                 return true;

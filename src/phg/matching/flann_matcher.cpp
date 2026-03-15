@@ -6,8 +6,8 @@
 #include "flann_matcher.h"
 #include "flann_factory.h"
 
-static constexpr int N_TREES = 5;
-static constexpr int N_CHECKS = 50;
+static constexpr int N_TREES = 4;
+static constexpr int N_CHECKS = 40;
 
 phg::FlannMatcher::FlannMatcher()
 {
