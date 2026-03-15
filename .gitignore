@@ -1,7 +1,8 @@
 **/*_cl.h
 .idea
-build
+/build*
 cmake-build*
 /.cache/
 /.venv/
 /.vscode
+/data/debug/

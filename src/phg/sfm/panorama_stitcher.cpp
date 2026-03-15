@@ -3,6 +3,27 @@
 
 #include <libutils/bbox2.h>
 #include <iostream>
+#include <opencv2/core/mat.hpp>
+#include <vector>
+
+static void callDfsOrder(const std::vector<int>& parent, const std::function<void(int)>& action, std::vector<bool>& mask, int i)
+{
+    if (mask[i])
+        return;
+    if (parent[i] != -1)
+        callDfsOrder(parent, action, mask, parent[i]);
+    action(i);
+    mask[i] = true;
+}
+
+static void callDfsOrder(const std::vector<int>& parent, const std::function<void(int)>& action)
+{
+    std::vector<bool> mask(parent.size());
+
+    for (int i = 0; i < parent.size(); ++i) {
+        callDfsOrder(parent, action, mask, i);
+    }
+}
 
 /*
  * imgs - список картинок
@@ -23,7 +44,14 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
     {
         // здесь надо посчитать вектор Hs
         // при этом можно обойтись n_images - 1 вызовами функтора homography_builder
-        throw std::runtime_error("not implemented yet");
+        callDfsOrder(parent, [&homography_builder, &parent, &imgs, &Hs, n_images](int i) { 
+            if (parent[i] == -1) {
+                Hs[i] = cv::Mat({3, 3}, { 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0 });
+            } else {
+                Hs[i] = homography_builder(imgs[i], imgs[parent[i]]);
+                Hs[i] *= Hs[parent[i]];
+            }
+            });
     }
 
     bbox2<double, cv::Point2d> bbox;
