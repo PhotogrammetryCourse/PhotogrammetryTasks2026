@@ -11,6 +11,7 @@ struct SIFTParams {
     double edge_threshold = 10;
     double sigma = 1.6;
 
+    // double orient_peak_ratio = 0.999;
     double orient_peak_ratio = 0.8;
     int orient_nbins = 36;
     bool upscale_first = true;

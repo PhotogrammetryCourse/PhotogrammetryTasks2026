@@ -108,6 +108,11 @@ std::vector<phg::SIFT::Octave> phg::buildOctaves(const cv::Mat& img, const phg::
         //  можно подумать, как сделать эффективнее - для построения n+1 слоя доблюревать уже поблюренный n-ый слой, так чтобы в итоге получилась такая же сигма
         //  это будет немного быстрее, тк нужно более маленькое ядро свертки на каждый шаг
         for (int i = 1; i < n_layers; i++) {
+            // SEQUENTIAL blurring
+            // double sigma_prev_layer = sigma0 * std::pow((double) 2, (double) (i - 1) / s);
+            // sigma_layer = std::sqrt(sigma_layer * sigma_layer - sigma_prev_layer * sigma_prev_layer);
+            // cv::GaussianBlur(oct.layers[i - 1], oct.layers[i], cv::Size(), sigma_layer, sigma_layer);
+
             double sigma_layer = sigma0 * std::pow((double) 2, (double) i / s);
             sigma_layer = std::sqrt(sigma_layer * sigma_layer - sigma0 * sigma0);
             cv::GaussianBlur(oct.layers[0], oct.layers[i], cv::Size(), sigma_layer, sigma_layer);
@@ -142,6 +147,7 @@ std::vector<phg::SIFT::Octave> phg::buildDoG(const std::vector<phg::SIFT::Octave
         const phg::SIFT::Octave& octave = octaves[o];
         dog[o].layers.resize(octave.layers.size() - 1);
         for (int i = 0; i < dog[o].layers.size(); i++) {
+            // dog[o].layers[i] = octave.layers[i] - octave.layers[i + 1]; // возможно этот вариант согласуется с лекциями, но не согласуется с тестом на сверку
             dog[o].layers[i] = octave.layers[i + 1] - octave.layers[i]; 
         }
         // каждый слой дога это разница n+1 и n-й гауссианы
