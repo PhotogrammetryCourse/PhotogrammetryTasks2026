@@ -4,6 +4,7 @@
 #include <libutils/string_utils.h>
 #include <algorithm>
 #include <CL/cl.h>
+#include <CL/cl_ext.h>
 #include <iostream>
 #include "enum.h"
 
@@ -32,6 +33,9 @@ bool OpenCLEnum::enumPlatforms()
 
 	// Get OpenCL platform count
 	ciErrNum = clGetPlatformIDs (0, NULL, &num_platforms);
+	if (ciErrNum == CL_PLATFORM_NOT_FOUND_KHR) {
+		return true;
+	}
 	if (ciErrNum != CL_SUCCESS) {
 		std::cerr << "clGetPlatformIDs failed: " << ocl::errorString(ciErrNum) << std::endl;
 		return false;

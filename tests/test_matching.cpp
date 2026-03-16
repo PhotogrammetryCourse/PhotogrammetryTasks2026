@@ -19,9 +19,9 @@
 
 
 // TODO enable both toggles for testing custom detector & matcher
-#define ENABLE_MY_DESCRIPTOR 0
-#define ENABLE_MY_MATCHING 0
-#define ENABLE_GPU_BRUTEFORCE_MATCHER 0
+#define ENABLE_MY_DESCRIPTOR 1
+#define ENABLE_MY_MATCHING 1
+#define ENABLE_GPU_BRUTEFORCE_MATCHER 1
 
 #if ENABLE_MY_MATCHING
 const double max_keypoints_rmse_px = 1.0;
@@ -35,6 +35,22 @@ const double max_color_rmse_8u = 20;
 
 
 namespace {
+
+#if ENABLE_GPU_BRUTEFORCE_MATCHER
+    bool canRunGpuBruteforceMatcher()
+    {
+        static bool printed = false;
+
+        std::string reason;
+        const bool available = phg::BruteforceMatcherGPU::isAvailable(&reason, true);
+        if (!available && !printed) {
+            std::cout << "skipping brute force GPU matching: " << reason << std::endl;
+            printed = true;
+        }
+
+        return available;
+    }
+#endif
 
     void drawMatches(const cv::Mat &img1,
                      const cv::Mat &img2,
@@ -307,24 +323,27 @@ namespace {
         }
         time_bruteforce = tm.elapsed();
 
-        tm.restart();
         std::vector<std::vector<DMatch>> knn_matches_bruteforce_gpu;
+        time_bruteforce_gpu = -1.0;
 #if ENABLE_GPU_BRUTEFORCE_MATCHER
-        if (do_bruteforce) {
+        if (do_bruteforce && canRunGpuBruteforceMatcher()) {
             std::cout << "brute force GPU matching" << std::endl;
+            tm.restart();
             phg::BruteforceMatcherGPU matcher;
             matcher.train(descriptors2);
             matcher.knnMatch(descriptors1, knn_matches_bruteforce_gpu, 2);
+            time_bruteforce_gpu = tm.elapsed();
         }
 #endif
-        time_bruteforce_gpu = tm.elapsed();
 
 #if ENABLE_GPU_BRUTEFORCE_MATCHER
-        ASSERT_EQ(knn_matches_bruteforce_gpu.size(), knn_matches_bruteforce.size());
-        for (int i = 0; i < (int) knn_matches_bruteforce_gpu.size(); ++i) {
-            ASSERT_EQ(knn_matches_bruteforce_gpu[i].size(), knn_matches_bruteforce[i].size());
-            for (int j = 0; j < (int) knn_matches_bruteforce_gpu[i].size(); ++j) {
-                ASSERT_TRUE(matcheq(knn_matches_bruteforce_gpu[i][j], knn_matches_bruteforce[i][j]));
+        if (time_bruteforce_gpu >= 0.0) {
+            ASSERT_EQ(knn_matches_bruteforce_gpu.size(), knn_matches_bruteforce.size());
+            for (int i = 0; i < (int) knn_matches_bruteforce_gpu.size(); ++i) {
+                ASSERT_EQ(knn_matches_bruteforce_gpu[i].size(), knn_matches_bruteforce[i].size());
+                for (int j = 0; j < (int) knn_matches_bruteforce_gpu[i].size(); ++j) {
+                    ASSERT_TRUE(matcheq(knn_matches_bruteforce_gpu[i][j], knn_matches_bruteforce[i][j]));
+                }
             }
         }
 #endif
@@ -485,7 +504,11 @@ namespace {
         std::cout << "time_cv: " << time_cv << ", ";
         std::cout << "time_bruteforce: " << time_bruteforce << ", ";
 #if ENABLE_GPU_BRUTEFORCE_MATCHER
-        std::cout << "time_bruteforce_gpu: " << time_bruteforce_gpu << ", ";
+        if (time_bruteforce_gpu >= 0.0) {
+            std::cout << "time_bruteforce_gpu: " << time_bruteforce_gpu << ", ";
+        } else {
+            std::cout << "time_bruteforce_gpu: skipped, ";
+        }
 #endif
         std::cout << "good_nn: " << good_nn << ", ";
         std::cout << "good_ratio: " << good_ratio << ", ";
@@ -553,7 +576,9 @@ TEST (MATCHING, SimpleMatching) {
     EXPECT_LT(time_my, 0.1 * time_bruteforce);
 
 #if ENABLE_GPU_BRUTEFORCE_MATCHER
-    EXPECT_LT(time_bruteforce_gpu, time_bruteforce);
+    if (time_bruteforce_gpu >= 0.0) {
+        EXPECT_LT(time_bruteforce_gpu, time_bruteforce);
+    }
 #endif
 
 #if ENABLE_MY_MATCHING

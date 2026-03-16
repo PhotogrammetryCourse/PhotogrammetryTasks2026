@@ -13,6 +13,41 @@
 
 #define BF_MATCHER_GPU_VERBOSE 0
 
+bool phg::BruteforceMatcherGPU::isAvailable(std::string *reason, bool require_non_cpu_device)
+{
+    const std::vector<gpu::Device> devices = gpu::enumDevices();
+
+    bool has_opencl_device = false;
+    bool has_non_cpu_opencl_device = false;
+    for (const gpu::Device &device : devices) {
+        if (!device.supports_opencl) {
+            continue;
+        }
+
+        has_opencl_device = true;
+        if (!device.is_cpu) {
+            has_non_cpu_opencl_device = true;
+            break;
+        }
+    }
+
+    if (require_non_cpu_device ? has_non_cpu_opencl_device : has_opencl_device) {
+        return true;
+    }
+
+    if (!reason) {
+        return false;
+    }
+
+    if (!has_opencl_device) {
+        *reason = "no OpenCL platforms/devices detected; install an OpenCL ICD/runtime and verify with clinfo";
+    } else {
+        *reason = "only CPU OpenCL devices are available; the GPU matcher benchmark needs a non-CPU OpenCL device";
+    }
+
+    return false;
+}
+
 void phg::BruteforceMatcherGPU::train(const cv::Mat &train_desc)
 {
     if (train_desc.rows < 2) {
@@ -26,6 +61,11 @@ void phg::BruteforceMatcherGPU::knnMatch(const cv::Mat &query_desc,
                                          std::vector<std::vector<cv::DMatch>> &matches,
                                          int k) const
 {
+    std::string availability_reason;
+    if (!isAvailable(&availability_reason)) {
+        throw std::runtime_error("BruteforceMatcherGPU:: knnMatch : " + availability_reason);
+    }
+
     if (!train_desc_ptr) {
         throw std::runtime_error("BruteforceMatcher:: knnMatch : matcher is not trained");
     }
@@ -37,9 +77,6 @@ void phg::BruteforceMatcherGPU::knnMatch(const cv::Mat &query_desc,
     std::cout << "BruteforceMatcher::knnMatch : n query desc : " << query_desc.rows << ", n train desc : " << train_desc_ptr->rows << std::endl;
 
     gpu::Device device = gpu::chooseDevice(BF_MATCHER_GPU_VERBOSE);
-    if (!device.supports_opencl) {
-        throw std::runtime_error("No OpenCL device found");
-    }
 
     gpu::Context context;
     context.init(device.device_id_opencl);
