@@ -23,6 +23,11 @@ jobs:
           sudo apt install -y g++ cmake unzip wget
           bash .github/scripts/linux/install_opencv.sh
 
+      - name: Install OpenCL CPU driver
+        if: runner.os == 'Linux'
+        run: |
+          bash .github/scripts/linux/install_opencl_cpu_driver.sh
+
       - name: Build and install OpenCV + OpenMP (macOS)
         if: runner.os == 'macOS'
         run: |

@@ -23,6 +23,14 @@
 #define ENABLE_MY_MATCHING 1
 #define ENABLE_GPU_BRUTEFORCE_MATCHER 1
 
+// TODO disable for local testing but do not commit
+#define SERVER_TESTING 1
+
+#if SERVER_TESTING && !defined(__linux__)
+#undef ENABLE_GPU_BRUTEFORCE_MATCHER
+#define ENABLE_GPU_BRUTEFORCE_MATCHER 0
+#endif
+
 #if ENABLE_MY_MATCHING
 const double max_keypoints_rmse_px = 1.0;
 #else
@@ -575,10 +583,8 @@ TEST (MATCHING, SimpleMatching) {
     EXPECT_LT(time_my, 1.5 * time_cv);
     EXPECT_LT(time_my, 0.1 * time_bruteforce);
 
-#if ENABLE_GPU_BRUTEFORCE_MATCHER
-    if (time_bruteforce_gpu >= 0.0) {
-        EXPECT_LT(time_bruteforce_gpu, time_bruteforce);
-    }
+#if ENABLE_GPU_BRUTEFORCE_MATCHER && !SERVER_TESTING
+    EXPECT_LT(time_bruteforce_gpu, time_bruteforce);
 #endif
 
 #if ENABLE_MY_MATCHING
