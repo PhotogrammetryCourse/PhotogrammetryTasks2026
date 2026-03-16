@@ -15,15 +15,55 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
                             std::function<cv::Mat(const cv::Mat &, const cv::Mat &)> &homography_builder)
 {
     const int n_images = imgs.size();
+    if (parent.size() != imgs.size()) {
+        throw std::runtime_error("stitchPanorama: parent.size() != imgs.size()");
+    }
 
     // склеивание панорамы происходит через приклеивание всех картинок к корню, некоторые приклеиваются не напрямую, а через цепочку других картинок
 
     // вектор гомографий, для каждой картинки описывает преобразование до корня
     std::vector<cv::Mat> Hs(n_images);
     {
-        // здесь надо посчитать вектор Hs
-        // при этом можно обойтись n_images - 1 вызовами функтора homography_builder
-        throw std::runtime_error("not implemented yet");
+        std::vector<cv::Mat> edge_Hs(n_images);
+        std::vector<char> edge_ready(n_images, 0);
+        std::vector<char> ready(n_images, 0);
+        std::vector<char> in_stack(n_images, 0);
+
+        std::function<void(int)> build_to_root = [&](int i) {
+            if (ready[i]) {
+                return;
+            }
+            if (in_stack[i]) {
+                throw std::runtime_error("stitchPanorama: cycle in parent graph");
+            }
+
+            in_stack[i] = 1;
+
+            const int p = parent[i];
+            if (p == -1) {
+                Hs[i] = cv::Mat::eye(3, 3, CV_64FC1);
+            } else {
+                if (p < 0 || p >= n_images) {
+                    throw std::runtime_error("stitchPanorama: invalid parent index");
+                }
+
+                build_to_root(p);
+
+                if (!edge_ready[i]) {
+                    edge_Hs[i] = homography_builder(imgs[i], imgs[p]);
+                    edge_ready[i] = 1;
+                }
+
+                Hs[i] = Hs[p] * edge_Hs[i];
+            }
+
+            ready[i] = 1;
+            in_stack[i] = 0;
+        };
+
+        for (int i = 0; i < n_images; ++i) {
+            build_to_root(i);
+        }
     }
 
     bbox2<double, cv::Point2d> bbox;
