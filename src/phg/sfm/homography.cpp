@@ -7,6 +7,8 @@
 
 namespace {
 
+    constexpr double kPi = 3.14159265358979323846;
+
     // источник: https://e-maxx.ru/algo/linear_systems_gauss
     // очень важно при выполнении метода гаусса использовать выбор опорного элемента: об этом можно почитать в источнике кода
     // или на вики: https://en.wikipedia.org/wiki/Pivot_element
@@ -320,7 +322,7 @@ namespace {
         const int n_matches = static_cast<int>(points_lhs.size());
         const int max_trials = 5000;
         const int n_samples = 4;
-        const double alpha0 = M_PI / std::max(4.0 * M_PI, estimateBackgroundArea(points_rhs));
+        const double alpha0 = kPi / std::max(4.0 * kPi, estimateBackgroundArea(points_rhs));
 
         double best_log_nfa = std::numeric_limits<double>::infinity();
         int best_k = 0;
