@@ -28,6 +28,7 @@ __kernel void bruteforce_matcher(__global const float* train,
     // заполняем текущие лучшие дистанции большими значениями
     if (dim_id < KEYPOINTS_PER_WG * 2) {
         res_distance2_local[dim_id] = FLT_MAX; // полагаемся на то что res_distance2_local размера KEYPOINTS_PER_WG*2==4*2<dim_id<=NDIM==128
+        res_train_idx_local[dim_id] = 0;
     }
 
     __local float dist2_for_reduction[NDIM];
