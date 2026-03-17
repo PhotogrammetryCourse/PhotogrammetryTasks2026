@@ -19,9 +19,9 @@
 
 
 // TODO enable both toggles for testing custom detector & matcher
-#define ENABLE_MY_DESCRIPTOR 0
-#define ENABLE_MY_MATCHING 0
-#define ENABLE_GPU_BRUTEFORCE_MATCHER 0
+#define ENABLE_MY_DESCRIPTOR 1
+#define ENABLE_MY_MATCHING 1
+#define ENABLE_GPU_BRUTEFORCE_MATCHER 1
 
 // TODO disable for local testing but do not commit
 #define SERVER_TESTING 1
@@ -86,6 +86,22 @@ namespace {
 
 #if ENABLE_MY_MATCHING
         phg::DescriptorMatcher::filterMatchesRatioTest(knn_matches, good_matches);
+        std::vector<std::vector<DMatch>> right_knn_matches;
+        {
+            phg::FlannMatcher rightMatcher;
+            rightMatcher.train(descriptors1);
+            rightMatcher.knnMatch(descriptors2, right_knn_matches, 2);
+
+            std::vector<DMatch> right_good_matches(right_knn_matches.size());
+            for (int i = 0; i < (int) right_knn_matches.size(); ++i) {
+                right_good_matches[i] = right_knn_matches[i][0];
+            }
+            phg::DescriptorMatcher::filterMatchesRatioTest(right_knn_matches, right_good_matches);
+
+            std::vector<DMatch> tmp;
+            phg::DescriptorMatcher::filterMatchesLeftRightTest(good_matches, right_good_matches, tmp);
+            std::swap(tmp, good_matches);
+        }
         {
             std::vector<DMatch> tmp;
             phg::DescriptorMatcher::filterMatchesClusters(good_matches, keypoints1, keypoints2, tmp);
@@ -138,6 +154,22 @@ namespace {
 
 #if ENABLE_MY_MATCHING
         phg::DescriptorMatcher::filterMatchesRatioTest(knn_matches, good_matches);
+        std::vector<std::vector<DMatch>> right_knn_matches;
+        {
+            phg::FlannMatcher rightMatcher;
+            rightMatcher.train(descriptors1);
+            rightMatcher.knnMatch(descriptors2, right_knn_matches, 2);
+
+            std::vector<DMatch> right_good_matches(right_knn_matches.size());
+            for (int i = 0; i < (int) right_knn_matches.size(); ++i) {
+                right_good_matches[i] = right_knn_matches[i][0];
+            }
+            phg::DescriptorMatcher::filterMatchesRatioTest(right_knn_matches, right_good_matches);
+
+            std::vector<DMatch> tmp;
+            phg::DescriptorMatcher::filterMatchesLeftRightTest(good_matches, right_good_matches, tmp);
+            std::swap(tmp, good_matches);
+        }
         {
             std::vector<DMatch> tmp;
             phg::DescriptorMatcher::filterMatchesClusters(good_matches, keypoints1, keypoints2, tmp);
@@ -388,6 +420,27 @@ namespace {
         phg::DescriptorMatcher::filterMatchesRatioTest(knn_matches_flann, good_matches_ratio);
         drawMatches(img1, img2, keypoints1, keypoints2, good_matches_ratio, "data/debug/test_matching/" + getTestSuiteName() + "_" + getTestName() + "_" + "01_matches_ratio.png");
 
+        std::cout << "filtering matches by left right..." << std::endl;
+        std::vector<DMatch> good_matches_left_right;
+        std::vector<std::vector<DMatch>> right_knn_matches;
+        {
+            phg::FlannMatcher rightMatcher;
+            rightMatcher.train(descriptors1);
+            rightMatcher.knnMatch(descriptors2, right_knn_matches, 2);
+
+            std::vector<DMatch> right_good_matches(right_knn_matches.size());
+            for (int i = 0; i < (int) right_knn_matches.size(); ++i) {
+                right_good_matches[i] = right_knn_matches[i][0];
+            }
+            phg::DescriptorMatcher::filterMatchesRatioTest(right_knn_matches, right_good_matches);
+
+            std::vector<DMatch> tmp;
+            phg::DescriptorMatcher::filterMatchesLeftRightTest(good_matches_ratio, right_good_matches, tmp);
+            std::swap(tmp, good_matches_left_right);
+        }
+        drawMatches(img1, img2, keypoints1, keypoints2, good_matches_left_right, "data/debug/test_matching/" + getTestSuiteName() + "_" + getTestName() + "_" + "02_matches_left_right.png");
+
+
         std::cout << "filtering matches by clusters..." << std::endl;
         std::vector<DMatch> good_matches_clusters_only;
         phg::DescriptorMatcher::filterMatchesClusters(good_matches_nn, keypoints1, keypoints2, good_matches_clusters_only);
@@ -395,7 +448,7 @@ namespace {
 
         std::cout << "filtering matches by ratio & clusters" << std::endl;
         std::vector<DMatch> good_matches_clusters_and_ratio;
-        phg::DescriptorMatcher::filterMatchesClusters(good_matches_ratio, keypoints1, keypoints2, good_matches_clusters_and_ratio);
+        phg::DescriptorMatcher::filterMatchesClusters(good_matches_left_right, keypoints1, keypoints2, good_matches_clusters_and_ratio);
         drawMatches(img1, img2, keypoints1, keypoints2, good_matches_clusters_and_ratio, "data/debug/test_matching/" + getTestSuiteName() + "_" + getTestName() + "_" + "04_matches_clusters_and_ratio.png");
         #else
         std::vector<DMatch> good_matches_clusters_and_ratio;
@@ -786,6 +839,22 @@ namespace {
         }
 
         phg::DescriptorMatcher::filterMatchesRatioTest(knn_matches, good_matches);
+        std::vector<std::vector<DMatch>> right_knn_matches;
+        {
+            phg::FlannMatcher rightMatcher;
+            rightMatcher.train(descriptors1);
+            rightMatcher.knnMatch(descriptors2, right_knn_matches, 2);
+
+            std::vector<DMatch> right_good_matches(right_knn_matches.size());
+            for (int i = 0; i < (int) right_knn_matches.size(); ++i) {
+                right_good_matches[i] = right_knn_matches[i][0];
+            }
+            phg::DescriptorMatcher::filterMatchesRatioTest(right_knn_matches, right_good_matches);
+
+            std::vector<DMatch> tmp;
+            phg::DescriptorMatcher::filterMatchesLeftRightTest(good_matches, right_good_matches, tmp);
+            std::swap(tmp, good_matches);
+        }
 
         {
             std::vector<DMatch> tmp;

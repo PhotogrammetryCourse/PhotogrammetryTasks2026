@@ -11,6 +11,10 @@ namespace phg {
 
         static void filterMatchesRatioTest(const std::vector<std::vector<cv::DMatch>> &matches, std::vector<cv::DMatch> &filtered_matches);
 
+        static void filterMatchesLeftRightTest(const std::vector<cv::DMatch> &left_matches,
+                                               const std::vector<cv::DMatch> &right_matches,
+                                               std::vector<cv::DMatch> &filtered_matches);
+
         static void filterMatchesClusters(const std::vector<cv::DMatch> &matches,
                                           const std::vector<cv::KeyPoint> keypoints_query,
                                           const std::vector<cv::KeyPoint> keypoints_train,
