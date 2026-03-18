@@ -1,5 +1,6 @@
 #include "descriptor_matcher.h"
 
+#include <algorithm>
 #include <opencv2/flann/miniflann.hpp>
 #include "flann_factory.h"
 
@@ -7,8 +8,15 @@ void phg::DescriptorMatcher::filterMatchesRatioTest(const std::vector<std::vecto
                                                     std::vector<cv::DMatch> &filtered_matches)
 {
     filtered_matches.clear();
-
-    throw std::runtime_error("not implemented yet");
+    const float ratio = 0.7f;
+    for (const auto &m : matches) {
+        if (m.size() < 2) {
+            continue;
+        }
+        if (m[0].distance < ratio * m[1].distance) {
+            filtered_matches.push_back(m[0]);
+        }
+    }
 }
 
 
@@ -73,4 +81,62 @@ void phg::DescriptorMatcher::filterMatchesClusters(const std::vector<cv::DMatch>
 //
 //    метч остается, если левое и правое множества первых total_neighbors соседей в радиусах поиска(radius2_query, radius2_train) имеют как минимум consistent_matches общих элементов
 //    // TODO заполнить filtered_matches
+    std::shared_ptr<cv::flann::IndexParams> index_params = flannKdTreeIndexParams(1);
+    std::shared_ptr<cv::flann::SearchParams> search_params = flannKsTreeSearchParams(32);
+
+    std::shared_ptr<cv::flann::Index> index_query = flannKdTreeIndex(points_query, index_params);
+    std::shared_ptr<cv::flann::Index> index_train = flannKdTreeIndex(points_train, index_params);
+
+    cv::Mat indices_query(n_matches, total_neighbours, CV_32SC1);
+    cv::Mat distances2_query(n_matches, total_neighbours, CV_32FC1);
+    cv::Mat indices_train(n_matches, total_neighbours, CV_32SC1);
+    cv::Mat distances2_train(n_matches, total_neighbours, CV_32FC1);
+
+    index_query->knnSearch(points_query, indices_query, distances2_query, total_neighbours, *search_params);
+    index_train->knnSearch(points_train, indices_train, distances2_train, total_neighbours, *search_params);
+
+    float radius2_query, radius2_train;
+    {
+        std::vector<double> max_dists2_query(n_matches);
+        std::vector<double> max_dists2_train(n_matches);
+        for (int i = 0; i < n_matches; ++i) {
+            max_dists2_query[i] = distances2_query.at<float>(i, total_neighbours - 1);
+            max_dists2_train[i] = distances2_train.at<float>(i, total_neighbours - 1);
+        }
+
+        int median_pos = n_matches / 2;
+        std::nth_element(max_dists2_query.begin(), max_dists2_query.begin() + median_pos, max_dists2_query.end());
+        std::nth_element(max_dists2_train.begin(), max_dists2_train.begin() + median_pos, max_dists2_train.end());
+
+        radius2_query = max_dists2_query[median_pos] * radius_limit_scale * radius_limit_scale;
+        radius2_train = max_dists2_train[median_pos] * radius_limit_scale * radius_limit_scale;
+    }
+
+    for (int i = 0; i < n_matches; ++i) {
+        std::vector<int> neigh_q;
+        std::vector<int> neigh_t;
+
+        neigh_q.reserve(total_neighbours);
+        neigh_t.reserve(total_neighbours);
+
+        for (size_t j = 0; j < total_neighbours; ++j) {
+            if (distances2_query.at<float>(i, (int)j) <= radius2_query) {
+                neigh_q.push_back(indices_query.at<int>(i, (int)j));
+            }
+            if (distances2_train.at<float>(i, (int)j) <= radius2_train) {
+                neigh_t.push_back(indices_train.at<int>(i, (int)j));
+            }
+        }
+
+        int common = 0;
+        for (int vq : neigh_q) {
+            if (std::find(neigh_t.begin(), neigh_t.end(), vq) != neigh_t.end()) {
+                ++common;
+            }
+        }
+
+        if (common >= (int)consistent_matches) {
+            filtered_matches.push_back(matches[i]);
+        }
+    }
 }
