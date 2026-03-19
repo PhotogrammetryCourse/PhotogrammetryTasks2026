@@ -36,5 +36,8 @@ cv::Vec4d phg::triangulatePoint(const cv::Matx34d *Ps, const cv::Vec3d *ms, int 
 
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeFullV);
     Eigen::VectorXd X = svd.matrixV().col(3);
+    if (X(3) < 0) {
+        X = -X;
+    }
     return cv::Vec4d(X(0), X(1), X(2), X(3));
 }
