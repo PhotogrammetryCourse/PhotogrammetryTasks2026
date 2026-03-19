@@ -87,7 +87,6 @@ void phg::DescriptorMatcher::filterMatchesClusters(const std::vector<cv::DMatch>
     }
 //
 //    метч остается, если левое и правое множества первых total_neighbors соседей в радиусах поиска(radius2_query, radius2_train) имеют как минимум consistent_matches общих элементов
-//    // TODO заполнить filtered_matches
     for (int i = 0; i < n_matches; ++i) {
         std::vector<int> valid_query_neighbors;
         for (int j = 0; j < total_neighbours; ++j) {
