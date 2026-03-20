@@ -33,7 +33,7 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
         }
 
         Hs.resize(n_images);
-        bool done[n_images] = {};
+        std::vector<bool> done(n_images, false);
 
         Hs[root] = cv::Mat::eye(3, 3, CV_64FC1);
         done[root] = true;
