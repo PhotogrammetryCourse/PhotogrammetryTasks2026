@@ -171,7 +171,7 @@ namespace {
        const int n_matches = points_lhs.size();
 
        // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
-       const int n_trials = 1000;
+       const int n_trials = 500;
 
        const int n_samples = 4;
        uint64_t seed = 1;
