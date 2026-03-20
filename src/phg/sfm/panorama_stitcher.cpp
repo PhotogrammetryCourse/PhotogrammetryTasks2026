@@ -23,7 +23,24 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
     {
         // здесь надо посчитать вектор Hs
         // при этом можно обойтись n_images - 1 вызовами функтора homography_builder
-        throw std::runtime_error("not implemented yet");
+        std::vector<bool> computed(n_images, false);
+        int computed_cnt = 0;
+        for (int i = 0; i < n_images; ++i) {
+            if (parent[i] == -1) {
+                Hs[i] = cv::Mat::eye(3, 3, CV_64F);
+                computed[i] = true;
+                computed_cnt++;
+            }
+        }
+        while (computed_cnt != n_images) {
+            for (int i = 0; i < n_images; ++i) {
+                if (parent[i] != -1 && !computed[i] && computed[parent[i]]) {
+                    Hs[i] = Hs[parent[i]] * homography_builder(imgs[i], imgs[parent[i]]);
+                    computed[i] = true;
+                    computed_cnt++;
+                }
+            }
+        }
     }
 
     bbox2<double, cv::Point2d> bbox;
