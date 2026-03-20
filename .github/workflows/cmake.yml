@@ -2,6 +2,7 @@ name: CMake
 
 on: [push, pull_request]
 
+
 env:
   BUILD_TYPE: RelWithDebInfo
 
