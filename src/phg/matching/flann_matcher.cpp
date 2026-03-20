@@ -13,13 +13,8 @@ phg::FlannMatcher::FlannMatcher()
 
 void phg::FlannMatcher::train(const cv::Mat &train_desc)
 {
-    if (train_desc.rows >= 2000) {
-        index_params = flannKdTreeIndexParams(4);
-        search_params = flannKsTreeSearchParams(32);
-    } else {
-        index_params = flannKdTreeIndexParams(1);
-        search_params = flannKsTreeSearchParams(16);
-    }
+    index_params = flannKdTreeIndexParams(4);
+    search_params = flannKsTreeSearchParams(32);
 
     flann_index = flannKdTreeIndex(train_desc, index_params);
 }
