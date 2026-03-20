@@ -28,7 +28,7 @@
 // TODO ENABLE ME
 // TODO ENABLE ME
 // TODO ENABLE ME
-#define ENABLE_MY_SIFT_TESTING 0
+#define ENABLE_MY_SIFT_TESTING 1
 
 #define DENY_CREATE_REF_DATA 1
 
@@ -40,11 +40,11 @@ template <typename SIFT> MatchingPairData evaluateMatching(SIFT& sift, const cv:
 {
     std::vector<cv::KeyPoint> kpts1;
     cv::Mat desc1;
-    sift.detectAndCompute(img1, { }, kpts1, desc1);
+    sift.detectAndCompute(img1, {}, kpts1, desc1);
 
     std::vector<cv::KeyPoint> kpts2;
     cv::Mat desc2;
-    sift.detectAndCompute(img2, { }, kpts2, desc2);
+    sift.detectAndCompute(img2, {}, kpts2, desc2);
 
     // Brute-force matching with ratio test
     cv::BFMatcher matcher(cv::NORM_L2);
@@ -225,10 +225,10 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
             std::vector<unsigned char> is_not_matched0(kps0.size(), true); // для каждой исходной точки хотим понять сопоставилась ли она
             std::vector<unsigned char> is_not_matched1(kps1.size(), true); // для каждой точки с результирующей картинки хотим понять сопоставился ли с ней хоть кто-то
 
-            // эта прагма - способ распараллелить цикл на все ядра процессора (см. OpenMP parallel for)
-            // reduction позволяет сказать OpenMP что нужно провести редукцию суммированием для каждой из переменных: error_sum, n_matched, n_in_bounds, ...
-            // мы ведь хотим найти сумму по всем потокам
-            #pragma omp parallel for reduction(+ : error_sum, n_matched, n_in_bounds, size_ratio_sum, angle_diff_sum, desc_dist_sum, desc_rand_dist_sum)
+// эта прагма - способ распараллелить цикл на все ядра процессора (см. OpenMP parallel for)
+// reduction позволяет сказать OpenMP что нужно провести редукцию суммированием для каждой из переменных: error_sum, n_matched, n_in_bounds, ...
+// мы ведь хотим найти сумму по всем потокам
+#pragma omp parallel for reduction(+ : error_sum, n_matched, n_in_bounds, size_ratio_sum, angle_diff_sum, desc_dist_sum, desc_rand_dist_sum)
             for (ptrdiff_t i = 0; i < kps0.size(); ++i) {
                 cv::Point2f p01 = ps01[i]; // взяли ожидаемую координату куда должна была перейти точка
                 if (p01.x > 0 && p01.x < width && p01.y > 0 && p01.y < height) {
@@ -247,8 +247,8 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
                     }
                 }
                 if (closest_j != -1 && min_error <= MAX_ACCEPTED_PIXEL_ERROR * width) {
-                    // мы нашли что-то достаточно близкое - успех!
-                    #pragma omp critical
+// мы нашли что-то достаточно близкое - успех!
+#pragma omp critical
                     {
                         is_not_matched0[i] = false;
                         is_not_matched1[closest_j] = false;
@@ -280,7 +280,7 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
                         // между точками в пространстве высокой размерности:
 #if 0
                         if (i % 100 == 0) {
-                            #pragma omp critical
+#pragma omp critical
                             {
                                 std::cout << "d0: " << d0 << std::endl;
                                 std::cout << "d1: " << d1 << std::endl;
@@ -568,7 +568,7 @@ std::string compareMats(const cv::Mat& a, const cv::Mat& b, const std::string& l
         return ss.str();
     }
     if (a.empty() && b.empty())
-        return { };
+        return {};
 
     // Convert to float64 for comparison
     cv::Mat af, bf;
@@ -588,7 +588,7 @@ std::string compareMats(const cv::Mat& a, const cv::Mat& b, const std::string& l
             }
         }
     }
-    return { };
+    return {};
 }
 
 // ── Octave serialization ──────────────────────────────────────────────────

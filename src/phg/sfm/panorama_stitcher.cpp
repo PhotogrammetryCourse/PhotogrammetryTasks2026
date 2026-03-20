@@ -23,7 +23,35 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
     {
         // здесь надо посчитать вектор Hs
         // при этом можно обойтись n_images - 1 вызовами функтора homography_builder
-        throw std::runtime_error("not implemented yet");
+
+        int root = -1;
+        for (int i = 0; i < n_images; i++) {
+            if (parent[i] == -1) {
+                root = i;
+                break;
+            }
+        }
+
+        Hs.resize(n_images);
+        std::vector<bool> done(n_images, false);
+
+        Hs[root] = cv::Mat::eye(3, 3, CV_64FC1);
+        done[root] = true;
+
+        std::function<void(size_t)> compute_homography = [&](size_t idx) {
+            if (done[idx])
+                return;
+            compute_homography(parent[idx]);
+            cv::Mat cur_img = imgs[idx];
+            cv::Mat parent_img = imgs[parent[idx]];
+            cv::Mat homography = homography_builder(cur_img, parent_img);
+            Hs[idx] = Hs[parent[idx]] * homography;
+            done[idx] = true;
+        };
+
+        for (int i = 0; i < n_images; i++) {
+            compute_homography(i);
+        }
     }
 
     bbox2<double, cv::Point2d> bbox;
@@ -46,19 +74,19 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
     // из-за растяжения пикселей при использовании прямой матрицы гомографии после отображения между пикселями остается пустое пространство
     // лучше использовать обратную и для каждого пикселя на итоговвой картинке проверять, с какой картинки он может получить цвет
     // тогда в некоторых пикселях цвет будет дублироваться, но изображение будет непрерывным
-//        for (int i = 0; i < n_images; ++i) {
-//            for (int y = 0; y < imgs[i].rows; ++y) {
-//                for (int x = 0; x < imgs[i].cols; ++x) {
-//                    cv::Vec3b color = imgs[i].at<cv::Vec3b>(y, x);
-//
-//                    cv::Point2d pt_dst = applyH(cv::Point2d(x, y), Hs[i]) - bbox.min();
-//                    int y_dst = std::max(0, std::min((int) std::round(pt_dst.y), result_height - 1));
-//                    int x_dst = std::max(0, std::min((int) std::round(pt_dst.x), result_width - 1));
-//
-//                    result.at<cv::Vec3b>(y_dst, x_dst) = color;
-//                }
-//            }
-//        }
+    // for (int i = 0; i < n_images; ++i) {
+    //     for (int y = 0; y < imgs[i].rows; ++y) {
+    //         for (int x = 0; x < imgs[i].cols; ++x) {
+    //             cv::Vec3b color = imgs[i].at<cv::Vec3b>(y, x);
+
+    //             cv::Point2d pt_dst = applyH(cv::Point2d(x, y), Hs[i]) - bbox.min();
+    //             int y_dst = std::max(0, std::min((int) std::round(pt_dst.y), result_height - 1));
+    //             int x_dst = std::max(0, std::min((int) std::round(pt_dst.x), result_width - 1));
+
+    //             result.at<cv::Vec3b>(y_dst, x_dst) = color;
+    //         }
+    //     }
+    // }
 
     std::vector<cv::Mat> Hs_inv;
     std::transform(Hs.begin(), Hs.end(), std::back_inserter(Hs_inv), [&](const cv::Mat &H){ return H.inv(); });
