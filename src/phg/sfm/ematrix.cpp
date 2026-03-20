@@ -21,11 +21,26 @@ namespace {
         Eigen::MatrixXd U = svd.matrixU();
         Eigen::VectorXd s = svd.singularValues();
         Eigen::MatrixXd V = svd.matrixV();
+        if (U.determinant() < 0) {
+            U = -U;
+        }
+        if (V.determinant() < 0) {
+            V = -V;
+        }
         
         if (s[0] < 1e-10 || s[1] < 1e-10) {
             std::cout << "ensureSpectralProperty: s: " << s.transpose() << std::endl;
             throw std::runtime_error("essential matrix is degenerate");
         }
+        double avg = (s[0] + s[1]) / 2.0;
+        s[0] = avg; 
+        s[1] = avg; 
+        s[2] = 0;
+
+        Eigen::MatrixXd S = Eigen::MatrixXd::Zero(3, 3);
+        S(0, 0) = s[0];
+        S(1, 1) = s[1];
+        E = U * S * V.transpose();
         copy(E, Ecv);
     }
 
@@ -83,33 +98,8 @@ namespace {
        }
 
 
-        // 3. Helper to compute camera center from projection matrix P = [R | t]
-        auto cameraCenter = [](const matrix34d &P) -> vector3d {
-            // Extract rotation matrix (first 3 columns) and translation (4th column)
-            cv::Matx33d R(P(0,0), P(0,1), P(0,2),
-                        P(1,0), P(1,1), P(1,2),
-                        P(2,0), P(2,1), P(2,2));
-            cv::Vec3d t(P(0,3), P(1,3), P(2,3));
-
-            // C = -Rᵀ * t
-            cv::Vec3d C = -R.t() * t;
-            return vector3d(C[0], C[1], C[2]);
-        };
-
-
-        vector3d C0 = cameraCenter(P0);
-        vector3d C1 = cameraCenter(P1);
-        vector3d axis0(P0(0,2), P0(1,2), P0(2,2));   // third column = optical axis direction
-        vector3d axis1(P1(0,2), P1(1,2), P1(2,2));
-
-        // 5. Rays from camera centers to the point
-        vector3d Xh(X[0], X[1], X[2]); 
-        vector3d ray0 = Xh - C0;
-        vector3d ray1 = Xh - C1;
-
-        double depth0 = ray0.dot(P0.col(2));
-        double depth1 = ray1.dot(P1.col(2));
-
+      double depth0 = P0(2, 0) * X[0] + P0(2, 1) * X[1] + P0(2, 2) * X[2] + P0(2, 3);
+        double depth1 = P1(2, 0) * X[0] + P1(2, 1) * X[1] + P1(2, 2) * X[2] + P1(2, 3);
         return depth0 > 0 && depth1 > 0;
 
     }

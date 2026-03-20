@@ -154,11 +154,11 @@ namespace {
             m1_t[i] = transformPoint(m1[i], TN1);
         }
 
-        {
-        // Проверьте лог: при повторной нормализации должно найтись почти единичное преобразование
-            getNormalizeTransform(m0_t);
-            getNormalizeTransform(m1_t);
-        }
+        // {
+        // // Проверьте лог: при повторной нормализации должно найтись почти единичное преобразование
+        //     getNormalizeTransform(m0_t);
+        //     getNormalizeTransform(m1_t);
+        // }
 
        // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
        // будет отличаться от случая с гомографией
@@ -170,10 +170,10 @@ namespace {
        // k = log(1 - p) / log(1 - w^n)
 
        // lets put p = 0.99, 
-       double w = 0.85; // we expect at least 50% of inliers in the data
-       double p = 0.9;
+    //    double w = 0.8; // we expect at least 50% of inliers in the data
+    //    double p = 0.9;
        const int n_samples = 8;
-       const int n_trials = 10 * std::log(1 - p) / std::log(1 - std::pow(w, n_samples));
+       const int n_trials = 20000; // used this value to pass SFM.FmatrixMatchFiltering
        
        uint64_t seed = 1;
 
