@@ -25,13 +25,15 @@
 
 #define GAUSSIAN_NOISE_STDDEV 1.0
 
-// TODO ENABLE ME
-// TODO ENABLE ME
-// TODO ENABLE ME
-#define ENABLE_MY_SIFT_TESTING 0
+
+#define ENABLE_MY_SIFT_TESTING 1
 
 #define DENY_CREATE_REF_DATA 1
 
+
+// [ORB_OCV] average angle difference between matched points: 25.313 degrees
+// [SIFTOCV] average angle difference between matched points: 9.58379 degrees with SIFT_ORI_PEAK_RATIO 0.8
+// [SIFTOCV] average angle difference between matched points: 24.1679 degrees with SIFT_ORI_PEAK_RATIO 0.999
 struct MatchingPairData {
     size_t npoints1, npoints2, nmatches;
 };
@@ -149,7 +151,8 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
     size_t width = img0.cols;
     size_t height = img0.rows;
     cv::Mat transformedImage;
-    cv::warpAffine(img0, transformedImage, M, cv::Size(width, height)); // строим img1 - преобразованная исходная картинка в соответствии с закодированным в матрицу M искажением пространства
+    cv::warpAffine(img0, transformedImage, M, cv::Size(width, height)); // строим img1 - преобразованная исходная картинка в соответствии
+                                                                                        // с закодированным в матрицу M искажением пространства
     cv::Mat noise(cv::Size(width, height), CV_8UC3);
     cv::setRNGSeed(125125); // фиксируем рандом для детерминизма (чтобы результат воспроизводился из раза в раз)
     cv::randn(noise, cv::Scalar::all(0), cv::Scalar::all(GAUSSIAN_NOISE_STDDEV));
@@ -160,6 +163,7 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
         for (int method = 0; method < 3; ++method) { // тестируем три метода: OpenCV ORB, OpenCV SIFT, ваш SIFT
             std::vector<cv::KeyPoint> kps0;
             std::vector<cv::KeyPoint> kps1;
+            // size ~ diameter of the meaningful neighborhood around that point
 
             cv::Mat desc0;
             cv::Mat desc1;
@@ -178,7 +182,7 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
                 detector->detect(img0, kps0); // детектируем ключевые точки на исходной картинке
                 detector->detect(img1, kps1); // детектируем ключевые точки на преобразованной картинке
 
-                detector->compute(img0, kps0, desc0);
+                detector->compute(img0, kps0, desc0); // compute descriptors for kpts
                 detector->compute(img1, kps1, desc1);
             } else if (method == 1) {
                 method_name = "SIFTOCV";
@@ -304,7 +308,8 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
             std::cout << log_prefix << "average size ratio between matched points: " << (size_ratio_sum / n_matched) << std::endl;
             if (angle_diff_sum != 0.0) {
                 std::cout << log_prefix << "average angle difference between matched points: " << (angle_diff_sum / n_matched) << " degrees" << std::endl;
-                // TODO почему SIFT менее точно угадывает средний угол отклонения? изменяется ли ситуация если выкрутить параметр ORIENTATION_VOTES_PEAK_RATIO=0.999? почему?
+                // TODO почему SIFT менее точно угадывает средний угол отклонения? 
+                // изменяется ли ситуация если выкрутить параметр ORIENTATION_VOTES_PEAK_RATIO=0.999? почему?
             }
             if (desc_dist_sum != 0.0 && desc_rand_dist_sum != 0.0) {
                 std::cout << log_prefix << "average descriptor distance between matched points: " << (desc_dist_sum / n_matched) << " (random distance: " << (desc_rand_dist_sum / n_matched)
