@@ -28,9 +28,9 @@ void phg::FlannMatcher::knnMatch(const cv::Mat &query_desc, std::vector<std::vec
         return;
     }
 
-    cv::Mat indices(query_desc.rows, k, CV_32SC1);
-    cv::Mat distances(query_desc.rows, k, CV_32FC1);
-    flann_index->knnSearch(query_desc, indices, distances, k, *search_params);
+    cv::Mat indices;
+    cv::Mat distances;
+    flann_index->knnSearch(query_desc, indices, distances, k);
 
     for (int qi = 0; qi < query_desc.rows; ++qi) {
         std::vector<cv::DMatch>& dst = matches[qi];
