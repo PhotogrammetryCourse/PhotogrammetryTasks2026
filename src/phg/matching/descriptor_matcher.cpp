@@ -8,9 +8,9 @@ void phg::DescriptorMatcher::filterMatchesRatioTest(const std::vector<std::vecto
                                                     std::vector<cv::DMatch> &filtered_matches)
 {
     filtered_matches.clear();
-    const float ratio = 0.5;
+    const float ratio = 0.55;
     for (auto& knn: matches) {
-        if (knn.size() >= 2 && knn[0].distance > knn[1].distance * ratio) {
+        if (knn.size() < 2 || knn[0].distance > knn[1].distance * ratio) {
             continue;
         }
         filtered_matches.push_back(knn[0]);
