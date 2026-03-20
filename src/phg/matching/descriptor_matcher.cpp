@@ -8,7 +8,7 @@ void phg::DescriptorMatcher::filterMatchesRatioTest(const std::vector<std::vecto
 {
     filtered_matches.clear();
 
-    const float threshold2 = 0.72f * 0.72f;
+    const float threshold2 = 0.71f * 0.71f;
 
     for(const auto& m : matches) {
         if(m.size() >= 2 && m[0].distance < threshold2 * m[1].distance) {
