@@ -1,5 +1,6 @@
 #include "panorama_stitcher.h"
 #include "homography.h"
+#include "libutils/rasserts.h"
 
 #include <libutils/bbox2.h>
 #include <iostream>
@@ -23,7 +24,27 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
     {
         // здесь надо посчитать вектор Hs
         // при этом можно обойтись n_images - 1 вызовами функтора homography_builder
-        throw std::runtime_error("not implemented yet");
+        // rassert(parent.size() == n_images, 0101);
+        std::vector<bool> visited(n_images, false);
+
+        const auto do_visit = [&](const auto& func, size_t i){
+            if (visited[i]) {
+                return Hs[i];
+            }
+            visited[i] = true;
+
+            if (parent[i] == -1) {
+                Hs[i] = cv::Mat::eye(3, 3, CV_64FC1);
+                return Hs[i];
+            }
+
+            Hs[i] = homography_builder(imgs[i], imgs[parent[i]]) * func(func, parent[i]);
+            return Hs[i];
+        };
+
+        for (size_t i = 0; i < n_images; i++) {
+            do_visit(do_visit, i);
+        }
     }
 
     bbox2<double, cv::Point2d> bbox;
