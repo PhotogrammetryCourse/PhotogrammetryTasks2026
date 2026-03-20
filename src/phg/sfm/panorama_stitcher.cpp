@@ -3,6 +3,7 @@
 
 #include <libutils/bbox2.h>
 #include <iostream>
+#include <vector>
 
 /*
  * imgs - список картинок
@@ -23,7 +24,44 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
     {
         // здесь надо посчитать вектор Hs
         // при этом можно обойтись n_images - 1 вызовами функтора homography_builder
-        throw std::runtime_error("not implemented yet");
+        std::vector<cv::Mat> edge_H(n_images);
+        std::vector<char> edge_ready(n_images, 0);
+        std::vector<char> H_ready(n_images, 0);
+
+        for (int i = 0; i < n_images; ++i) {
+            if (parent[i] == -1) {
+                Hs[i] = cv::Mat::eye(3, 3, CV_64FC1);
+                H_ready[i] = 1;
+            }
+        }
+
+        for (int i = 0; i < n_images; ++i) {
+            if (H_ready[i]) {
+                continue;
+            }
+
+            std::vector<int> chain;
+            int cur = i;
+            while (!H_ready[cur]) {
+                chain.push_back(cur);
+
+                int p = parent[cur];
+
+                if (!edge_ready[cur]) {
+                    edge_H[cur] = homography_builder(imgs[cur], imgs[p]);
+                    edge_ready[cur] = 1;
+                }
+
+                cur = p;
+            }
+
+            for (int k = (int)chain.size() - 1; k >= 0; --k) {
+                int v = chain[k];
+                int p = parent[v];
+                Hs[v] = Hs[p] * edge_H[v];
+                H_ready[v] = 1;
+            }
+        }
     }
 
     bbox2<double, cv::Point2d> bbox;
