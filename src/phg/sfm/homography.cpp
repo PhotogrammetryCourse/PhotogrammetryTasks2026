@@ -181,10 +181,10 @@ namespace {
         for (size_t j = 0; j < n_samples; j++) {
             n_inliers_probability *= one_inlier_probability;
         }
-        const double fail_probability = 0.01f;
+        const double fail_probability = 0.03f;
         const int n_trials = std::log(fail_probability) / std::log(1 - n_inliers_probability);
 
-        std::cout << "n_trials = " << n_trials << "\n";
+//        std::cout << "n_trials = " << n_trials << "\n";
 
         uint64_t seed = 1;
         const double reprojection_error_threshold_px = 2;
