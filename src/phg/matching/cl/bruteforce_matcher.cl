@@ -30,9 +30,16 @@ __kernel void bruteforce_matcher(__global const float* train,
         res_distance2_local[dim_id] = FLT_MAX; // полагаемся на то что res_distance2_local размера KEYPOINTS_PER_WG*2==4*2<dim_id<=NDIM==128
     }
 
-    // грузим 4 дескриптора-query (для каждого из четырех дескрипторов каждый поток грузит значение своей размерности dim_id)
-    // TODO: т.е. надо прогрузить в query_local все KEYPOINTS_PER_WG=4 дескриптора из query (начиная с индекса query_id0) (а если часть из них выходит за пределы n_query_desc - грузить нули)
+    __local float dist2_for_reduction[NDIM];
 
+    // грузим 4 дескриптора-query (для каждого из четырех дескрипторов каждый поток грузит значение своей размерности dim_id)
+
+    for(int i = 0; i < KEYPOINTS_PER_WG; i++) {
+        if (query_id0 + i < n_query_desc)
+            query_local[i * NDIM + dim_id] = query[(query_id0 + i) * NDIM + dim_id];
+        else
+            query_local[i * NDIM + dim_id] = 0.0f;
+    }
     barrier(CLK_LOCAL_MEM_FENCE); // дожидаемся прогрузки наших дескрипторов-запросов
 
     for (int train_idx = 0; train_idx < n_train_desc; ++train_idx) {
@@ -42,14 +49,14 @@ __kernel void bruteforce_matcher(__global const float* train,
             // от дескриптора-query в локальной памяти  (#query_local_i)
             // до дескриптора-train в глобальной памяти (#train_idx)
 
-            // TODO посчитать квадрат расстояния по нашей размерности (dim_id) и сохранить его в нашу ячейку в dist2_for_reduction
-
+            float distance2 = train_value_dim - query_local[query_local_i * NDIM + dim_id];
+            dist2_for_reduction[dim_id] = distance2 * distance2;
             barrier(CLK_LOCAL_MEM_FENCE);
-            // TODO суммируем редукцией все что есть в dist2_for_reduction
+
             int step = NDIM / 2;
             while (step > 0) {
                 if (dim_id < step) {
-                    // TODO
+                    dist2_for_reduction[dim_id] += dist2_for_reduction[dim_id + step];
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
                 step /= 2;
@@ -67,9 +74,11 @@ __kernel void bruteforce_matcher(__global const float* train,
                     // не забываем что прошлое лучшее сопоставление теперь стало вторым по лучшевизне (на данный момент)
                     res_distance2_local[query_local_i * 2 + SECOND_BEST_INDEX] = res_distance2_local[query_local_i * 2 + BEST_INDEX];
                     res_train_idx_local[query_local_i * 2 + SECOND_BEST_INDEX] = res_train_idx_local[query_local_i * 2 + BEST_INDEX];
-                    // TODO заменяем нашим (dist2, train_idx) самое лучшее сопоставление для локального дескриптора
+                    res_distance2_local[query_local_i * 2 + BEST_INDEX] = dist2;
+                    res_train_idx_local[query_local_i * 2 + BEST_INDEX] = train_idx;
                 } else if (dist2 <= res_distance2_local[query_local_i * 2 + SECOND_BEST_INDEX]) { // может мы улучшили хотя бы второе по лучшевизне сопоставление?
-                    // TODO заменяем второе по лучшевизне сопоставление для локального дескриптора
+                    res_distance2_local[query_local_i * 2 + SECOND_BEST_INDEX] = dist2;
+                    res_train_idx_local[query_local_i * 2 + SECOND_BEST_INDEX] = train_idx;
                 }
             }
         }
@@ -82,9 +91,9 @@ __kernel void bruteforce_matcher(__global const float* train,
 
         int query_id = query_id0 + query_local_i;
         if (query_id < n_query_desc) {
-            res_train_idx[query_id * 2 + k] = // TODO
-            res_query_idx[query_id * 2 + k] = // TODO хм, не масло масленное ли?
-            res_distance [query_id * 2 + k] = // TODO не забудьте извлечь корень
+            res_train_idx[query_id * 2 + k] = res_train_idx_local[query_local_i * 2 + k];
+            res_query_idx[query_id * 2 + k] = query_id;
+            res_distance [query_id * 2 + k] = sqrt(res_distance2_local[query_local_i * 2 + k]);
         }
     }
 }
