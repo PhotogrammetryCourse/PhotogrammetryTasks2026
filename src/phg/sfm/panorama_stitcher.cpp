@@ -4,6 +4,8 @@
 #include <libutils/bbox2.h>
 #include <iostream>
 
+#include <queue>
+
 /*
  * imgs - список картинок
  * parent - список индексов, каждый индекс указывает, к какой картинке должна быть приклеена текущая картинка
@@ -20,11 +22,32 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
 
     // вектор гомографий, для каждой картинки описывает преобразование до корня
     std::vector<cv::Mat> Hs(n_images);
-    {
-        // здесь надо посчитать вектор Hs
-        // при этом можно обойтись n_images - 1 вызовами функтора homography_builder
-        throw std::runtime_error("not implemented yet");
+{
+    int root;
+    std::vector<std::vector<int>> children(n_images);
+    for (int i = 0; i < n_images; ++i) {
+        if (parent[i] != -1) {
+            children[parent[i]].push_back(i);
+        }else{
+            root = i;
+        }
     }
+    
+    Hs[root] = cv::Mat::eye(3, 3, CV_64F);
+    std::queue<int> q;
+    q.push(root);
+    
+    while (!q.empty()) {
+        int current = q.front();
+        q.pop();
+        
+        for (int child : children[current]) {
+            cv::Mat H_child_to_current = homography_builder(imgs[child], imgs[current]);
+            Hs[child] = H_child_to_current * Hs[current];
+            q.push(child);
+        }
+    }
+}
 
     bbox2<double, cv::Point2d> bbox;
     for (int i = 0; i < n_images; ++i) {

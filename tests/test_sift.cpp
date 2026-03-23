@@ -28,7 +28,7 @@
 // TODO ENABLE ME
 // TODO ENABLE ME
 // TODO ENABLE ME
-#define ENABLE_MY_SIFT_TESTING 0
+#define ENABLE_MY_SIFT_TESTING 1
 
 #define DENY_CREATE_REF_DATA 1
 
@@ -139,6 +139,8 @@ double diffAngles(double angle0, double angle1)
 // На вход передается матрица описывающая преобразование картинки (сдвиг, поворот, масштабирование или их комбинация), допустимый процент Recall, и опционально можно тестировать другую картинку
 void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Mat())
 {
+    #include <filesystem>
+    std::cout << std::filesystem::current_path() << std::endl;
     if (img0.empty()) {
         img0 = cv::imread("data/src/test_sift/unicorn.png"); // грузим картинку по умолчанию
     }
@@ -212,6 +214,7 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
                 for (size_t i = 0; i < kps0.size(); ++i) {
                     ps0[i] = kps0[i].pt;
                 }
+
                 cv::transform(ps0, ps01, M); // преобразовываем все точки с исходного изображения в систему координат его искаженной версии с учетом матрицы M, эти точки - эталон
             }
 
