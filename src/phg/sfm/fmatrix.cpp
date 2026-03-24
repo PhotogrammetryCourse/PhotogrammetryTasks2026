@@ -139,7 +139,7 @@ namespace {
        // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
        // будет отличаться от случая с гомографией
        constexpr int n_samples = 8;
-       const double inlier_prob = 0.4;
+       const double inlier_prob = 0.38;
        const double early_stop_prob = 1e-6;
        const int n_trials = std::log(early_stop_prob)/std::log(1 - std::pow(inlier_prob, n_samples));
 
