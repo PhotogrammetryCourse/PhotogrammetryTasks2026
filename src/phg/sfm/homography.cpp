@@ -84,11 +84,13 @@ namespace {
             double w1 = ws1[i];
 
             // 8 elements of matrix + free term as needed by gauss routine
-            // A.push_back({0, 0, 0, -w1 * x0, -w1 * y0, -w1 * w0, y1 * x0, y1 * y0, y1 * w0});
-            // A.push_back({w1 * x0, w1 * y0, w1 * w0, 0, 0, 0, -x1 * x0, -x1 * y0, -x1 * w0});
+            // in fact 9 elements + 1 free term (extended matrix form)
+            // A.push_back({0, 0, 0, -w1 * x0, -w1 * y0, -w1 * w0, y1 * x0, y1 * y0, y1 * w0, 0});
+            // A.push_back({w1 * x0, w1 * y0, w1 * w0, 0, 0, 0, -x1 * x0, -x1 * y0, -x1 * w0, 0});
 
-            A.push_back({w1 * x0, w1 * y0, w1 * w0, 0, 0, 0, -x1 * x0, -x1 * y0, x1 * w0});
-            A.push_back({0, 0, 0, w1 * x0, w1 * y0, w1 * w0, -y1 * x0, -y1 * y0, y1 * w0});
+            // set h_9 equals 1 and move Ae_9 to the free term
+            A.push_back({0, 0, 0, -w1 * x0, -w1 * y0, -w1 * w0, y1 * x0, y1 * y0, -(y1 * w0)});
+            A.push_back({w1 * x0, w1 * y0, w1 * w0, 0, 0, 0, -x1 * x0, -x1 * y0, -(-(x1 * w0))});
         }
 
         int res = gauss(A, H);
