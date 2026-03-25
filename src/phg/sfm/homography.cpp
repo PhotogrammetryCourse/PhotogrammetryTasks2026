@@ -174,11 +174,13 @@ namespace {
         // * [3] http://ikrisoft.blogspot.com/2015/01/ransac-with-contrario-approach.html
 
         const int n_matches = points_lhs.size();
+        const int n_points = 4;
 
         // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
-        const int n_trials = 1000;
+        const double singlePointInlierProbability = 0.5, successProbability = 0.99;
+        const int n_trials = (int) (log(1 - successProbability) / log(1 - pow(singlePointInlierProbability, n_points)));
 
-        const int n_samples = 10;
+        const int n_samples = n_points;
         uint64_t seed = 1;
         const double reprojection_error_threshold_px = 2;
 

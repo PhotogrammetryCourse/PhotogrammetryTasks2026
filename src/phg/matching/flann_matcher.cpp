@@ -7,7 +7,7 @@ phg::FlannMatcher::FlannMatcher()
 {
     // параметры для приближенного поиска
     index_params = flannKdTreeIndexParams(3); // рекомендуется выставлять 5, но когда включил свой SIFT пришлось уменьшить до 3, чтобы прозоходились тесты
-    search_params = flannKsTreeSearchParams(30); // в документации OpenCV используют 50, но 50 не очень стабильно проходит тесты по тайм-лимитам
+    search_params = flannKsTreeSearchParams(35); // в документации OpenCV используют 50, но 50 не очень стабильно проходит тесты по тайм-лимитам
 }
 
 void phg::FlannMatcher::train(const cv::Mat &train_desc)
