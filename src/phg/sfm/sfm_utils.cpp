@@ -1,6 +1,7 @@
 #include "sfm_utils.h"
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 
 
@@ -41,5 +42,20 @@ void phg::randomSample(std::vector<int> &dst, int max_id, int sample_size, uint6
 // проверяет, что расстояние от точки до линии меньше порога
 bool phg::epipolarTest(const cv::Vec2d &pt0, const cv::Vec2d &pt1, const cv::Matx33d &F, double t)
 {
-    throw std::runtime_error("not implemented yet");
+    cv::Vec3d x0(pt0[0], pt0[1], 1.0);
+    cv::Vec3d x1(pt1[0], pt1[1], 1.0);
+
+    cv::Vec3d l1 = F * x0;
+
+    double a = l1[0];
+    double b = l1[1];
+    double c = l1[2];
+
+    double denom = std::sqrt(a * a + b * b);
+    if (denom <= 0.0) {
+        throw std::runtime_error("invalid epipolar line");
+    }
+
+    double dist = std::abs(x1.dot(l1)) / denom;
+    return dist < t;
 }
