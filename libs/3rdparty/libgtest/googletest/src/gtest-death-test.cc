@@ -45,6 +45,7 @@
 
 # include <errno.h>
 # include <fcntl.h>
+# include <cstdint>
 # include <limits.h>
 
 # if GTEST_OS_LINUX

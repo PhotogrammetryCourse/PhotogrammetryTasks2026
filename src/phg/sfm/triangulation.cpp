@@ -2,44 +2,31 @@
 
 #include "defines.h"
 
+#include <stdexcept>
 #include <Eigen/SVD>
 
+// По положениям камер и ключевых точкам определяем точку в трехмерном пространстве
+// Задача эквивалентна поиску точки пересечения двух (или более) лучей
 // Используем DLT метод, составляем систему уравнений. Система похожа на систему для гомографии, там пары уравнений получались из выражений вида x (cross) Hx = 0, а здесь будет x (cross) PX = 0
 // (см. Hartley & Zisserman p.312)
 cv::Vec4d phg::triangulatePoint(const cv::Matx34d *Ps, const cv::Vec3d *ms, int count)
 {
-    using mat = Eigen::MatrixXd;
-    using vec = Eigen::VectorXd;
+    if (count < 2) {
+        throw std::runtime_error("triangulatePoint: expected at least 2 observations");
+    }
 
-    mat A(2 * count, 4);
-
+    Eigen::MatrixXd A(2 * count, 4);
     for (int i = 0; i < count; ++i) {
+        const cv::Vec3d &m = ms[i];
+        const cv::Matx34d &P = Ps[i];
 
-        const matrix34d &P = Ps[i];
-        const vector3d &m = ms[i];
-
-        double x = m[0];
-        double y = m[1];
-        double z = m[2];
-
-        auto p0 = P.row(0);
-        auto p1 = P.row(1);
-        auto p2 = P.row(2);
-
-        auto row0 = x * p2 - z * p0;
-        auto row1 = y * p2 - z * p1;
-
-        A.row(i * 2 + 0) << row0(0), row0(1), row0(2), row0(3);
-        A.row(i * 2 + 1) << row1(0), row1(1), row1(2), row1(3);
+        for (int j = 0; j < 4; ++j) {
+            A(2 * i + 0, j) = m[0] * P(2, j) - m[2] * P(0, j);
+            A(2 * i + 1, j) = m[1] * P(2, j) - m[2] * P(1, j);
+        }
     }
 
-    Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    Eigen::VectorXd null_space = svd.matrixV().col(3);
-
-    vector4d result;
-    for (int i = 0; i < 4; ++i) {
-        result(i) = null_space(i);
-    }
-
-    return result;
+    Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeFullV);
+    const Eigen::Vector4d X = svd.matrixV().col(3);
+    return cv::Vec4d(X[0], X[1], X[2], X[3]);
 }

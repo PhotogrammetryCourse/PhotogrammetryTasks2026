@@ -11,25 +11,19 @@
 namespace {
 
     // essential matrix must have exactly two equal non zero singular values
+    // (см. Hartley & Zisserman p.257)
     void ensureSpectralProperty(matrix3d &Ecv)
     {
         Eigen::MatrixXd E;
         copy(Ecv, E);
 
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        const Eigen::MatrixXd U = svd.matrixU();
+        const Eigen::MatrixXd V = svd.matrixV();
+        const Eigen::Vector3d s = svd.singularValues();
 
-        Eigen::MatrixXd U = svd.matrixU();
-        Eigen::VectorXd s = svd.singularValues();
-        Eigen::MatrixXd V = svd.matrixV();
-
-        Eigen::MatrixXd S = Eigen::MatrixXd(3, 3);
-        S.setZero();
-
-        S(0, 0) = 1.0;
-        S(1, 1) = 1.0;
-        S(2, 2) = 0.0;
-
-        E = U * S * V.transpose();
+        const double sigma = 0.5 * (s[0] + s[1]);
+        E = U * Eigen::Vector3d(sigma, sigma, 0.0).asDiagonal() * V.transpose();
 
         copy(E, Ecv);
     }
@@ -38,16 +32,8 @@ namespace {
 
 cv::Matx33d phg::fmatrix2ematrix(const cv::Matx33d &F, const phg::Calibration &calib0, const phg::Calibration &calib1)
 {
-    // TODO check that correct conversion (transpose ok)
-
-    // TODO add separate test for fmatrix (check 1) reprojection errors 2) f matrix singular value property)
-    // TODO add separate test for ematrix (check 1) reprojection errors of normalized coordinates 2) e matrix singular value property)
-    // TODO add separate test for ematrix decomposition: 1) check angle between cameras 2) check translation direction between cameras
-
     matrix3d E = calib1.K().t() * F * calib0.K();
-
     ensureSpectralProperty(E);
-
     return E;
 }
 
@@ -74,7 +60,7 @@ namespace {
         return result;
     }
 
-    double getDepth(const vector2d &m0, const vector2d &m1, const phg::Calibration &calib0, const phg::Calibration &calib1, const matrix34d &P0, const matrix34d &P1)
+    bool depthTest(const vector2d &m0, const vector2d &m1, const phg::Calibration &calib0, const phg::Calibration &calib1, const matrix34d &P0, const matrix34d &P1)
     {
         vector3d p0 = calib0.unproject(m0);
         vector3d p1 = calib1.unproject(m1);
@@ -83,11 +69,14 @@ namespace {
         matrix34d Ps[2] = {P0, P1};
 
         vector4d X = phg::triangulatePoint(Ps, ps, 2);
-        if (X[3] != 0) {
-            X /= X[3];
+        if (X[3] == 0) {
+            return false;
         }
+        X /= X[3];
 
-        return p0.dot(P0 * X) > 0 && p1.dot(P1 * X) > 0;
+        const vector3d x0 = P0 * X;
+        const vector3d x1 = P1 * X;
+        return x0[2] > 0 && x1[2] > 0;
     }
 }
 
@@ -103,24 +92,28 @@ void phg::decomposeEMatrix(cv::Matx34d &P0, cv::Matx34d &P1, const cv::Matx33d &
     if (m0.size() != m1.size()) {
         throw std::runtime_error("decomposeEMatrix : m0.size() != m1.size()");
     }
+    if (m0.empty()) {
+        throw std::runtime_error("decomposeEMatrix : no correspondences");
+    }
 
     using mat = Eigen::MatrixXd;
     using vec = Eigen::VectorXd;
-    
+
     mat E;
     copy(Ecv, E);
-
-    // (см. Hartley & Zisserman p.258)
 
     Eigen::JacobiSVD<mat> svd(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
 
     mat U = svd.matrixU();
-    vec s = svd.singularValues();
+    const vec &s = svd.singularValues();
     mat V = svd.matrixV();
 
-    // U, V must be rotation matrices, not just orthogonal
-    if (U.determinant() < 0) U = -U;
-    if (V.determinant() < 0) V = -V;
+    if (U.determinant() < 0) {
+        U.col(2) *= -1;
+    }
+    if (V.determinant() < 0) {
+        V.col(2) *= -1;
+    }
 
     if (verbose) {
         std::cout << "U:\n" << U << std::endl;
@@ -128,19 +121,19 @@ void phg::decomposeEMatrix(cv::Matx34d &P0, cv::Matx34d &P1, const cv::Matx33d &
         std::cout << "V:\n" << V << std::endl;
     }
 
-    mat W(3, 3);
-    W << 0, -1, 0, 1, 0, 0, 0, 0, 1;
-
-    mat Z(3, 3);
-    Z << 0, 1, 0, -1, 0, 0, 0, 0, 0;
-
-    if (verbose) {
-        std::cout << "W:\n" << W << std::endl;
-        std::cout << "Z:\n" << Z << std::endl;
-    }
+    Eigen::Matrix3d W;
+    W << 0.0, -1.0, 0.0,
+         1.0,  0.0, 0.0,
+         0.0,  0.0, 1.0;
 
     mat R0 = U * W * V.transpose();
     mat R1 = U * W.transpose() * V.transpose();
+    if (R0.determinant() < 0) {
+        R0 = -R0;
+    }
+    if (R1.determinant() < 0) {
+        R1 = -R1;
+    }
 
     if (verbose) {
         std::cout << "R0:\n" << R0 << std::endl;
@@ -156,20 +149,18 @@ void phg::decomposeEMatrix(cv::Matx34d &P0, cv::Matx34d &P1, const cv::Matx33d &
 
     P0 = matrix34d::eye();
 
-    // 4 possible solutions
     matrix34d P10 = composeP(R0, t0);
     matrix34d P11 = composeP(R0, t1);
     matrix34d P12 = composeP(R1, t0);
     matrix34d P13 = composeP(R1, t1);
     matrix34d P1s[4] = {P10, P11, P12, P13};
 
-    // need to select best of 4 solutions: 3d points should be in front of cameras (positive depths)
     int best_count = 0;
     int best_idx = -1;
     for (int i = 0; i < 4; ++i) {
         int count = 0;
-        for (int j = 0; j < (int) m0.size(); ++j) {
-            if (getDepth(m0[j], m1[j], calib0, calib1, P0, P1s[i]) > 0) {
+        for (int j = 0; j < static_cast<int>(m0.size()); ++j) {
+            if (depthTest(m0[j], m1[j], calib0, calib1, P0, P1s[i])) {
                 ++count;
             }
         }
@@ -205,7 +196,7 @@ void phg::decomposeUndistortedPMatrix(cv::Matx33d &R, cv::Vec3d &O, const cv::Ma
     O(2) = O_mat(2);
 
     if (cv::determinant(R) < 0) {
-        R *= -1;   
+        R *= -1;
     }
 }
 
