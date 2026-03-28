@@ -84,8 +84,8 @@ namespace {
             double w1 = ws1[i];
 
             // 8 elements of matrix + free term as needed by gauss routine
-//            A.push_back({TODO});
-//            A.push_back({TODO});
+            A.push_back({ 0, 0, 0, -x0 * w1, -y0 * w1, -w0 * w1, x0 * y1, y0 * y1 });
+            A.push_back({ x0 * w1, y0 * w1, w0 * w1, 0, 0, 0, -x0 * x1, -y0 * x1 });
         }
 
         int res = gauss(A, H);
@@ -238,7 +238,18 @@ cv::Mat phg::findHomographyCV(const std::vector<cv::Point2f> &points_lhs, const 
 // таким преобразованием внутри занимается функции cv::perspectiveTransform и cv::warpPerspective
 cv::Point2d phg::transformPoint(const cv::Point2d &pt, const cv::Mat &T)
 {
-    throw std::runtime_error("not implemented yet");
+    // [x']   [T00 T01 T02] [x]
+    // [y'] = [T10 T11 T12] [y]
+    // [w']   [T20 T21 T22] [1]
+    
+    double x = T.at<double>(0, 0) * pt.x + T.at<double>(0, 1) * pt.y + T.at<double>(0, 2);
+    double y = T.at<double>(1, 0) * pt.x + T.at<double>(1, 1) * pt.y + T.at<double>(1, 2);
+    double w = T.at<double>(2, 0) * pt.x + T.at<double>(2, 1) * pt.y + T.at<double>(2, 2);
+
+    double x_transformed = x / w;
+    double y_transformed = y / w;
+
+    return { x_transformed, y_transformed };
 }
 
 cv::Point2d phg::transformPointCV(const cv::Point2d &pt, const cv::Mat &T) {
