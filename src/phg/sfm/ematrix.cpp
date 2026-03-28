@@ -24,7 +24,7 @@ namespace {
         Eigen::MatrixXd V = svd.matrixV().transpose();
 
         Eigen::Vector3d singular = svd.singularValues();
-        double non_zero = (singular[0] + singular[1]) / 2.0;
+        double non_zero = (singular[0] + singular[1]) * 0.5;
         S(0, 0) = non_zero;
         S(1, 1) = non_zero;
 

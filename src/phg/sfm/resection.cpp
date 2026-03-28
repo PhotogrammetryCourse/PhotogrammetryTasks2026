@@ -65,29 +65,20 @@ namespace {
             double Z = Xs[i][2];
             double W = 1.0;
 
-            A.row(i << 1) << 0, 0, 0, 0, -w * X, -w * Y, -w * Z, -w * W, y * X, y * Y, y * Z, y * W;
-            A.row((i << 1) + 1) << w * X, w * Y, w * Z, w * W, 0, 0, 0, 0, -x * X, -x * Y, -x * Z, -x * W;
-
-            //A.row(i * 2) << 0, 0, 0, 0, -w * X, -w * Y, -w * Z, -w * W, y * X, y * Y, y * Z, y * W;
-            //A.row(i * 2 + 1) << w * X, w * Y, w * Z, w * W, 0, 0, 0, 0, -x * X, -x * Y, -x * Z, -x * W;
+            A.row(i * 2) << 0, 0, 0, 0, -w * X, -w * Y, -w * Z, -w * W, y * X, y * Y, y * Z, y * W;
+            A.row(i * 2 + 1) << w * X, w * Y, w * Z, w * W, 0, 0, 0, 0, -x * X, -x * Y, -x * Z, -x * W;
         }
 
         matrix34d result;
 
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeFullV);
 
-        Eigen::VectorXd p = svd.matrixV().col(11);
-        for (int i = 0; i < 12; ++i)
-            result(i / 4, i % 4) = p[i];
-
-
-
-        /*Eigen::VectorXd solution = svd.matrixV().col(11);
+        Eigen::VectorXd solution = svd.matrixV().col(11);
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
                 result(i, j) = solution(i * 4 + j);
             }
-        }*/
+        }
 
         return canonicalizeP(result);
     }
@@ -104,7 +95,7 @@ namespace {
 
         // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
         // будет отличаться от случая с гомографией
-        const int n_trials = 10000;
+        const int n_trials = 20000;
 
         const double threshold_px = 3;
 
