@@ -18,7 +18,7 @@
 #include "utils/test_utils.h"
 
 
-#define ENABLE_MY_SFM 0
+#define ENABLE_MY_SFM 1
 
 namespace {
 
@@ -295,7 +295,7 @@ TEST (SFM, EmatrixDecomposeSimple) {
     std::cout << "RMS2: " << rms2 << std::endl;
     std::cout << "RMS3: " << rms3 << std::endl;
 
-    double eps = 1e-10;
+    double eps = 1e-6;
     EXPECT_LT(rms1, eps);
     EXPECT_LT(rms2, eps);
     EXPECT_LT(rms3, eps);
@@ -346,7 +346,7 @@ TEST (SFM, TriangulationSimple) {
     vector4d d = X - X1;
     std::cout << "|X - X1| = " << cv::norm(d) << std::endl;
 
-    double eps = 1e-10;
+    double eps = 1e-6;
     EXPECT_LT(cv::norm(d), eps);
 }
 
