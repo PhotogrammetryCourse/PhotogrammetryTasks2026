@@ -201,6 +201,8 @@ namespace {
 }
 
 cv::Matx33d phg::findFMatrix(const std::vector <cv::Vec2d> &m0, const std::vector <cv::Vec2d> &m1, double threshold_px) {
+    cv::setRNGSeed(1);
+
     cv::Mat inlier_mask;
     cv::Mat Fm = cv::findFundamentalMat(m0, m1, cv::USAC_MAGSAC, threshold_px, 0.999, inlier_mask);
     if (Fm.empty()) {
@@ -224,7 +226,8 @@ cv::Matx33d phg::findFMatrix(const std::vector <cv::Vec2d> &m0, const std::vecto
         s0.reserve(m0.size());
         s1.reserve(m1.size());
         for (size_t i = 0; i < m0.size(); ++i) {
-            if (phg::epipolarTest(m0[i], m1[i], Fcv, threshold_px)) {
+            if (phg::epipolarTest(m0[i], m1[i], Fcv, threshold_px) &&
+                phg::epipolarTest(m1[i], m0[i], Fcv.t(), threshold_px)) {
                 s0.push_back(m0[i]);
                 s1.push_back(m1[i]);
             }
