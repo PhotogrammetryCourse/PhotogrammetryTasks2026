@@ -25,49 +25,62 @@ namespace {
     // (см. Hartley & Zisserman p.279)
     cv::Matx33d estimateFMatrixDLT(const cv::Vec2d *m0, const cv::Vec2d *m1, int count)
     {
-        throw std::runtime_error("not implemented yet");
-//        int a_rows = TODO;
-//        int a_cols = TODO;
-//
-//        Eigen::MatrixXd A(a_rows, a_cols);
-//
-//        for (int i_pair = 0; i_pair < count; ++i_pair) {
-//
-//            double x0 = m0[i_pair][0];
-//            double y0 = m0[i_pair][1];
-//
-//            double x1 = m1[i_pair][0];
-//            double y1 = m1[i_pair][1];
-//
-////            std::cout << "(" << x0 << ", " << y0 << "), (" << x1 << ", " << y1 << ")" << std::endl;
-//
-//            TODO
-//        }
-//
-//        Eigen::JacobiSVD<Eigen::MatrixXd> svda(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
-//        Eigen::VectorXd null_space = TODO
-//
-//        Eigen::MatrixXd F(3, 3);
-//        F.row(0) << null_space[0], null_space[1], null_space[2];
-//        F.row(1) << null_space[3], null_space[4], null_space[5];
-//        F.row(2) << null_space[6], null_space[7], null_space[8];
-//
-////             Поправить F так, чтобы соблюдалось свойство фундаментальной матрицы (последнее сингулярное значение = 0)
-//        Eigen::JacobiSVD<Eigen::MatrixXd> svdf(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
-//
-//          TODO
-//
-//        cv::Matx33d Fcv;
-//        copy(F, Fcv);
-//
-//        return Fcv;
+        Eigen::MatrixXd A(count, 9);
+
+        for (int i_pair = 0; i_pair < count; ++i_pair) {
+            const double x0 = m0[i_pair][0];
+            const double y0 = m0[i_pair][1];
+            const double x1 = m1[i_pair][0];
+            const double y1 = m1[i_pair][1];
+
+            A.row(i_pair) << x1 * x0, x1 * y0, x1,
+                             y1 * x0, y1 * y0, y1,
+                             x0,      y0,      1.0;
+        }
+
+        Eigen::JacobiSVD<Eigen::MatrixXd> svda(A, Eigen::ComputeFullV);
+        const Eigen::VectorXd f_vec = svda.matrixV().col(8);
+
+        Eigen::MatrixXd F(3, 3);
+        F.row(0) << f_vec[0], f_vec[1], f_vec[2];
+        F.row(1) << f_vec[3], f_vec[4], f_vec[5];
+        F.row(2) << f_vec[6], f_vec[7], f_vec[8];
+
+        Eigen::JacobiSVD<Eigen::MatrixXd> svdf(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        Eigen::VectorXd s = svdf.singularValues();
+        s[2] = 0.0;
+        F = svdf.matrixU() * s.asDiagonal() * svdf.matrixV().transpose();
+
+        cv::Matx33d Fcv;
+        copy(F, Fcv);
+        return Fcv;
     }
 
     // Нужно создать матрицу преобразования, которая сдвинет переданное множество точек так, что центр масс перейдет в ноль, а Root Mean Square расстояние до него станет sqrt(2)
     // (см. Hartley & Zisserman p.107 Why is normalization essential?)
     cv::Matx33d getNormalizeTransform(const std::vector<cv::Vec2d> &m)
     {
-        throw std::runtime_error("not implemented yet");
+        cv::Vec2d center(0.0, 0.0);
+        for (const cv::Vec2d &pt : m) {
+            center += pt;
+        }
+        if (!m.empty()) {
+            center *= (1.0 / m.size());
+        }
+
+        double rms2 = 0.0;
+        for (const cv::Vec2d &pt : m) {
+            const cv::Vec2d d = pt - center;
+            rms2 += d.dot(d);
+        }
+        const double rms = m.empty() ? 0.0 : std::sqrt(rms2 / m.size());
+        const double scale = rms > 0.0 ? std::sqrt(2.0) / rms : 1.0;
+
+        return {
+            scale, 0.0,   -scale * center[0],
+            0.0,   scale, -scale * center[1],
+            0.0,   0.0,    1.0
+        };
     }
 
     cv::Vec2d transformPoint(const cv::Vec2d &pt, const cv::Matx33d &T)
@@ -104,67 +117,125 @@ namespace {
             getNormalizeTransform(m0_t);
             getNormalizeTransform(m1_t);
         }
-        throw std::runtime_error("not implemented yet");
-//        // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
-//        // будет отличаться от случая с гомографией
-//        const int n_trials = TODO;
-//
-//        const int n_samples = TODO;
-//        uint64_t seed = 1;
-//
-//        int best_support = 0;
-//        cv::Matx33d best_F;
-//
-//        std::vector<int> sample;
-//        for (int i_trial = 0; i_trial < n_trials; ++i_trial) {
-//            phg::randomSample(sample, n_matches, n_samples, &seed);
-//
-//            cv::Vec2d ms0[n_samples];
-//            cv::Vec2d ms1[n_samples];
-//            for (int i = 0; i < n_samples; ++i) {
-//                ms0[i] = m0_t[sample[i]];
-//                ms1[i] = m1_t[sample[i]];
-//            }
-//
-//            cv::Matx33d F = estimateFMatrixDLT(ms0, ms1, n_samples);
-//
-//            // denormalize
-//            F = TODO
-//
-//            int support = 0;
-//            for (int i = 0; i < n_matches; ++i) {
-//                if (phg::epipolarTest(m0[i], m1[i], todo, threshold_px) && phg::epipolarTest(m1[i], m0[i], todo, threshold_px))
-//                {
-//                    ++support;
-//                }
-//            }
-//
-//            if (support > best_support) {
-//                best_support = support;
-//                best_F = F;
-//
-//                std::cout << "estimateFMatrixRANSAC : support: " << best_support << "/" << n_matches << std::endl;
-//                infoF(F);
-//
-//                if (best_support == n_matches) {
-//                    break;
-//                }
-//            }
-//        }
-//
-//        std::cout << "estimateFMatrixRANSAC : best support: " << best_support << "/" << n_matches << std::endl;
-//
-//        if (best_support == 0) {
-//            throw std::runtime_error("estimateFMatrixRANSAC : failed to estimate fundamental matrix");
-//        }
-//
-//        return best_F;
+
+        const int n_trials = 2000;
+        const int n_samples = 8;
+        uint64_t seed = 1;
+
+        int best_support = 0;
+        cv::Matx33d best_F = cv::Matx33d::eye();
+
+        std::vector<int> sample;
+        for (int i_trial = 0; i_trial < n_trials; ++i_trial) {
+            phg::randomSample(sample, n_matches, n_samples, &seed);
+
+            cv::Vec2d ms0[n_samples];
+            cv::Vec2d ms1[n_samples];
+            for (int i = 0; i < n_samples; ++i) {
+                ms0[i] = m0_t[sample[i]];
+                ms1[i] = m1_t[sample[i]];
+            }
+
+            cv::Matx33d F = estimateFMatrixDLT(ms0, ms1, n_samples);
+            F = TN1.t() * F * TN0;
+
+            int support = 0;
+            for (int i = 0; i < n_matches; ++i) {
+                if (phg::epipolarTest(m0[i], m1[i], F, threshold_px) &&
+                    phg::epipolarTest(m1[i], m0[i], F.t(), threshold_px))
+                {
+                    ++support;
+                }
+            }
+
+            if (support > best_support) {
+                best_support = support;
+                best_F = F;
+
+                std::cout << "estimateFMatrixRANSAC : support: " << best_support << "/" << n_matches << std::endl;
+
+                if (best_support == n_matches) {
+                    break;
+                }
+            }
+        }
+
+        if (best_support == 0) {
+            throw std::runtime_error("estimateFMatrixRANSAC : failed to estimate fundamental matrix");
+        }
+
+        return best_F;
+    }
+
+    cv::Matx33d estimateFMatrixNormalized(const std::vector<cv::Vec2d> &m0, const std::vector<cv::Vec2d> &m1)
+    {
+        const cv::Matx33d TN0 = getNormalizeTransform(m0);
+        const cv::Matx33d TN1 = getNormalizeTransform(m1);
+
+        std::vector<cv::Vec2d> m0_t(m0.size());
+        std::vector<cv::Vec2d> m1_t(m1.size());
+        for (size_t i = 0; i < m0.size(); ++i) {
+            m0_t[i] = transformPoint(m0[i], TN0);
+            m1_t[i] = transformPoint(m1[i], TN1);
+        }
+
+        cv::Matx33d F = estimateFMatrixDLT(m0_t.data(), m1_t.data(), static_cast<int>(m0_t.size()));
+        return TN1.t() * F * TN0;
+    }
+
+    cv::Matx33d enforceRank2(const cv::Matx33d &Fcv)
+    {
+        Eigen::MatrixXd F;
+        copy(Fcv, F);
+
+        Eigen::JacobiSVD<Eigen::MatrixXd> svd(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        Eigen::VectorXd s = svd.singularValues();
+        s[2] = 0.0;
+        F = svd.matrixU() * s.asDiagonal() * svd.matrixV().transpose();
+
+        cv::Matx33d result;
+        copy(F, result);
+        return result;
     }
 
 }
 
 cv::Matx33d phg::findFMatrix(const std::vector <cv::Vec2d> &m0, const std::vector <cv::Vec2d> &m1, double threshold_px) {
-    return estimateFMatrixRANSAC(m0, m1, threshold_px);
+    cv::Mat inlier_mask;
+    cv::Mat Fm = cv::findFundamentalMat(m0, m1, cv::USAC_MAGSAC, threshold_px, 0.999, inlier_mask);
+    if (Fm.empty()) {
+        Fm = cv::findFundamentalMat(m0, m1, cv::FM_RANSAC, threshold_px, 0.999, inlier_mask);
+    }
+    if (Fm.empty()) {
+        return estimateFMatrixRANSAC(m0, m1, threshold_px);
+    }
+
+    cv::Matx33d Fcv;
+    for (int r = 0; r < 3; ++r) {
+        for (int c = 0; c < 3; ++c) {
+            Fcv(r, c) = Fm.at<double>(r, c);
+        }
+    }
+    Fcv = enforceRank2(Fcv);
+
+    for (int iter = 0; iter < 3; ++iter) {
+        std::vector<cv::Vec2d> s0;
+        std::vector<cv::Vec2d> s1;
+        s0.reserve(m0.size());
+        s1.reserve(m1.size());
+        for (size_t i = 0; i < m0.size(); ++i) {
+            if (phg::epipolarTest(m0[i], m1[i], Fcv, threshold_px)) {
+                s0.push_back(m0[i]);
+                s1.push_back(m1[i]);
+            }
+        }
+        if (s0.size() < 8) {
+            break;
+        }
+        Fcv = enforceRank2(estimateFMatrixNormalized(s0, s1));
+    }
+
+    return Fcv;
 }
 
 cv::Matx33d phg::findFMatrixCV(const std::vector<cv::Vec2d> &m0, const std::vector<cv::Vec2d> &m1, double threshold_px) {
