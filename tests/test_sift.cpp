@@ -28,7 +28,7 @@
 // TODO ENABLE ME
 // TODO ENABLE ME
 // TODO ENABLE ME
-#define ENABLE_MY_SIFT_TESTING 0
+#define ENABLE_MY_SIFT_TESTING 1
 
 #define DENY_CREATE_REF_DATA 1
 
@@ -195,6 +195,7 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
                 method_name = "SIFT_MY";
                 log_prefix = "[SIFT_MY] ";
                 phg::SIFT mySIFT(p);
+                
                 mySIFT.detectAndCompute(img0, kps0, desc0);
                 mySIFT.detectAndCompute(img1, kps1, desc1);
 #else
