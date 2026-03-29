@@ -95,7 +95,7 @@ namespace {
         // будет отличаться от случая с гомографией
         const int n_points_fit = 6;
         const double singlePointInlierProbability = 0.2, successProbability = 0.99; // maybe singlePointInlierProbability should be set to lower value
-        const int n_trials = (int) (log(1 - successProbability) / log(1 - pow(singlePointInlierProbability, n_points_fit)));
+        const int n_trials = 100000;
 
         const double threshold_px = 3;
 
