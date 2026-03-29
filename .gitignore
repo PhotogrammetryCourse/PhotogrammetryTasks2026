@@ -2,3 +2,7 @@
 .idea
 build
 cmake-build*
+.github
+4.11.0.zip
+.cache
+opencv-4.11.0

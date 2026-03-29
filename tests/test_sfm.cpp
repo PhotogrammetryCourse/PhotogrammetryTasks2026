@@ -18,7 +18,7 @@
 #include "utils/test_utils.h"
 
 
-#define ENABLE_MY_SFM 0
+#define ENABLE_MY_SFM 1
 
 namespace {
 
@@ -217,7 +217,7 @@ TEST (SFM, FmatrixSimple) {
 
     matrix3d F = phg::findFMatrix(pts0, pts1);
     matrix3d Fcv = phg::findFMatrixCV(pts0, pts1);
-
+    std::cout << "matrix3d Fcv = phg::findFMatrixCV(pts0, pts1);" << "\n";
     EXPECT_TRUE(checkFmatrixSpectralProperty(F));
     EXPECT_TRUE(checkFmatrixSpectralProperty(Fcv));
 }
