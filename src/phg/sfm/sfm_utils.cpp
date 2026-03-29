@@ -1,4 +1,6 @@
 #include "sfm_utils.h"
+#include "opencv2/core/matx.hpp"
+#include "opencv2/imgproc.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -41,5 +43,6 @@ void phg::randomSample(std::vector<int> &dst, int max_id, int sample_size, uint6
 // проверяет, что расстояние от точки до линии меньше порога
 bool phg::epipolarTest(const cv::Vec2d &pt0, const cv::Vec2d &pt1, const cv::Matx33d &F, double t)
 {
-    throw std::runtime_error("not implemented yet");
+    auto line = F * cv::Vec3d(pt0[0], pt0[1], 1.0);
+    return std::abs(line.dot(cv::Vec3d(pt1[0], pt1[1], 1.0))) / std::sqrt(line[0] * line[0] + line[1] * line[1]) < t;
 }
