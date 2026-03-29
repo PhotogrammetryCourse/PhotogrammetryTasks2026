@@ -72,7 +72,7 @@ namespace {
 
         matrix34d result;
         Eigen::JacobiSVD<mat> svda(A, Eigen::ComputeFullV);
-        auto p = svda.matrixV().col(2 * count - 1);
+        auto p = svda.matrixV().col(12 - 1);
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 4; j++) {
                 result(i, j) = p[i * 4 + j];
