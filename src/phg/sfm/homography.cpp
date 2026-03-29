@@ -233,11 +233,9 @@ cv::Mat phg::findHomographyCV(const std::vector<cv::Point2f>& points_lhs, const 
 // T - 3x3 однородная матрица, например, гомография
 // таким преобразованием внутри занимается функции cv::perspectiveTransform и cv::warpPerspective
 cv::Point2d phg::transformPoint(const cv::Point2d& pt, const cv::Mat& T) {
-    double w = T.at<double>(2, 0) * pt.x + T.at<double>(2, 1) * pt.y + T.at<double>(2, 2);
-    return {
-            (T.at<double>(0, 0) * pt.x + T.at<double>(0, 1) * pt.y + T.at<double>(0, 2)) / w,
-            (T.at<double>(1, 0) * pt.x + T.at<double>(1, 1) * pt.y + T.at<double>(1, 2)) / w
-    };
+    cv::Vec3d v(pt.x, pt.y, 1.0);
+    double w = T.row(2).dot(v);
+    return {T.row(0).dot(v) / w, T.row(1).dot(v) / w};
 }
 
 cv::Point2d phg::transformPointCV(const cv::Point2d& pt, const cv::Mat& T) {
