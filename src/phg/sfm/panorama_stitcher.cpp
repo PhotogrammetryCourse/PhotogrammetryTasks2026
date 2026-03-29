@@ -4,16 +4,35 @@
 #include <libutils/bbox2.h>
 #include <iostream>
 
+
+cv::Mat compute_H(int idx,
+                  const std::vector<int>& parent,
+                  const std::vector<cv::Mat>& imgs,
+                  std::vector<cv::Mat>& Hs,
+                  std::vector<cv::Mat>& parent_Hs,
+                  std::vector<bool>& done,
+                  std::function<cv::Mat(const cv::Mat&, const cv::Mat&)>& homography_builder) {
+    if (done[idx]) return Hs[idx];
+    if (parent[idx] < 0) {
+        Hs[idx] = cv::Mat::eye(3, 3, CV_64FC1);
+    } else {
+        if (parent_Hs[idx].empty()) parent_Hs[idx] = homography_builder(imgs[idx], imgs[parent[idx]]);
+        Hs[idx] = compute_H(parent[idx], parent, imgs, Hs, parent_Hs, done, homography_builder) * parent_Hs[idx];
+    }
+
+    done[idx] = true;
+    return Hs[idx];
+}
+
 /*
  * imgs - список картинок
  * parent - список индексов, каждый индекс указывает, к какой картинке должна быть приклеена текущая картинка
  *          этот список образует дерево, корень дерева (картинка, которая ни к кому не приклеивается, приклеиваются только к ней), в данном массиве имеет значение -1
  * homography_builder - функтор, возвращающий гомографию по паре картинок
  * */
-cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
-                            const std::vector<int> &parent,
-                            std::function<cv::Mat(const cv::Mat &, const cv::Mat &)> &homography_builder)
-{
+cv::Mat phg::stitchPanorama(const std::vector<cv::Mat>& imgs,
+                            const std::vector<int>& parent,
+                            std::function<cv::Mat(const cv::Mat&, const cv::Mat&)>& homography_builder) {
     const int n_images = imgs.size();
 
     // склеивание панорамы происходит через приклеивание всех картинок к корню, некоторые приклеиваются не напрямую, а через цепочку других картинок
@@ -23,7 +42,9 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
     {
         // здесь надо посчитать вектор Hs
         // при этом можно обойтись n_images - 1 вызовами функтора homography_builder
-        throw std::runtime_error("not implemented yet");
+        std::vector<bool> done(n_images, false);
+        std::vector<cv::Mat> parent_Hs(n_images);
+        for (int i = 0; i < n_images; ++i) compute_H(i, parent, imgs, Hs, parent_Hs, done, homography_builder);
     }
 
     bbox2<double, cv::Point2d> bbox;
@@ -61,7 +82,7 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
 //        }
 
     std::vector<cv::Mat> Hs_inv;
-    std::transform(Hs.begin(), Hs.end(), std::back_inserter(Hs_inv), [&](const cv::Mat &H){ return H.inv(); });
+    std::transform(Hs.begin(), Hs.end(), std::back_inserter(Hs_inv), [&](const cv::Mat& H) { return H.inv(); });
 
 #pragma omp parallel for
     for (int y = 0; y < result_height; ++y) {

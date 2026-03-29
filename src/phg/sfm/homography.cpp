@@ -8,8 +8,7 @@ namespace {
     // источник: https://e-maxx.ru/algo/linear_systems_gauss
     // очень важно при выполнении метода гаусса использовать выбор опорного элемента: об этом можно почитать в источнике кода
     // или на вики: https://en.wikipedia.org/wiki/Pivot_element
-    int gauss(std::vector<std::vector<double>> a, std::vector<double> &ans)
-    {
+    int gauss(std::vector<std::vector<double>> a, std::vector<double>& ans) {
         using namespace std;
         const double EPS = 1e-8;
         const int INF = std::numeric_limits<int>::max();
@@ -17,51 +16,50 @@ namespace {
         int n = (int) a.size();
         int m = (int) a[0].size() - 1;
 
-        vector<int> where (m, -1);
-        for (int col=0, row=0; col<m && row<n; ++col) {
+        vector<int> where(m, -1);
+        for (int col = 0, row = 0; col < m && row < n; ++col) {
             int sel = row;
-            for (int i=row; i<n; ++i)
-                if (abs (a[i][col]) > abs (a[sel][col]))
+            for (int i = row; i < n; ++i)
+                if (abs(a[i][col]) > abs(a[sel][col]))
                     sel = i;
-            if (abs (a[sel][col]) < EPS)
+            if (abs(a[sel][col]) < EPS)
                 continue;
-            for (int i=col; i<=m; ++i)
-                swap (a[sel][i], a[row][i]);
+            for (int i = col; i <= m; ++i)
+                swap(a[sel][i], a[row][i]);
             where[col] = row;
 
-            for (int i=0; i<n; ++i)
+            for (int i = 0; i < n; ++i)
                 if (i != row) {
                     double c = a[i][col] / a[row][col];
-                    for (int j=col; j<=m; ++j)
+                    for (int j = col; j <= m; ++j)
                         a[i][j] -= a[row][j] * c;
                 }
             ++row;
         }
 
-        ans.assign (m, 0);
-        for (int i=0; i<m; ++i)
+        ans.assign(m, 0);
+        for (int i = 0; i < m; ++i)
             if (where[i] != -1)
                 ans[i] = a[where[i]][m] / a[where[i]][i];
-        for (int i=0; i<n; ++i) {
+        for (int i = 0; i < n; ++i) {
             double sum = 0;
-            for (int j=0; j<m; ++j)
+            for (int j = 0; j < m; ++j)
                 sum += ans[j] * a[i][j];
-            if (abs (sum - a[i][m]) > EPS)
+            if (abs(sum - a[i][m]) > EPS)
                 return 0;
         }
 
-        for (int i=0; i<m; ++i)
+        for (int i = 0; i < m; ++i)
             if (where[i] == -1)
                 return INF;
         return 1;
     }
 
     // см. Hartley, Zisserman: Multiple View Geometry in Computer Vision. Second Edition 4.1, 4.1.2
-    cv::Mat estimateHomography4Points(const cv::Point2f &l0, const cv::Point2f &l1,
-                                      const cv::Point2f &l2, const cv::Point2f &l3,
-                                      const cv::Point2f &r0, const cv::Point2f &r1,
-                                      const cv::Point2f &r2, const cv::Point2f &r3)
-    {
+    cv::Mat estimateHomography4Points(const cv::Point2f& l0, const cv::Point2f& l1,
+                                      const cv::Point2f& l2, const cv::Point2f& l3,
+                                      const cv::Point2f& r0, const cv::Point2f& r1,
+                                      const cv::Point2f& r2, const cv::Point2f& r3) {
         std::vector<std::vector<double>> A;
         std::vector<double> H;
 
@@ -84,20 +82,24 @@ namespace {
             double w1 = ws1[i];
 
             // 8 elements of matrix + free term as needed by gauss routine
-//            A.push_back({TODO});
-//            A.push_back({TODO});
+            A.push_back({
+                                0.0, 0.0, 0.0,
+                                -x0 * w1, -y0 * w1, -w0 * w1,
+                                x0 * y1, y0 * y1, -w0 * y1
+                        });
+            A.push_back({
+                                x0 * w1, y0 * w1, w0 * w1,
+                                0.0, 0.0, 0.0,
+                                -x0 * x1, -y0 * x1, w0 * x1
+                        });
         }
 
         int res = gauss(A, H);
         if (res == 0) {
             throw std::runtime_error("gauss: no solution found");
-        }
-        else
-        if (res == 1) {
+        } else if (res == 1) {
 //            std::cout << "gauss: unique solution found" << std::endl;
-        }
-        else
-        if (res == std::numeric_limits<int>::max()) {
+        } else if (res == std::numeric_limits<int>::max()) {
             std::cerr << "gauss: infinitely many solutions found" << std::endl;
             std::cerr << "gauss: xs0: ";
             for (int i = 0; i < 4; ++i) {
@@ -108,9 +110,7 @@ namespace {
                 std::cerr << ys0[i] << ", ";
             }
             std::cerr << std::endl;
-        }
-        else
-        {
+        } else {
             throw std::runtime_error("gauss: unexpected return code");
         }
 
@@ -123,8 +123,7 @@ namespace {
     }
 
     // pseudorandom number generator
-    inline uint64_t xorshift64(uint64_t *state)
-    {
+    inline uint64_t xorshift64(uint64_t* state) {
         if (*state == 0) {
             *state = 1;
         }
@@ -136,8 +135,7 @@ namespace {
         return *state = x;
     }
 
-    void randomSample(std::vector<int> &dst, int max_id, int sample_size, uint64_t *state)
-    {
+    void randomSample(std::vector<int>& dst, int max_id, int sample_size, uint64_t* state) {
         dst.clear();
 
         const int max_attempts = 1000;
@@ -156,8 +154,8 @@ namespace {
         }
     }
 
-    cv::Mat estimateHomographyRANSAC(const std::vector<cv::Point2f> &points_lhs, const std::vector<cv::Point2f> &points_rhs)
-    {
+    cv::Mat
+    estimateHomographyRANSAC(const std::vector<cv::Point2f>& points_lhs, const std::vector<cv::Point2f>& points_rhs) {
         if (points_lhs.size() != points_rhs.size()) {
             throw std::runtime_error("findHomography: points_lhs.size() != points_rhs.size()");
         }
@@ -223,25 +221,26 @@ namespace {
 
 }
 
-cv::Mat phg::findHomography(const std::vector<cv::Point2f> &points_lhs, const std::vector<cv::Point2f> &points_rhs)
-{
+cv::Mat phg::findHomography(const std::vector<cv::Point2f>& points_lhs, const std::vector<cv::Point2f>& points_rhs) {
     return estimateHomographyRANSAC(points_lhs, points_rhs);
 }
 
 // чтобы заработало, нужно пересобрать библиотеку с дополнительным модулем calib3d (см. инструкцию в корневом CMakeLists.txt)
-cv::Mat phg::findHomographyCV(const std::vector<cv::Point2f> &points_lhs, const std::vector<cv::Point2f> &points_rhs)
-{
+cv::Mat phg::findHomographyCV(const std::vector<cv::Point2f>& points_lhs, const std::vector<cv::Point2f>& points_rhs) {
     return cv::findHomography(points_lhs, points_rhs, cv::RANSAC);
 }
 
 // T - 3x3 однородная матрица, например, гомография
 // таким преобразованием внутри занимается функции cv::perspectiveTransform и cv::warpPerspective
-cv::Point2d phg::transformPoint(const cv::Point2d &pt, const cv::Mat &T)
-{
-    throw std::runtime_error("not implemented yet");
+cv::Point2d phg::transformPoint(const cv::Point2d& pt, const cv::Mat& T) {
+    double w = T.at<double>(2, 0) * pt.x + T.at<double>(2, 1) * pt.y + T.at<double>(2, 2);
+    return {
+            (T.at<double>(0, 0) * pt.x + T.at<double>(0, 1) * pt.y + T.at<double>(0, 2)) / w,
+            (T.at<double>(1, 0) * pt.x + T.at<double>(1, 1) * pt.y + T.at<double>(1, 2)) / w
+    };
 }
 
-cv::Point2d phg::transformPointCV(const cv::Point2d &pt, const cv::Mat &T) {
+cv::Point2d phg::transformPointCV(const cv::Point2d& pt, const cv::Mat& T) {
     // ineffective but ok for testing
     std::vector<cv::Point2f> tmp0 = {pt};
     std::vector<cv::Point2f> tmp1(1);

@@ -12,5 +12,17 @@ cv::Vec4d phg::triangulatePoint(const cv::Matx34d *Ps, const cv::Vec3d *ms, int 
 {
     // составление однородной системы + SVD
     // без подвохов
-    throw std::runtime_error("not implemented yet");
+
+    Eigen::MatrixXd A(count * 2, 4);
+
+    for (int i = 0; i < count; ++i) {
+        const cv::Matx34d &P = Ps[i];
+        double x = ms[i][0];
+        double y = ms[i][1];
+
+        A.row(i * 2)        << x * P(2, 0) - P(0, 0), x * P(2, 1) - P(0, 1),x * P(2, 2) - P(0, 2),x * P(2, 3) - P(0, 3);
+        A.row(i * 2 + 1)    << y * P(2, 0) - P(1, 0), y * P(2, 1) - P(1, 1),y * P(2, 2) - P(1, 2),y * P(2, 3) - P(1, 3);
+    }
+    Eigen::VectorXd res = Eigen::JacobiSVD<Eigen::MatrixXd>(A, Eigen::ComputeFullV).matrixV().col(3);
+    return {res[0], res[1], res[2], res[3]};
 }
