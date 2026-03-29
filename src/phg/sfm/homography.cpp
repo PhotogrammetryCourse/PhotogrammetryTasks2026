@@ -84,8 +84,8 @@ namespace {
             double w1 = ws1[i];
 
             // 8 elements of matrix + free term as needed by gauss routine
-//            A.push_back({TODO});
-//            A.push_back({TODO});
+            A.push_back({0.0, 0.0, 0.0, -x0 * w1, -y0 * w1, -w0 * w1, x0 * y1, y0 * y1, -w0 * y1});
+            A.push_back({x0 * w1, y0 * w1, w0 * w1, 0.0, 0.0, 0.0, -x0 * x1, -y0 * x1, w0 * x1});
         }
 
         int res = gauss(A, H);

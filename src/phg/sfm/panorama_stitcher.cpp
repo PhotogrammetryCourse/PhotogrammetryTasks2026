@@ -1,8 +1,8 @@
 #include "panorama_stitcher.h"
 #include "homography.h"
 
-#include <libutils/bbox2.h>
 #include <iostream>
+#include <libutils/bbox2.h>
 
 /*
  * imgs - список картинок
@@ -10,9 +10,7 @@
  *          этот список образует дерево, корень дерева (картинка, которая ни к кому не приклеивается, приклеиваются только к ней), в данном массиве имеет значение -1
  * homography_builder - функтор, возвращающий гомографию по паре картинок
  * */
-cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
-                            const std::vector<int> &parent,
-                            std::function<cv::Mat(const cv::Mat &, const cv::Mat &)> &homography_builder)
+cv::Mat phg::stitchPanorama(const std::vector<cv::Mat>& imgs, const std::vector<int>& parent, std::function<cv::Mat(const cv::Mat&, const cv::Mat&)>& homography_builder)
 {
     const int n_images = imgs.size();
 
@@ -46,22 +44,22 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
     // из-за растяжения пикселей при использовании прямой матрицы гомографии после отображения между пикселями остается пустое пространство
     // лучше использовать обратную и для каждого пикселя на итоговвой картинке проверять, с какой картинки он может получить цвет
     // тогда в некоторых пикселях цвет будет дублироваться, но изображение будет непрерывным
-//        for (int i = 0; i < n_images; ++i) {
-//            for (int y = 0; y < imgs[i].rows; ++y) {
-//                for (int x = 0; x < imgs[i].cols; ++x) {
-//                    cv::Vec3b color = imgs[i].at<cv::Vec3b>(y, x);
-//
-//                    cv::Point2d pt_dst = applyH(cv::Point2d(x, y), Hs[i]) - bbox.min();
-//                    int y_dst = std::max(0, std::min((int) std::round(pt_dst.y), result_height - 1));
-//                    int x_dst = std::max(0, std::min((int) std::round(pt_dst.x), result_width - 1));
-//
-//                    result.at<cv::Vec3b>(y_dst, x_dst) = color;
-//                }
-//            }
-//        }
+    //        for (int i = 0; i < n_images; ++i) {
+    //            for (int y = 0; y < imgs[i].rows; ++y) {
+    //                for (int x = 0; x < imgs[i].cols; ++x) {
+    //                    cv::Vec3b color = imgs[i].at<cv::Vec3b>(y, x);
+    //
+    //                    cv::Point2d pt_dst = applyH(cv::Point2d(x, y), Hs[i]) - bbox.min();
+    //                    int y_dst = std::max(0, std::min((int) std::round(pt_dst.y), result_height - 1));
+    //                    int x_dst = std::max(0, std::min((int) std::round(pt_dst.x), result_width - 1));
+    //
+    //                    result.at<cv::Vec3b>(y_dst, x_dst) = color;
+    //                }
+    //            }
+    //        }
 
     std::vector<cv::Mat> Hs_inv;
-    std::transform(Hs.begin(), Hs.end(), std::back_inserter(Hs_inv), [&](const cv::Mat &H){ return H.inv(); });
+    std::transform(Hs.begin(), Hs.end(), std::back_inserter(Hs_inv), [&](const cv::Mat& H) { return H.inv(); });
 
 #pragma omp parallel for
     for (int y = 0; y < result_height; ++y) {
@@ -82,7 +80,6 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
                     break;
                 }
             }
-
         }
     }
 
