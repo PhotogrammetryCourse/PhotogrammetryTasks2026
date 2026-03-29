@@ -142,9 +142,12 @@ namespace {
         }
         // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
         // будет отличаться от случая с гомографией
+        const int n_points_fit = 8;
+        const double singlePointInlierProbability = 0.287, successProbability = 0.99; // maybe singlePointInlierProbability should be set to lower value
+        // const int n_trials = (int) (log(1 - successProbability) / log(1 - pow(singlePointInlierProbability, n_points_fit)));
         const int n_trials = 100000; // works
 
-        const int n_samples = 8;
+        const int n_samples = n_points_fit;
         uint64_t seed = 1;
 
         int best_support = 0;
