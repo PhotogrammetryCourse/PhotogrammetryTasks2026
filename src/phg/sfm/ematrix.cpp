@@ -18,9 +18,9 @@ namespace {
 
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
 
-        Eigen::VectorXd U, S, V;
+        Eigen::MatrixXd U, S, V;
         U = svd.matrixU();
-        S = Eigen::VectorXd::Zero(3, 3);
+        S = Eigen::MatrixXd::Zero(3, 3);
         V = svd.matrixV().transpose();
 
         Eigen::Vector3d s = svd.singularValues();
@@ -33,6 +33,7 @@ namespace {
 
 cv::Matx33d phg::fmatrix2ematrix(const cv::Matx33d& F, const phg::Calibration& calib0, const phg::Calibration& calib1) {
     matrix3d E = calib1.K().t() * F * calib0.K();
+
     ensureSpectralProperty(E);
 
     return E;

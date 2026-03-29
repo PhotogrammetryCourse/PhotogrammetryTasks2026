@@ -52,7 +52,9 @@ namespace {
 //             Поправить F так, чтобы соблюдалось свойство фундаментальной матрицы (последнее сингулярное значение = 0)
         Eigen::JacobiSVD<Eigen::MatrixXd> svdf(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
 
-        F = svdf.matrixU() * svdf.singularValues().asDiagonal() * svdf.matrixV().transpose();
+        Eigen::MatrixXd ms = svdf.singularValues().asDiagonal();
+        ms(2, 2) = 0.0;
+        F = svdf.matrixU() * ms * svdf.matrixV().transpose();
 
         cv::Matx33d Fcv;
         copy(F, Fcv);
