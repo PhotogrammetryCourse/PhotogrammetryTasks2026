@@ -10,7 +10,23 @@
 // (см. Hartley & Zisserman p.312)
 cv::Vec4d phg::triangulatePoint(const cv::Matx34d *Ps, const cv::Vec3d *ms, int count)
 {
+//    DONE
+
     // составление однородной системы + SVD
     // без подвохов
-    throw std::runtime_error("not implemented yet");
+
+    Eigen::MatrixXd A(count * 2, 4);
+    for (int i = 0; i < count; i++) {
+        for (int j = 0; j < 4; j++) {
+            A(i * 2, j) = ms[i][0] * Ps[i](2, j) - Ps[i](0, j);
+            A(i * 2 + 1, j) = ms[i][1] * Ps[i](2, j) - Ps[i](1, j);
+        }
+    }
+
+    Eigen::JacobiSVD<Eigen::MatrixXd> svda(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+    Eigen::MatrixXd V = svda.matrixV();
+    auto h = V.col(3);
+    return {h[0], h[1], h[2], h[3]};
+//    throw std::runtime_error("not implemented yet");
 }
