@@ -143,12 +143,12 @@ namespace {
 
         const int n_samples = 8;
 
-        const double one_inlier_probability = 0.4f;
+        const double one_inlier_probability = 0.3f;
         double n_inliers_probability = 1;
         for (size_t j = 0; j < n_samples; j++) {
             n_inliers_probability *= one_inlier_probability;
         }
-        const double fail_probability = 0.05f;
+        const double fail_probability = 0.15f;
         const int n_trials = std::log(fail_probability) / std::log(1 - n_inliers_probability);
         uint64_t seed = 1;
 
