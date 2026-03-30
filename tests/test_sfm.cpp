@@ -239,7 +239,6 @@ TEST (SFM, EmatrixSimple) {
     }
 
     matrix3d F = phg::findFMatrix(pts0, pts1, 10);
-    std::cout << "???";
     matrix3d E = phg::fmatrix2ematrix(F, calib, calib);
 
     EXPECT_TRUE(checkEmatrixSpectralProperty(E));
@@ -268,11 +267,6 @@ TEST (SFM, EmatrixDecomposeSimple) {
     matrix34d P0, P1;
     phg::decomposeEMatrix(P0, P1, E, pts0, pts1, calib, calib);
 
-
-    std::cout << "tut" << "\n";
-    std::cout << "tut" << "\n";
-    std::cout << "tut" << "\n";
-    std::cout << "tut" << "\n";
     matrix3d R;
     R = P1.get_minor<3, 3>(0, 0);
     vector3d T;
