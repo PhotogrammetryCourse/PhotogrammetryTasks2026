@@ -19,8 +19,10 @@ namespace {
 
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
         auto singular_values_vector = svd.singularValues();
+        double sigma12 = (singular_values_vector[0] + singular_values_vector[1]) / 2.;
+        singular_values_vector[0] = sigma12;
+        singular_values_vector[1] = sigma12;
         singular_values_vector[2] = double(0.);
-        singular_values_vector[1] = singular_values_vector[0];
         E = svd.matrixU() * singular_values_vector.asDiagonal() * svd.matrixV().transpose();
 
         copy(E, Ecv);
