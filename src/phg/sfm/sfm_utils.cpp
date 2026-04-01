@@ -45,7 +45,7 @@ bool phg::epipolarTest(const cv::Vec2d &pt0, const cv::Vec2d &pt1, const cv::Mat
 
     cv::Vec3d epipolarLine = F * pt0ext;
     double inner_product = pt1ext.ddot(epipolarLine);
-    double dist = std::abs(inner_product) / std::sqrt(epipolarLine[0] * epipolarLine[0] + epipolarLine[1] * epipolarLine[1]);
+    double epipolarLineLength = std::sqrt(epipolarLine[0] * epipolarLine[0] + epipolarLine[1] * epipolarLine[1]);
 
-    return dist < t;
+    return std::abs(inner_product) < t * epipolarLineLength;
 }

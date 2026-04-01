@@ -32,7 +32,7 @@ namespace {
 
 cv::Matx33d phg::fmatrix2ematrix(const cv::Matx33d &F, const phg::Calibration &calib0, const phg::Calibration &calib1)
 {
-    matrix3d E = calib0.K().t() * F * calib1.K();
+    matrix3d E = calib1.K().t() * F * calib0.K();
 
     ensureSpectralProperty(E);
 
@@ -121,7 +121,7 @@ void phg::decomposeEMatrix(cv::Matx34d &P0, cv::Matx34d &P1, const cv::Matx33d &
     mat W(3, 3);
     W << 0., -1., 0., 1., 0., 0., 0., 0., 1.;
 
-    mat R0 = U * W * V.transpose();
+    mat R0 = U * W * V.transpose(); // the same thing as for U and V? => positive determinant : det ALWAYS > 0 
     mat R1 = U * W.transpose() * V.transpose();
 
     std::cout << "R0:\n" << R0 << std::endl;
