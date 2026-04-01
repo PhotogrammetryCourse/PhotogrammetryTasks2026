@@ -100,8 +100,8 @@ namespace {
             rms += (m[i][0] - avg[0]) * (m[i][0] - avg[0]) + (m[i][1] - avg[1]) * (m[i][1] - avg[1]);
 
         }
-        rms = std::sqrt(rms) / m.size();
-        double s = std::sqrt(2) / (rms + 1e-6);
+        
+        double s = std::sqrt(2 * m.size() / (rms + 1e-6));
 
         return {s, 0., -avg[0] * s, 0., s, -avg[1] * s, 0., 0., 1.};
     }
