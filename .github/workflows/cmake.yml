@@ -112,12 +112,7 @@ jobs:
             Copy-Item "$vcpkgBin\*.dll" $exeDir -Force
           }
 
-      - name: Run test_ceres_solver (Windows)
+      - name: Run test_depth_maps_pm (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: .\build\${{ env.BUILD_TYPE }}\test_ceres_solver.exe
-
-      - name: Run test_sfm_ba (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: .\build\${{ env.BUILD_TYPE }}\test_sfm_ba.exe
+        run: .\build\${{ env.BUILD_TYPE }}\test_depth_maps_pm.exe
