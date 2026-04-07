@@ -1,0 +1,1438 @@
+[==========] Running 1 test from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 1 test from SFM
+[ RUN      ] SFM.ReconstructNViews
+25 images
+detecting points...
+matching points...
+0% - Cameras 17-0 (0017.png-0000.png): 25 matches
+0% - Cameras 21-0 (0021.png-0000.png): 15 matches
+1% - Cameras 5-0 (0005.png-0000.png): 2 matches
+1% - Cameras 0-1 (0000.png-0001.png): 1404 matches
+1% - Cameras 9-1 (0009.png-0001.png): 11 matches
+1% - Cameras 17-1 (0017.png-0001.png): 8 matches
+2% - Cameras 5-1 (0005.png-0001.png): 61 matches
+2% - Cameras 0-2 (0000.png-0002.png): 415 matches
+2% - Cameras 5-2 (0005.png-0002.png): 186 matches
+3% - Cameras 17-2 (0017.png-0002.png): 104 matches
+3% - Cameras 21-2 (0021.png-0002.png): 20 matches
+3% - Cameras 0-3 (0000.png-0003.png): 218 matches
+3% - Cameras 5-3 (0005.png-0003.png): 806 matches
+3% - Cameras 9-3 (0009.png-0003.png): 12 matches
+3% - Cameras 17-3 (0017.png-0003.png): 524 matches
+4% - Cameras 21-3 (0021.png-0003.png): 24 matches
+4% - Cameras 0-4 (0000.png-0004.png): 130 matches
+4% - Cameras 9-4 (0009.png-0004.png): 87 matches
+4% - Cameras 17-4 (0017.png-0004.png): 726 matches
+4% - Cameras 21-4 (0021.png-0004.png): 41 matches
+5% - Cameras 5-4 (0005.png-0004.png): 1185 matches
+5% - Cameras 0-5 (0000.png-0005.png): 27 matches
+5% - Cameras 17-5 (0017.png-0005.png): 1269 matches
+5% - Cameras 21-5 (0021.png-0005.png): 63 matches
+5% - Cameras 5-6 (0005.png-0006.png): 1346 matches
+6% - Cameras 9-5 (0009.png-0005.png): 261 matches
+6% - Cameras 0-6 (0000.png-0006.png): 11 matches
+6% - Cameras 21-6 (0021.png-0006.png): 219 matches
+6% - Cameras 17-6 (0017.png-0006.png): 1073 matches
+6% - Cameras 5-7 (0005.png-0007.png): 946 matches
+7% - Cameras 9-6 (0009.png-0006.png): 329 matches
+7% - Cameras 17-7 (0017.png-0007.png): 634 matches
+7% - Cameras 21-7 (0021.png-0007.png): 445 matches
+7% - Cameras 5-8 (0005.png-0008.png): 487 matches
+8% - Cameras 9-7 (0009.png-0007.png): 760 matches
+8% - Cameras 21-8 (0021.png-0008.png): 625 matches
+8% - Cameras 17-8 (0017.png-0008.png): 318 matches
+8% - Cameras 9-8 (0009.png-0008.png): 1698 matches
+9% - Cameras 17-9 (0017.png-0009.png): 122 matches
+9% - Cameras 21-9 (0021.png-0009.png): 484 matches
+9% - Cameras 5-9 (0005.png-0009.png): 277 matches
+9% - Cameras 9-10 (0009.png-0010.png): 1565 matches
+10% - Cameras 21-10 (0021.png-0010.png): 247 matches
+10% - Cameras 17-10 (0017.png-0010.png): 27 matches
+10% - Cameras 5-10 (0005.png-0010.png): 58 matches
+10% - Cameras 17-11 (0017.png-0011.png): 16 matches
+11% - Cameras 9-11 (0009.png-0011.png): 530 matches
+11% - Cameras 21-11 (0021.png-0011.png): 64 matches
+11% - Cameras 5-11 (0005.png-0011.png): 70 matches
+11% - Cameras 21-12 (0021.png-0012.png): 53 matches
+12% - Cameras 9-12 (0009.png-0012.png): 46 matches
+12% - Cameras 0-12 (0000.png-0012.png): 1 matches
+12% - Cameras 17-14 (0017.png-0014.png): 47 matches
+13% - Cameras 21-13 (0021.png-0013.png): 124 matches
+13% - Cameras 13-10 (0013.png-0010.png): 14 matches
+13% - Cameras 17-15 (0017.png-0015.png): 467 matches
+14% - Cameras 13-11 (0013.png-0011.png): 78 matches
+14% - Cameras 5-14 (0005.png-0014.png): 64 matches
+14% - Cameras 17-16 (0017.png-0016.png): 1080 matches
+14% - Cameras 0-14 (0000.png-0014.png): 930 matches
+14% - Cameras 21-14 (0021.png-0014.png): 9 matches
+15% - Cameras 9-15 (0009.png-0015.png): 23 matches
+15% - Cameras 13-12 (0013.png-0012.png): 517 matches
+15% - Cameras 5-15 (0005.png-0015.png): 402 matches
+15% - Cameras 17-18 (0017.png-0018.png): 1178 matches
+15% - Cameras 0-15 (0000.png-0015.png): 200 matches
+15% - Cameras 17-19 (0017.png-0019.png): 876 matches
+16% - Cameras 5-16 (0005.png-0016.png): 743 matches
+16% - Cameras 13-14 (0013.png-0014.png): 11 matches
+16% - Cameras 9-16 (0009.png-0016.png): 55 matches
+16% - Cameras 21-15 (0021.png-0015.png): 48 matches
+16% - Cameras 5-17 (0005.png-0017.png): 1251 matches
+16% - Cameras 17-20 (0017.png-0020.png): 205 matches
+17% - Cameras 0-16 (0000.png-0016.png): 25 matches
+17% - Cameras 9-17 (0009.png-0017.png): 152 matches
+17% - Cameras 5-18 (0005.png-0018.png): 832 matches
+17% - Cameras 17-21 (0017.png-0021.png): 100 matches
+17% - Cameras 0-17 (0000.png-0017.png): 13 matches
+18% - Cameras 21-16 (0021.png-0016.png): 110 matches
+18% - Cameras 5-19 (0005.png-0019.png): 626 matches
+18% - Cameras 9-18 (0009.png-0018.png): 213 matches
+18% - Cameras 17-22 (0017.png-0022.png): 52 matches
+19% - Cameras 9-19 (0009.png-0019.png): 258 matches
+19% - Cameras 5-20 (0005.png-0020.png): 120 matches
+19% - Cameras 21-17 (0021.png-0017.png): 257 matches
+20% - Cameras 5-21 (0005.png-0021.png): 34 matches
+20% - Cameras 9-20 (0009.png-0020.png): 460 matches
+20% - Cameras 5-22 (0005.png-0022.png): 11 matches
+21% - Cameras 21-18 (0021.png-0018.png): 551 matches
+21% - Cameras 18-0 (0018.png-0000.png): 25 matches
+21% - Cameras 9-21 (0009.png-0021.png): 471 matches
+21% - Cameras 18-1 (0018.png-0001.png): 21 matches
+22% - Cameras 13-20 (0013.png-0020.png): 31 matches
+22% - Cameras 9-22 (0009.png-0022.png): 215 matches
+22% - Cameras 21-19 (0021.png-0019.png): 757 matches
+22% - Cameras 18-2 (0018.png-0002.png): 64 matches
+23% - Cameras 13-21 (0013.png-0021.png): 75 matches
+23% - Cameras 9-23 (0009.png-0023.png): 26 matches
+23% - Cameras 18-3 (0018.png-0003.png): 277 matches
+23% - Cameras 21-20 (0021.png-0020.png): 1579 matches
+23% - Cameras 0-22 (0000.png-0022.png): 4 matches
+23% - Cameras 6-0 (0006.png-0000.png): 20 matches
+24% - Cameras 13-22 (0013.png-0022.png): 154 matches
+24% - Cameras 21-22 (0021.png-0022.png): 1184 matches
+24% - Cameras 18-4 (0018.png-0004.png): 506 matches
+24% - Cameras 6-1 (0006.png-0001.png): 27 matches
+24% - Cameras 0-23 (0000.png-0023.png): 28 matches
+25% - Cameras 13-23 (0013.png-0023.png): 13 matches
+25% - Cameras 21-23 (0021.png-0023.png): 266 matches
+25% - Cameras 10-0 (0010.png-0000.png): 12 matches
+25% - Cameras 6-2 (0006.png-0002.png): 145 matches
+25% - Cameras 18-5 (0018.png-0005.png): 884 matches
+25% - Cameras 0-24 (0000.png-0024.png): 14 matches
+26% - Cameras 21-24 (0021.png-0024.png): 35 matches
+26% - Cameras 6-3 (0006.png-0003.png): 478 matches
+26% - Cameras 18-6 (0018.png-0006.png): 1298 matches
+26% - Cameras 13-24 (0013.png-0024.png): 137 matches
+26% - Cameras 10-1 (0010.png-0001.png): 11 matches
+26% - Cameras 18-7 (0018.png-0007.png): 1218 matches
+27% - Cameras 1-0 (0001.png-0000.png): 1235 matches
+27% - Cameras 6-4 (0006.png-0004.png): 744 matches
+27% - Cameras 14-0 (0014.png-0000.png): 695 matches
+27% - Cameras 18-8 (0018.png-0008.png): 723 matches
+27% - Cameras 10-2 (0010.png-0002.png): 10 matches
+28% - Cameras 1-2 (0001.png-0002.png): 857 matches
+28% - Cameras 6-5 (0006.png-0005.png): 1359 matches
+28% - Cameras 22-1 (0022.png-0001.png): 1 matches
+28% - Cameras 18-9 (0018.png-0009.png): 181 matches
+28% - Cameras 10-3 (0010.png-0003.png): 10 matches
+28% - Cameras 14-1 (0014.png-0001.png): 837 matches
+29% - Cameras 6-7 (0006.png-0007.png): 1415 matches
+29% - Cameras 18-10 (0018.png-0010.png): 46 matches
+29% - Cameras 14-2 (0014.png-0002.png): 542 matches
+29% - Cameras 10-4 (0010.png-0004.png): 58 matches
+29% - Cameras 1-3 (0001.png-0003.png): 558 matches
+29% - Cameras 22-2 (0022.png-0002.png): 3 matches
+30% - Cameras 6-8 (0006.png-0008.png): 821 matches
+30% - Cameras 18-11 (0018.png-0011.png): 9 matches
+30% - Cameras 10-5 (0010.png-0005.png): 61 matches
+30% - Cameras 14-3 (0014.png-0003.png): 303 matches
+30% - Cameras 6-9 (0006.png-0009.png): 375 matches
+30% - Cameras 22-3 (0022.png-0003.png): 6 matches
+31% - Cameras 1-4 (0001.png-0004.png): 305 matches
+31% - Cameras 14-4 (0014.png-0004.png): 169 matches
+31% - Cameras 22-4 (0022.png-0004.png): 21 matches
+31% - Cameras 10-6 (0010.png-0006.png): 41 matches
+31% - Cameras 1-5 (0001.png-0005.png): 71 matches
+32% - Cameras 6-10 (0006.png-0010.png): 118 matches
+32% - Cameras 14-5 (0014.png-0005.png): 47 matches
+32% - Cameras 22-5 (0022.png-0005.png): 19 matches
+32% - Cameras 10-7 (0010.png-0007.png): 148 matches
+32% - Cameras 14-6 (0014.png-0006.png): 11 matches
+33% - Cameras 1-6 (0001.png-0006.png): 32 matches
+33% - Cameras 22-6 (0022.png-0006.png): 46 matches
+33% - Cameras 18-14 (0018.png-0014.png): 15 matches
+33% - Cameras 10-8 (0010.png-0008.png): 673 matches
+33% - Cameras 6-11 (0006.png-0011.png): 22 matches
+34% - Cameras 18-15 (0018.png-0015.png): 215 matches
+34% - Cameras 22-7 (0022.png-0007.png): 65 matches
+34% - Cameras 18-16 (0018.png-0016.png): 571 matches
+34% - Cameras 22-8 (0022.png-0008.png): 142 matches
+35% - Cameras 10-9 (0010.png-0009.png): 1410 matches
+35% - Cameras 14-9 (0014.png-0009.png): 11 matches
+35% - Cameras 22-9 (0022.png-0009.png): 190 matches
+36% - Cameras 10-11 (0010.png-0011.png): 1273 matches
+36% - Cameras 18-17 (0018.png-0017.png): 1240 matches
+36% - Cameras 22-10 (0022.png-0010.png): 364 matches
+36% - Cameras 14-11 (0014.png-0011.png): 10 matches
+36% - Cameras 10-12 (0010.png-0012.png): 310 matches
+37% - Cameras 18-19 (0018.png-0019.png): 1618 matches
+37% - Cameras 22-11 (0022.png-0011.png): 233 matches
+37% - Cameras 10-13 (0010.png-0013.png): 23 matches
+38% - Cameras 6-14 (0006.png-0014.png): 14 matches
+38% - Cameras 18-20 (0018.png-0020.png): 691 matches
+38% - Cameras 14-13 (0014.png-0013.png): 17 matches
+38% - Cameras 22-12 (0022.png-0012.png): 42 matches
+38% - Cameras 18-21 (0018.png-0021.png): 429 matches
+39% - Cameras 14-15 (0014.png-0015.png): 738 matches
+39% - Cameras 1-12 (0001.png-0012.png): 10 matches
+39% - Cameras 6-15 (0006.png-0015.png): 308 matches
+39% - Cameras 22-13 (0022.png-0013.png): 47 matches
+39% - Cameras 18-22 (0018.png-0022.png): 120 matches
+40% - Cameras 14-16 (0014.png-0016.png): 189 matches
+40% - Cameras 10-15 (0010.png-0015.png): 16 matches
+40% - Cameras 1-13 (0001.png-0013.png): 12 matches
+40% - Cameras 18-23 (0018.png-0023.png): 21 matches
+40% - Cameras 14-17 (0014.png-0017.png): 27 matches
+41% - Cameras 6-16 (0006.png-0016.png): 595 matches
+41% - Cameras 10-16 (0010.png-0016.png): 22 matches
+41% - Cameras 1-14 (0001.png-0014.png): 829 matches
+41% - Cameras 22-15 (0022.png-0015.png): 23 matches
+42% - Cameras 19-0 (0019.png-0000.png): 6 matches
+42% - Cameras 10-17 (0010.png-0017.png): 50 matches
+42% - Cameras 6-17 (0006.png-0017.png): 1169 matches
+42% - Cameras 1-15 (0001.png-0015.png): 335 matches
+42% - Cameras 19-1 (0019.png-0001.png): 10 matches
+43% - Cameras 22-16 (0022.png-0016.png): 62 matches
+43% - Cameras 14-20 (0014.png-0020.png): 8 matches
+43% - Cameras 10-18 (0010.png-0018.png): 16 matches
+43% - Cameras 19-2 (0019.png-0002.png): 39 matches
+43% - Cameras 22-17 (0022.png-0017.png): 47 matches
+44% - Cameras 10-19 (0010.png-0019.png): 72 matches
+44% - Cameras 6-18 (0006.png-0018.png): 1380 matches
+44% - Cameras 19-3 (0019.png-0003.png): 202 matches
+44% - Cameras 1-16 (0001.png-0016.png): 44 matches
+44% - Cameras 14-22 (0014.png-0022.png): 23 matches
+44% - Cameras 22-18 (0022.png-0018.png): 120 matches
+45% - Cameras 14-23 (0014.png-0023.png): 10 matches
+45% - Cameras 19-4 (0019.png-0004.png): 301 matches
+45% - Cameras 10-20 (0010.png-0020.png): 158 matches
+45% - Cameras 6-19 (0006.png-0019.png): 999 matches
+45% - Cameras 22-19 (0022.png-0019.png): 147 matches
+46% - Cameras 19-5 (0019.png-0005.png): 683 matches
+46% - Cameras 1-17 (0001.png-0017.png): 57 matches
+46% - Cameras 15-0 (0015.png-0000.png): 48 matches
+46% - Cameras 19-6 (0019.png-0006.png): 983 matches
+46% - Cameras 10-21 (0010.png-0021.png): 161 matches
+46% - Cameras 6-20 (0006.png-0020.png): 329 matches
+47% - Cameras 1-18 (0001.png-0018.png): 5 matches
+47% - Cameras 22-20 (0022.png-0020.png): 782 matches
+47% - Cameras 19-7 (0019.png-0007.png): 1164 matches
+47% - Cameras 15-1 (0015.png-0001.png): 312 matches
+47% - Cameras 19-8 (0019.png-0008.png): 795 matches
+48% - Cameras 10-22 (0010.png-0022.png): 348 matches
+48% - Cameras 15-2 (0015.png-0002.png): 729 matches
+48% - Cameras 6-21 (0006.png-0021.png): 185 matches
+48% - Cameras 22-21 (0022.png-0021.png): 915 matches
+48% - Cameras 19-9 (0019.png-0009.png): 248 matches
+48% - Cameras 10-23 (0010.png-0023.png): 198 matches
+49% - Cameras 1-20 (0001.png-0020.png): 8 matches
+49% - Cameras 15-3 (0015.png-0003.png): 1169 matches
+49% - Cameras 22-23 (0022.png-0023.png): 790 matches
+49% - Cameras 10-24 (0010.png-0024.png): 17 matches
+49% - Cameras 19-10 (0019.png-0010.png): 70 matches
+49% - Cameras 15-4 (0015.png-0004.png): 751 matches
+50% - Cameras 6-22 (0006.png-0022.png): 47 matches
+50% - Cameras 1-21 (0001.png-0021.png): 9 matches
+50% - Cameras 22-24 (0022.png-0024.png): 114 matches
+50% - Cameras 19-11 (0019.png-0011.png): 2 matches
+50% - Cameras 6-23 (0006.png-0023.png): 20 matches
+50% - Cameras 11-0 (0011.png-0000.png): 9 matches
+51% - Cameras 23-0 (0023.png-0000.png): 34 matches
+51% - Cameras 15-5 (0015.png-0005.png): 456 matches
+51% - Cameras 6-24 (0006.png-0024.png): 7 matches
+51% - Cameras 11-1 (0011.png-0001.png): 12 matches
+52% - Cameras 23-1 (0023.png-0001.png): 10 matches
+52% - Cameras 15-6 (0015.png-0006.png): 194 matches
+52% - Cameras 23-2 (0023.png-0002.png): 9 matches
+52% - Cameras 7-0 (0007.png-0000.png): 3 matches
+53% - Cameras 19-14 (0019.png-0014.png): 12 matches
+53% - Cameras 15-7 (0015.png-0007.png): 101 matches
+53% - Cameras 23-3 (0023.png-0003.png): 23 matches
+53% - Cameras 7-1 (0007.png-0001.png): 6 matches
+54% - Cameras 19-15 (0019.png-0015.png): 170 matches
+54% - Cameras 2-0 (0002.png-0000.png): 183 matches
+54% - Cameras 15-8 (0015.png-0008.png): 70 matches
+54% - Cameras 19-16 (0019.png-0016.png): 388 matches
+55% - Cameras 11-3 (0011.png-0003.png): 39 matches
+55% - Cameras 7-2 (0007.png-0002.png): 15 matches
+55% - Cameras 19-17 (0019.png-0017.png): 931 matches
+55% - Cameras 2-1 (0002.png-0001.png): 767 matches
+55% - Cameras 15-9 (0015.png-0009.png): 46 matches
+55% - Cameras 23-6 (0023.png-0006.png): 3 matches
+56% - Cameras 19-18 (0019.png-0018.png): 1574 matches
+56% - Cameras 11-4 (0011.png-0004.png): 33 matches
+56% - Cameras 2-3 (0002.png-0003.png): 784 matches
+56% - Cameras 7-3 (0007.png-0003.png): 248 matches
+56% - Cameras 15-10 (0015.png-0010.png): 20 matches
+56% - Cameras 23-7 (0023.png-0007.png): 25 matches
+57% - Cameras 2-4 (0002.png-0004.png): 433 matches
+57% - Cameras 19-20 (0019.png-0020.png): 894 matches
+57% - Cameras 11-5 (0011.png-0005.png): 57 matches
+57% - Cameras 7-4 (0007.png-0004.png): 376 matches
+57% - Cameras 23-8 (0023.png-0008.png): 27 matches
+58% - Cameras 2-5 (0002.png-0005.png): 202 matches
+58% - Cameras 11-6 (0011.png-0006.png): 4 matches
+58% - Cameras 19-21 (0019.png-0021.png): 643 matches
+58% - Cameras 2-6 (0002.png-0006.png): 72 matches
+58% - Cameras 7-5 (0007.png-0005.png): 970 matches
+59% - Cameras 11-7 (0011.png-0007.png): 30 matches
+59% - Cameras 19-22 (0019.png-0022.png): 200 matches
+59% - Cameras 23-9 (0023.png-0009.png): 38 matches
+59% - Cameras 19-23 (0019.png-0023.png): 3 matches
+59% - Cameras 2-7 (0002.png-0007.png): 33 matches
+60% - Cameras 15-14 (0015.png-0014.png): 650 matches
+60% - Cameras 11-8 (0011.png-0008.png): 189 matches
+60% - Cameras 23-10 (0023.png-0010.png): 205 matches
+60% - Cameras 7-6 (0007.png-0006.png): 1396 matches
+60% - Cameras 19-24 (0019.png-0024.png): 1 matches
+60% - Cameras 15-16 (0015.png-0016.png): 1026 matches
+61% - Cameras 11-9 (0011.png-0009.png): 451 matches
+61% - Cameras 23-11 (0023.png-0011.png): 693 matches
+61% - Cameras 7-8 (0007.png-0008.png): 1566 matches
+61% - Cameras 15-17 (0015.png-0017.png): 449 matches
+61% - Cameras 11-10 (0011.png-0010.png): 1226 matches
+62% - Cameras 23-12 (0023.png-0012.png): 200 matches
+62% - Cameras 15-18 (0015.png-0018.png): 153 matches
+62% - Cameras 7-9 (0007.png-0009.png): 787 matches
+62% - Cameras 11-12 (0011.png-0012.png): 1216 matches
+63% - Cameras 15-19 (0015.png-0019.png): 174 matches
+63% - Cameras 23-13 (0023.png-0013.png): 21 matches
+63% - Cameras 7-10 (0007.png-0010.png): 272 matches
+63% - Cameras 20-1 (0020.png-0001.png): 13 matches
+63% - Cameras 11-13 (0011.png-0013.png): 117 matches
+64% - Cameras 15-20 (0015.png-0020.png): 42 matches
+64% - Cameras 23-14 (0023.png-0014.png): 8 matches
+64% - Cameras 2-11 (0002.png-0011.png): 10 matches
+64% - Cameras 7-11 (0007.png-0011.png): 39 matches
+64% - Cameras 23-15 (0023.png-0015.png): 13 matches
+64% - Cameras 11-14 (0011.png-0014.png): 19 matches
+65% - Cameras 15-21 (0015.png-0021.png): 24 matches
+65% - Cameras 20-2 (0020.png-0002.png): 18 matches
+65% - Cameras 23-16 (0023.png-0016.png): 8 matches
+65% - Cameras 11-15 (0011.png-0015.png): 18 matches
+66% - Cameras 15-22 (0015.png-0022.png): 9 matches
+66% - Cameras 23-17 (0023.png-0017.png): 22 matches
+66% - Cameras 2-13 (0002.png-0013.png): 10 matches
+66% - Cameras 11-16 (0011.png-0016.png): 8 matches
+66% - Cameras 15-23 (0015.png-0023.png): 15 matches
+67% - Cameras 23-18 (0023.png-0018.png): 17 matches
+67% - Cameras 2-14 (0002.png-0014.png): 394 matches
+67% - Cameras 20-3 (0020.png-0003.png): 43 matches
+67% - Cameras 11-17 (0011.png-0017.png): 18 matches
+67% - Cameras 7-14 (0007.png-0014.png): 2 matches
+68% - Cameras 23-19 (0023.png-0019.png): 17 matches
+68% - Cameras 2-15 (0002.png-0015.png): 576 matches
+68% - Cameras 11-18 (0011.png-0018.png): 11 matches
+68% - Cameras 20-4 (0020.png-0004.png): 84 matches
+68% - Cameras 2-16 (0002.png-0016.png): 133 matches
+68% - Cameras 7-15 (0007.png-0015.png): 136 matches
+69% - Cameras 11-19 (0011.png-0019.png): 32 matches
+69% - Cameras 16-0 (0016.png-0000.png): 20 matches
+69% - Cameras 23-20 (0023.png-0020.png): 147 matches
+69% - Cameras 7-16 (0007.png-0016.png): 309 matches
+69% - Cameras 20-5 (0020.png-0005.png): 214 matches
+69% - Cameras 2-17 (0002.png-0017.png): 152 matches
+70% - Cameras 11-20 (0011.png-0020.png): 82 matches
+70% - Cameras 16-1 (0016.png-0001.png): 76 matches
+70% - Cameras 23-21 (0023.png-0021.png): 190 matches
+70% - Cameras 20-6 (0020.png-0006.png): 371 matches
+70% - Cameras 16-2 (0016.png-0002.png): 254 matches
+70% - Cameras 7-17 (0007.png-0017.png): 682 matches
+71% - Cameras 2-18 (0002.png-0018.png): 32 matches
+71% - Cameras 23-22 (0023.png-0022.png): 840 matches
+71% - Cameras 11-21 (0011.png-0021.png): 69 matches
+71% - Cameras 20-7 (0020.png-0007.png): 530 matches
+71% - Cameras 16-3 (0016.png-0003.png): 689 matches
+71% - Cameras 7-18 (0007.png-0018.png): 1150 matches
+72% - Cameras 23-24 (0023.png-0024.png): 751 matches
+72% - Cameras 2-19 (0002.png-0019.png): 25 matches
+72% - Cameras 20-8 (0020.png-0008.png): 748 matches
+72% - Cameras 7-19 (0007.png-0019.png): 1210 matches
+72% - Cameras 16-4 (0016.png-0004.png): 1007 matches
+72% - Cameras 11-22 (0011.png-0022.png): 332 matches
+73% - Cameras 2-20 (0002.png-0020.png): 10 matches
+73% - Cameras 20-9 (0020.png-0009.png): 450 matches
+73% - Cameras 7-20 (0007.png-0020.png): 529 matches
+73% - Cameras 2-21 (0002.png-0021.png): 5 matches
+74% - Cameras 20-10 (0020.png-0010.png): 215 matches
+74% - Cameras 16-5 (0016.png-0005.png): 787 matches
+74% - Cameras 11-23 (0011.png-0023.png): 726 matches
+74% - Cameras 7-21 (0007.png-0021.png): 263 matches
+75% - Cameras 20-11 (0020.png-0011.png): 64 matches
+75% - Cameras 16-6 (0016.png-0006.png): 512 matches
+75% - Cameras 7-22 (0007.png-0022.png): 44 matches
+75% - Cameras 11-24 (0011.png-0024.png): 266 matches
+76% - Cameras 16-7 (0016.png-0007.png): 255 matches
+76% - Cameras 7-23 (0007.png-0023.png): 12 matches
+76% - Cameras 2-24 (0002.png-0024.png): 2 matches
+77% - Cameras 16-8 (0016.png-0008.png): 166 matches
+77% - Cameras 20-13 (0020.png-0013.png): 18 matches
+77% - Cameras 3-0 (0003.png-0000.png): 139 matches
+77% - Cameras 12-1 (0012.png-0001.png): 12 matches
+78% - Cameras 16-9 (0016.png-0009.png): 96 matches
+78% - Cameras 20-14 (0020.png-0014.png): 6 matches
+78% - Cameras 3-1 (0003.png-0001.png): 516 matches
+78% - Cameras 16-10 (0016.png-0010.png): 46 matches
+79% - Cameras 8-1 (0008.png-0001.png): 9 matches
+79% - Cameras 3-2 (0003.png-0002.png): 936 matches
+79% - Cameras 20-15 (0020.png-0015.png): 37 matches
+79% - Cameras 16-11 (0016.png-0011.png): 46 matches
+80% - Cameras 8-2 (0008.png-0002.png): 19 matches
+80% - Cameras 3-4 (0003.png-0004.png): 1520 matches
+80% - Cameras 20-16 (0020.png-0016.png): 188 matches
+80% - Cameras 16-12 (0016.png-0012.png): 2 matches
+80% - Cameras 8-3 (0008.png-0003.png): 127 matches
+81% - Cameras 20-17 (0020.png-0017.png): 404 matches
+81% - Cameras 3-5 (0003.png-0005.png): 815 matches
+81% - Cameras 20-18 (0020.png-0018.png): 710 matches
+82% - Cameras 3-6 (0003.png-0006.png): 404 matches
+82% - Cameras 8-4 (0008.png-0004.png): 227 matches
+82% - Cameras 20-19 (0020.png-0019.png): 898 matches
+82% - Cameras 16-14 (0016.png-0014.png): 233 matches
+83% - Cameras 24-10 (0024.png-0010.png): 13 matches
+83% - Cameras 3-7 (0003.png-0007.png): 156 matches
+83% - Cameras 8-5 (0008.png-0005.png): 668 matches
+83% - Cameras 24-11 (0024.png-0011.png): 218 matches
+83% - Cameras 20-21 (0020.png-0021.png): 1491 matches
+84% - Cameras 16-15 (0016.png-0015.png): 1019 matches
+84% - Cameras 3-8 (0003.png-0008.png): 99 matches
+84% - Cameras 16-17 (0016.png-0017.png): 1034 matches
+84% - Cameras 20-22 (0020.png-0022.png): 796 matches
+84% - Cameras 24-12 (0024.png-0012.png): 1052 matches
+85% - Cameras 8-6 (0008.png-0006.png): 747 matches
+85% - Cameras 16-18 (0016.png-0018.png): 486 matches
+85% - Cameras 20-23 (0020.png-0023.png): 160 matches
+85% - Cameras 24-13 (0024.png-0013.png): 89 matches
+85% - Cameras 16-19 (0016.png-0019.png): 313 matches
+86% - Cameras 3-9 (0003.png-0009.png): 29 matches
+86% - Cameras 8-7 (0008.png-0007.png): 1653 matches
+86% - Cameras 12-9 (0012.png-0009.png): 38 matches
+86% - Cameras 16-20 (0016.png-0020.png): 101 matches
+87% - Cameras 3-10 (0003.png-0010.png): 14 matches
+87% - Cameras 8-9 (0008.png-0009.png): 1707 matches
+87% - Cameras 12-10 (0012.png-0010.png): 253 matches
+87% - Cameras 16-21 (0016.png-0021.png): 9 matches
+88% - Cameras 8-10 (0008.png-0010.png): 792 matches
+88% - Cameras 3-11 (0003.png-0011.png): 9 matches
+88% - Cameras 24-17 (0024.png-0017.png): 1 matches
+88% - Cameras 16-22 (0016.png-0022.png): 14 matches
+88% - Cameras 12-11 (0012.png-0011.png): 1219 matches
+88% - Cameras 8-11 (0008.png-0011.png): 248 matches
+89% - Cameras 12-13 (0012.png-0013.png): 438 matches
+89% - Cameras 24-19 (0024.png-0019.png): 17 matches
+89% - Cameras 16-24 (0016.png-0024.png): 7 matches
+90% - Cameras 8-12 (0008.png-0012.png): 4 matches
+90% - Cameras 3-14 (0003.png-0014.png): 277 matches
+91% - Cameras 3-15 (0003.png-0015.png): 1256 matches
+91% - Cameras 24-22 (0024.png-0022.png): 140 matches
+91% - Cameras 8-15 (0008.png-0015.png): 83 matches
+92% - Cameras 3-16 (0003.png-0016.png): 652 matches
+92% - Cameras 24-23 (0024.png-0023.png): 855 matches
+92% - Cameras 3-17 (0003.png-0017.png): 575 matches
+92% - Cameras 8-16 (0008.png-0016.png): 221 matches
+93% - Cameras 3-18 (0003.png-0018.png): 296 matches
+93% - Cameras 8-17 (0008.png-0017.png): 505 matches
+93% - Cameras 3-19 (0003.png-0019.png): 208 matches
+93% - Cameras 8-18 (0008.png-0018.png): 714 matches
+94% - Cameras 3-20 (0003.png-0020.png): 47 matches
+94% - Cameras 8-19 (0008.png-0019.png): 822 matches
+94% - Cameras 8-20 (0008.png-0020.png): 766 matches
+94% - Cameras 3-21 (0003.png-0021.png): 15 matches
+94% - Cameras 12-21 (0012.png-0021.png): 139 matches
+95% - Cameras 8-21 (0008.png-0021.png): 584 matches
+95% - Cameras 12-22 (0012.png-0022.png): 299 matches
+95% - Cameras 3-23 (0003.png-0023.png): 9 matches
+95% - Cameras 8-22 (0008.png-0022.png): 168 matches
+95% - Cameras 12-23 (0012.png-0023.png): 368 matches
+96% - Cameras 8-23 (0008.png-0023.png): 10 matches
+96% - Cameras 12-24 (0012.png-0024.png): 1121 matches
+96% - Cameras 4-0 (0004.png-0000.png): 79 matches
+96% - Cameras 4-1 (0004.png-0001.png): 227 matches
+97% - Cameras 4-2 (0004.png-0002.png): 559 matches
+97% - Cameras 4-3 (0004.png-0003.png): 1543 matches
+97% - Cameras 4-5 (0004.png-0005.png): 1229 matches
+97% - Cameras 4-6 (0004.png-0006.png): 659 matches
+97% - Cameras 4-7 (0004.png-0007.png): 344 matches
+97% - Cameras 4-8 (0004.png-0008.png): 194 matches
+98% - Cameras 4-9 (0004.png-0009.png): 42 matches
+98% - Cameras 4-10 (0004.png-0010.png): 11 matches
+98% - Cameras 4-11 (0004.png-0011.png): 28 matches
+98% - Cameras 4-14 (0004.png-0014.png): 89 matches
+99% - Cameras 4-15 (0004.png-0015.png): 779 matches
+99% - Cameras 4-16 (0004.png-0016.png): 995 matches
+99% - Cameras 4-17 (0004.png-0017.png): 816 matches
+99% - Cameras 4-18 (0004.png-0018.png): 437 matches
+99% - Cameras 4-19 (0004.png-0019.png): 326 matches
+99% - Cameras 4-20 (0004.png-0020.png): 39 matches
+100% - Cameras 4-21 (0004.png-0021.png): 28 matches
+100% - Cameras 4-22 (0004.png-0022.png): 24 matches
+Initial alignment from cameras #0 and #1 (0000.png, 0001.png)
+Before BA camera: k1=0, k2=0, f=1380.75, cx=768, cy=512
+Before BA projections: 90% inliers with MSE=0.736818
+    Camera #0 projections: 90% inliers (1265/1404) with MSE=0.625595
+    Camera #1 projections: 89% inliers (1253/1404) with MSE=0.849106
+After BA camera: k1=0, k2=0, f=1380.75, cx=768, cy=512
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+After BA tie poits: 0% old + 59% new = 59% total outliers
+After BA projections: 90% inliers with MSE=0.536496
+    Camera #0 projections: 89% inliers (1255/1404) with MSE=0.603225
+    Camera #1 projections: 91% inliers (1271/1404) with MSE=0.470607
+Append camera #2 (0002.png) to alignment via 266 common points
+Before BA camera: k1=0, k2=0, f=1380.75, cx=768, cy=512
+Before BA projections: 84% inliers with MSE=0.68146
+    Camera #0 projections: 89% inliers (1264/1422) with MSE=0.600908
+    Camera #1 projections: 90% inliers (1574/1756) with MSE=0.555347
+    Camera #2 projections: 61% inliers (419/692) with MSE=1.39822
+After BA camera: k1=0, k2=0, f=1380.75, cx=768, cy=512
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.05876, 0.16558, 1.43977] -> [1.08397, 0.160399, 1.45331]
+After BA tie poits: 47% old + 8% new = 54% total outliers
+After BA projections: 73% inliers with MSE=0.580487
+    Camera #0 projections: 88% inliers (1253/1422) with MSE=0.494945
+    Camera #1 projections: 58% inliers (1018/1756) with MSE=0.878161
+    Camera #2 projections: 77% inliers (535/692) with MSE=0.214418
+Append camera #3 (0003.png) to alignment via 517 common points
+Before BA camera: k1=0, k2=0, f=1380.75, cx=768, cy=512
+Before BA projections: 76% inliers with MSE=0.693638
+    Camera #0 projections: 88% inliers (1261/1432) with MSE=0.496399
+    Camera #1 projections: 60% inliers (1110/1855) with MSE=0.860032
+    Camera #2 projections: 82% inliers (970/1180) with MSE=0.38694
+    Camera #3 projections: 79% inliers (934/1179) with MSE=1.0807
+After BA camera: k1=0, k2=0, f=1380.75, cx=768, cy=512
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.08397, 0.160399, 1.45331] -> [1.08206, 0.15871, 1.45304]
+Camera #3 center: [2.07307, 0.160928, 0.944329] -> [2.07599, 0.170445, 0.94162]
+After BA tie poits: 41% old + 11% new = 52% total outliers
+After BA projections: 75% inliers with MSE=0.50248
+    Camera #0 projections: 88% inliers (1255/1432) with MSE=0.556048
+    Camera #1 projections: 57% inliers (1064/1855) with MSE=0.79842
+    Camera #2 projections: 82% inliers (962/1180) with MSE=0.320735
+    Camera #3 projections: 80% inliers (942/1179) with MSE=0.282448
+Append camera #4 (0004.png) to alignment via 668 common points
+Before BA camera: k1=0, k2=0, f=1380.75, cx=768, cy=512
+Before BA projections: 79% inliers with MSE=0.525663
+    Camera #0 projections: 88% inliers (1256/1435) with MSE=0.555657
+    Camera #1 projections: 57% inliers (1071/1870) with MSE=0.79394
+    Camera #2 projections: 82% inliers (1019/1245) with MSE=0.331163
+    Camera #3 projections: 86% inliers (1745/2028) with MSE=0.264618
+    Camera #4 projections: 87% inliers (1469/1694) with MSE=0.749436
+After BA camera: k1=0, k2=0, f=1396.76, cx=791.958, cy=499.298
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.08206, 0.15871, 1.45304] -> [1.0871, 0.165816, 1.47945]
+Camera #3 center: [2.07599, 0.170445, 0.94162] -> [2.10904, 0.158474, 0.975469]
+Camera #4 center: [2.67367, 0.193377, 1.20167] -> [2.71178, 0.204039, 1.24104]
+After BA tie poits: 37% old + 10% new = 48% total outliers
+After BA projections: 58% inliers with MSE=0.224201
+    Camera #0 projections: 32% inliers (464/1435) with MSE=0.253771
+    Camera #1 projections: 38% inliers (717/1870) with MSE=0.197485
+    Camera #2 projections: 60% inliers (743/1245) with MSE=0.24451
+    Camera #3 projections: 71% inliers (1450/2028) with MSE=0.224519
+    Camera #4 projections: 85% inliers (1442/1694) with MSE=0.217187
+Append camera #5 (0005.png) to alignment via 899 common points
+Before BA camera: k1=0, k2=0, f=1396.76, cx=791.958, cy=499.298
+Before BA projections: 63% inliers with MSE=0.498368
+    Camera #0 projections: 32% inliers (464/1436) with MSE=0.253771
+    Camera #1 projections: 38% inliers (719/1874) with MSE=0.198028
+    Camera #2 projections: 60% inliers (748/1255) with MSE=0.252591
+    Camera #3 projections: 72% inliers (1545/2148) with MSE=0.236368
+    Camera #4 projections: 86% inliers (1801/2088) with MSE=0.282884
+    Camera #5 projections: 80% inliers (1220/1527) with MSE=1.56899
+After BA camera: k1=0, k2=0, f=1407.98, cx=794.528, cy=501.195
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.0871, 0.165816, 1.47945] -> [1.09299, 0.163548, 1.48358]
+Camera #3 center: [2.10904, 0.158474, 0.975469] -> [2.12543, 0.16255, 0.985028]
+Camera #4 center: [2.71178, 0.204039, 1.24104] -> [2.72149, 0.213338, 1.25742]
+Camera #5 center: [3.58011, 0.300028, 1.81876] -> [3.57297, 0.35037, 1.85267]
+After BA tie poits: 41% old + 11% new = 52% total outliers
+After BA projections: 54% inliers with MSE=0.307009
+    Camera #0 projections: 31% inliers (443/1436) with MSE=0.257219
+    Camera #1 projections: 36% inliers (666/1874) with MSE=0.19003
+    Camera #2 projections: 44% inliers (552/1255) with MSE=0.292325
+    Camera #3 projections: 60% inliers (1283/2148) with MSE=0.336339
+    Camera #4 projections: 66% inliers (1386/2088) with MSE=0.356427
+    Camera #5 projections: 81% inliers (1243/1527) with MSE=0.308577
+Append camera #6 (0006.png) to alignment via 765 common points
+Before BA camera: k1=0, k2=0, f=1407.98, cx=794.528, cy=501.195
+Before BA projections: 59% inliers with MSE=0.487164
+    Camera #0 projections: 31% inliers (443/1436) with MSE=0.257219
+    Camera #1 projections: 36% inliers (666/1874) with MSE=0.19003
+    Camera #2 projections: 44% inliers (555/1260) with MSE=0.291074
+    Camera #3 projections: 60% inliers (1299/2169) with MSE=0.340185
+    Camera #4 projections: 67% inliers (1437/2149) with MSE=0.363228
+    Camera #5 projections: 85% inliers (1802/2128) with MSE=0.354617
+    Camera #6 projections: 81% inliers (1214/1504) with MSE=1.32444
+After BA camera: k1=-0.0116281, k2=0.0319668, f=1420.09, cx=792.603, cy=503.859
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.09299, 0.163548, 1.48358] -> [1.09336, 0.159334, 1.48232]
+Camera #3 center: [2.12543, 0.16255, 0.985028] -> [2.11394, 0.155728, 0.981202]
+Camera #4 center: [2.72149, 0.213338, 1.25742] -> [2.71146, 0.192186, 1.24986]
+Camera #5 center: [3.57297, 0.35037, 1.85267] -> [3.57165, 0.302854, 1.84079]
+Camera #6 center: [4.58271, 0.585969, 1.80538] -> [4.56805, 0.577766, 1.80741]
+After BA tie poits: 44% old + 8% new = 53% total outliers
+After BA projections: 49% inliers with MSE=0.318694
+    Camera #0 projections: 30% inliers (431/1436) with MSE=0.268193
+    Camera #1 projections: 35% inliers (649/1874) with MSE=0.252965
+    Camera #2 projections: 38% inliers (485/1260) with MSE=0.226634
+    Camera #3 projections: 46% inliers (1008/2169) with MSE=0.311688
+    Camera #4 projections: 51% inliers (1098/2149) with MSE=0.385904
+    Camera #5 projections: 57% inliers (1204/2128) with MSE=0.348536
+    Camera #6 projections: 86% inliers (1293/1504) with MSE=0.323653
+Append camera #7 (0007.png) to alignment via 936 common points
+Before BA camera: k1=-0.0116281, k2=0.0319668, f=1420.09, cx=792.603, cy=503.859
+Before BA projections: 53% inliers with MSE=0.679075
+    Camera #0 projections: 30% inliers (431/1439) with MSE=0.268193
+    Camera #1 projections: 35% inliers (649/1875) with MSE=0.252965
+    Camera #2 projections: 38% inliers (485/1260) with MSE=0.226634
+    Camera #3 projections: 47% inliers (1012/2174) with MSE=0.316138
+    Camera #4 projections: 51% inliers (1101/2155) with MSE=0.386541
+    Camera #5 projections: 58% inliers (1270/2208) with MSE=0.424685
+    Camera #6 projections: 87% inliers (1838/2103) with MSE=0.695304
+    Camera #7 projections: 63% inliers (1086/1711) with MSE=2.20365
+After BA camera: k1=-0.00350625, k2=0.0204841, f=1391.76, cx=796.766, cy=496.059
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.09336, 0.159334, 1.48232] -> [1.08904, 0.153068, 1.48571]
+Camera #3 center: [2.11394, 0.155728, 0.981202] -> [2.10954, 0.128894, 0.977294]
+Camera #4 center: [2.71146, 0.192186, 1.24986] -> [2.71297, 0.153172, 1.23858]
+Camera #5 center: [3.57165, 0.302854, 1.84079] -> [3.59018, 0.221141, 1.81034]
+Camera #6 center: [4.56805, 0.577766, 1.80741] -> [4.60354, 0.416802, 1.7291]
+Camera #7 center: [5.40468, 0.681947, 2.59974] -> [5.48525, 0.543263, 2.47354]
+After BA tie poits: 46% old + 9% new = 55% total outliers
+After BA projections: 46% inliers with MSE=0.298141
+    Camera #0 projections: 29% inliers (418/1439) with MSE=0.24375
+    Camera #1 projections: 33% inliers (627/1875) with MSE=0.232141
+    Camera #2 projections: 37% inliers (465/1260) with MSE=0.202518
+    Camera #3 projections: 39% inliers (842/2174) with MSE=0.377064
+    Camera #4 projections: 39% inliers (842/2155) with MSE=0.416751
+    Camera #5 projections: 45% inliers (988/2208) with MSE=0.362848
+    Camera #6 projections: 63% inliers (1321/2103) with MSE=0.257581
+    Camera #7 projections: 83% inliers (1420/1711) with MSE=0.250191
+Append camera #8 (0008.png) to alignment via 896 common points
+Before BA camera: k1=-0.00350625, k2=0.0204841, f=1391.76, cx=796.766, cy=496.059
+Before BA projections: 50% inliers with MSE=0.589908
+    Camera #0 projections: 29% inliers (418/1439) with MSE=0.24375
+    Camera #1 projections: 33% inliers (627/1875) with MSE=0.232141
+    Camera #2 projections: 37% inliers (465/1260) with MSE=0.202518
+    Camera #3 projections: 39% inliers (842/2176) with MSE=0.377064
+    Camera #4 projections: 39% inliers (845/2158) with MSE=0.422642
+    Camera #5 projections: 45% inliers (1011/2238) with MSE=0.376728
+    Camera #6 projections: 63% inliers (1366/2153) with MSE=0.281864
+    Camera #7 projections: 87% inliers (2096/2417) with MSE=0.587415
+    Camera #8 projections: 65% inliers (1174/1815) with MSE=1.87717
+After BA camera: k1=-0.0203913, k2=0.0266782, f=1406.1, cx=810.67, cy=506.873
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.08904, 0.153068, 1.48571] -> [1.09363, 0.158811, 1.5]
+Camera #3 center: [2.10954, 0.128894, 0.977294] -> [2.11781, 0.159219, 1.0044]
+Camera #4 center: [2.71297, 0.153172, 1.23858] -> [2.71504, 0.189013, 1.27288]
+Camera #5 center: [3.59018, 0.221141, 1.81034] -> [3.56971, 0.279573, 1.85947]
+Camera #6 center: [4.60354, 0.416802, 1.7291] -> [4.58091, 0.511414, 1.79891]
+Camera #7 center: [5.48525, 0.543263, 2.47354] -> [5.40577, 0.645185, 2.53113]
+Camera #8 center: [6.30102, 0.661808, 3.45482] -> [6.21393, 0.819434, 3.51572]
+After BA tie poits: 48% old + 7% new = 55% total outliers
+After BA projections: 43% inliers with MSE=0.310835
+    Camera #0 projections: 29% inliers (411/1439) with MSE=0.245058
+    Camera #1 projections: 33% inliers (614/1875) with MSE=0.165021
+    Camera #2 projections: 36% inliers (455/1260) with MSE=0.187322
+    Camera #3 projections: 35% inliers (761/2176) with MSE=0.207481
+    Camera #4 projections: 34% inliers (730/2158) with MSE=0.210281
+    Camera #5 projections: 31% inliers (696/2238) with MSE=0.366475
+    Camera #6 projections: 46% inliers (998/2153) with MSE=0.49931
+    Camera #7 projections: 58% inliers (1412/2417) with MSE=0.330253
+    Camera #8 projections: 79% inliers (1442/1815) with MSE=0.35978
+Append camera #9 (0009.png) to alignment via 840 common points
+Before BA camera: k1=-0.0203913, k2=0.0266782, f=1406.1, cx=810.67, cy=506.873
+Before BA projections: 49% inliers with MSE=0.447747
+    Camera #0 projections: 29% inliers (411/1439) with MSE=0.245058
+    Camera #1 projections: 33% inliers (615/1876) with MSE=0.167456
+    Camera #2 projections: 36% inliers (455/1260) with MSE=0.187322
+    Camera #3 projections: 35% inliers (761/2176) with MSE=0.207481
+    Camera #4 projections: 34% inliers (731/2159) with MSE=0.217171
+    Camera #5 projections: 31% inliers (702/2245) with MSE=0.369263
+    Camera #6 projections: 47% inliers (1007/2164) with MSE=0.497938
+    Camera #7 projections: 59% inliers (1467/2479) with MSE=0.333084
+    Camera #8 projections: 85% inliers (2248/2655) with MSE=0.341396
+    Camera #9 projections: 80% inliers (1464/1841) with MSE=1.22466
+After BA camera: k1=-0.0128938, k2=0.0115805, f=1393.7, cx=790.968, cy=500.934
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.09363, 0.158811, 1.5] -> [1.0921, 0.165552, 1.4806]
+Camera #3 center: [2.11781, 0.159219, 1.0044] -> [2.10027, 0.167426, 0.973776]
+Camera #4 center: [2.71504, 0.189013, 1.27288] -> [2.69679, 0.203385, 1.23533]
+Camera #5 center: [3.56971, 0.279573, 1.85947] -> [3.55511, 0.299385, 1.80749]
+Camera #6 center: [4.58091, 0.511414, 1.79891] -> [4.54898, 0.515952, 1.72245]
+Camera #7 center: [5.40577, 0.645185, 2.53113] -> [5.39984, 0.628581, 2.43307]
+Camera #8 center: [6.21393, 0.819434, 3.51572] -> [6.2264, 0.772499, 3.37004]
+Camera #9 center: [7.03789, 0.950411, 4.52686] -> [7.07364, 0.914971, 4.37861]
+After BA tie poits: 47% old + 6% new = 53% total outliers
+After BA projections: 45% inliers with MSE=0.366107
+    Camera #0 projections: 29% inliers (420/1439) with MSE=0.277371
+    Camera #1 projections: 33% inliers (624/1876) with MSE=0.194591
+    Camera #2 projections: 41% inliers (512/1260) with MSE=0.576752
+    Camera #3 projections: 39% inliers (844/2176) with MSE=0.593269
+    Camera #4 projections: 40% inliers (871/2159) with MSE=0.828885
+    Camera #5 projections: 28% inliers (618/2245) with MSE=0.413679
+    Camera #6 projections: 34% inliers (740/2164) with MSE=0.365238
+    Camera #7 projections: 46% inliers (1130/2479) with MSE=0.2198
+    Camera #8 projections: 67% inliers (1770/2655) with MSE=0.263951
+    Camera #9 projections: 85% inliers (1571/1841) with MSE=0.212719
+Append camera #10 (0010.png) to alignment via 820 common points
+Before BA camera: k1=-0.0128938, k2=0.0115805, f=1393.7, cx=790.968, cy=500.934
+Before BA projections: 49% inliers with MSE=0.453858
+    Camera #0 projections: 29% inliers (420/1445) with MSE=0.277371
+    Camera #1 projections: 33% inliers (624/1876) with MSE=0.194591
+    Camera #2 projections: 41% inliers (512/1260) with MSE=0.576752
+    Camera #3 projections: 39% inliers (844/2176) with MSE=0.593269
+    Camera #4 projections: 40% inliers (871/2163) with MSE=0.828885
+    Camera #5 projections: 28% inliers (619/2247) with MSE=0.413055
+    Camera #6 projections: 34% inliers (740/2165) with MSE=0.365238
+    Camera #7 projections: 46% inliers (1132/2486) with MSE=0.219449
+    Camera #8 projections: 67% inliers (1820/2715) with MSE=0.2713
+    Camera #9 projections: 88% inliers (2201/2503) with MSE=0.266043
+    Camera #10 projections: 82% inliers (1331/1621) with MSE=1.07782
+After BA camera: k1=0.00532975, k2=-0.0294877, f=1411.86, cx=772.777, cy=488.511
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.0921, 0.165552, 1.4806] -> [1.08807, 0.157091, 1.46363]
+Camera #3 center: [2.10027, 0.167426, 0.973776] -> [2.08087, 0.132291, 0.943298]
+Camera #4 center: [2.69679, 0.203385, 1.23533] -> [2.67629, 0.163473, 1.19725]
+Camera #5 center: [3.55511, 0.299385, 1.80749] -> [3.50442, 0.231436, 1.73714]
+Camera #6 center: [4.54898, 0.515952, 1.72245] -> [4.50244, 0.397969, 1.61693]
+Camera #7 center: [5.39984, 0.628581, 2.43307] -> [5.37148, 0.498395, 2.30521]
+Camera #8 center: [6.2264, 0.772499, 3.37004] -> [6.24377, 0.635246, 3.24471]
+Camera #9 center: [7.07364, 0.914971, 4.37861] -> [7.10992, 0.779992, 4.25667]
+Camera #10 center: [6.90064, 0.909888, 5.84882] -> [6.94802, 0.822522, 5.75415]
+After BA tie poits: 48% old + 5% new = 53% total outliers
+After BA projections: 41% inliers with MSE=0.266334
+    Camera #0 projections: 29% inliers (412/1445) with MSE=0.26506
+    Camera #1 projections: 33% inliers (612/1876) with MSE=0.190235
+    Camera #2 projections: 36% inliers (450/1260) with MSE=0.199992
+    Camera #3 projections: 34% inliers (742/2176) with MSE=0.249347
+    Camera #4 projections: 32% inliers (692/2163) with MSE=0.329255
+    Camera #5 projections: 24% inliers (540/2247) with MSE=0.367459
+    Camera #6 projections: 29% inliers (623/2165) with MSE=0.32627
+    Camera #7 projections: 34% inliers (851/2486) with MSE=0.261128
+    Camera #8 projections: 52% inliers (1411/2715) with MSE=0.248796
+    Camera #9 projections: 65% inliers (1629/2503) with MSE=0.25724
+    Camera #10 projections: 84% inliers (1358/1621) with MSE=0.264904
+Append camera #11 (0011.png) to alignment via 666 common points
+Before BA camera: k1=0.00532975, k2=-0.0294877, f=1411.86, cx=772.777, cy=488.511
+Before BA projections: 44% inliers with MSE=0.367677
+    Camera #0 projections: 28% inliers (412/1446) with MSE=0.26506
+    Camera #1 projections: 33% inliers (612/1877) with MSE=0.190235
+    Camera #2 projections: 36% inliers (450/1260) with MSE=0.199992
+    Camera #3 projections: 34% inliers (743/2178) with MSE=0.249858
+    Camera #4 projections: 32% inliers (692/2163) with MSE=0.329255
+    Camera #5 projections: 24% inliers (540/2250) with MSE=0.367459
+    Camera #6 projections: 29% inliers (623/2165) with MSE=0.32627
+    Camera #7 projections: 34% inliers (851/2488) with MSE=0.261128
+    Camera #8 projections: 52% inliers (1417/2724) with MSE=0.257596
+    Camera #9 projections: 65% inliers (1656/2546) with MSE=0.267338
+    Camera #10 projections: 86% inliers (1892/2201) with MSE=0.338185
+    Camera #11 projections: 69% inliers (945/1374) with MSE=1.25127
+After BA camera: k1=-0.0152475, k2=-0.00396497, f=1380.84, cx=760.459, cy=498.312
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.08807, 0.157091, 1.46363] -> [1.08517, 0.150261, 1.44924]
+Camera #3 center: [2.08087, 0.132291, 0.943298] -> [2.05357, 0.123367, 0.921802]
+Camera #4 center: [2.67629, 0.163473, 1.19725] -> [2.64309, 0.153474, 1.16461]
+Camera #5 center: [3.50442, 0.231436, 1.73714] -> [3.50118, 0.23528, 1.70167]
+Camera #6 center: [4.50244, 0.397969, 1.61693] -> [4.4876, 0.398051, 1.56472]
+Camera #7 center: [5.37148, 0.498395, 2.30521] -> [5.36081, 0.487986, 2.23354]
+Camera #8 center: [6.24377, 0.635246, 3.24471] -> [6.23868, 0.597891, 3.12664]
+Camera #9 center: [7.10992, 0.779992, 4.25667] -> [7.12511, 0.709707, 4.08588]
+Camera #10 center: [6.94802, 0.822522, 5.75415] -> [7.02889, 0.726414, 5.57837]
+Camera #11 center: [7.1669, 0.983318, 7.12275] -> [7.31385, 0.895833, 6.93202]
+After BA tie poits: 49% old + 4% new = 53% total outliers
+After BA projections: 40% inliers with MSE=0.315036
+    Camera #0 projections: 28% inliers (411/1446) with MSE=0.472694
+    Camera #1 projections: 32% inliers (610/1877) with MSE=0.28529
+    Camera #2 projections: 36% inliers (449/1260) with MSE=0.221082
+    Camera #3 projections: 34% inliers (735/2178) with MSE=0.237876
+    Camera #4 projections: 31% inliers (681/2163) with MSE=0.234229
+    Camera #5 projections: 24% inliers (529/2250) with MSE=0.254123
+    Camera #6 projections: 28% inliers (601/2165) with MSE=0.289004
+    Camera #7 projections: 32% inliers (799/2488) with MSE=0.30899
+    Camera #8 projections: 43% inliers (1174/2724) with MSE=0.378724
+    Camera #9 projections: 55% inliers (1394/2546) with MSE=0.370717
+    Camera #10 projections: 65% inliers (1432/2201) with MSE=0.329099
+    Camera #11 projections: 81% inliers (1111/1374) with MSE=0.303736
+Append camera #12 (0012.png) to alignment via 446 common points
+Before BA camera: k1=-0.0152475, k2=-0.00396497, f=1380.84, cx=760.459, cy=498.312
+Before BA projections: 43% inliers with MSE=0.352091
+    Camera #0 projections: 28% inliers (411/1446) with MSE=0.472694
+    Camera #1 projections: 32% inliers (610/1877) with MSE=0.28529
+    Camera #2 projections: 36% inliers (449/1260) with MSE=0.221082
+    Camera #3 projections: 34% inliers (735/2178) with MSE=0.237876
+    Camera #4 projections: 31% inliers (681/2163) with MSE=0.234229
+    Camera #5 projections: 24% inliers (529/2250) with MSE=0.254123
+    Camera #6 projections: 28% inliers (601/2165) with MSE=0.289004
+    Camera #7 projections: 32% inliers (799/2488) with MSE=0.30899
+    Camera #8 projections: 43% inliers (1174/2724) with MSE=0.378724
+    Camera #9 projections: 55% inliers (1396/2548) with MSE=0.370252
+    Camera #10 projections: 65% inliers (1459/2232) with MSE=0.331706
+    Camera #11 projections: 84% inliers (1703/2020) with MSE=0.286733
+    Camera #12 projections: 78% inliers (932/1196) with MSE=0.805766
+After BA camera: k1=-0.00458829, k2=0.0163258, f=1382.97, cx=784.459, cy=498.633
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.08517, 0.150261, 1.44924] -> [1.09062, 0.164479, 1.47352]
+Camera #3 center: [2.05357, 0.123367, 0.921802] -> [2.1021, 0.158148, 0.965923]
+Camera #4 center: [2.64309, 0.153474, 1.16461] -> [2.70592, 0.192729, 1.22763]
+Camera #5 center: [3.50118, 0.23528, 1.70167] -> [3.5741, 0.283486, 1.7988]
+Camera #6 center: [4.4876, 0.398051, 1.56472] -> [4.57065, 0.491592, 1.71409]
+Camera #7 center: [5.36081, 0.487986, 2.23354] -> [5.43429, 0.595725, 2.43044]
+Camera #8 center: [6.23868, 0.597891, 3.12664] -> [6.26237, 0.735749, 3.36806]
+Camera #9 center: [7.12511, 0.709707, 4.08588] -> [7.11122, 0.876328, 4.38316]
+Camera #10 center: [7.02889, 0.726414, 5.57837] -> [6.93976, 0.88308, 5.85606]
+Camera #11 center: [7.31385, 0.895833, 6.93202] -> [7.152, 1.03268, 7.19484]
+Camera #12 center: [6.95334, 1.07055, 7.971] -> [6.75927, 1.16188, 8.21571]
+After BA tie poits: 49% old + 2% new = 51% total outliers
+After BA projections: 41% inliers with MSE=0.289406
+    Camera #0 projections: 28% inliers (405/1446) with MSE=0.2359
+    Camera #1 projections: 32% inliers (607/1877) with MSE=0.161828
+    Camera #2 projections: 36% inliers (451/1260) with MSE=0.169887
+    Camera #3 projections: 34% inliers (735/2178) with MSE=0.205548
+    Camera #4 projections: 32% inliers (694/2163) with MSE=0.261386
+    Camera #5 projections: 24% inliers (530/2250) with MSE=0.199018
+    Camera #6 projections: 28% inliers (607/2165) with MSE=0.281281
+    Camera #7 projections: 32% inliers (797/2488) with MSE=0.239763
+    Camera #8 projections: 43% inliers (1166/2724) with MSE=0.322472
+    Camera #9 projections: 54% inliers (1379/2548) with MSE=0.656061
+    Camera #10 projections: 53% inliers (1191/2232) with MSE=0.186899
+    Camera #11 projections: 66% inliers (1328/2020) with MSE=0.233838
+    Camera #12 projections: 85% inliers (1014/1196) with MSE=0.267912
+Append camera #13 (0013.png) to alignment via 229 common points
+Before BA camera: k1=-0.00458829, k2=0.0163258, f=1382.97, cx=784.459, cy=498.633
+Before BA projections: 42% inliers with MSE=0.305425
+    Camera #0 projections: 28% inliers (405/1446) with MSE=0.2359
+    Camera #1 projections: 32% inliers (607/1877) with MSE=0.161828
+    Camera #2 projections: 36% inliers (451/1260) with MSE=0.169887
+    Camera #3 projections: 34% inliers (735/2178) with MSE=0.205548
+    Camera #4 projections: 32% inliers (694/2163) with MSE=0.261386
+    Camera #5 projections: 24% inliers (530/2250) with MSE=0.199018
+    Camera #6 projections: 28% inliers (607/2165) with MSE=0.281281
+    Camera #7 projections: 32% inliers (797/2488) with MSE=0.239763
+    Camera #8 projections: 43% inliers (1166/2724) with MSE=0.322472
+    Camera #9 projections: 54% inliers (1379/2548) with MSE=0.656061
+    Camera #10 projections: 53% inliers (1192/2233) with MSE=0.186807
+    Camera #11 projections: 66% inliers (1335/2029) with MSE=0.235028
+    Camera #12 projections: 86% inliers (1215/1418) with MSE=0.265174
+    Camera #13 projections: 70% inliers (336/482) with MSE=0.855081
+After BA camera: k1=-0.00592803, k2=0.00964168, f=1376.76, cx=788.736, cy=497.584
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.09062, 0.164479, 1.47352] -> [1.08876, 0.163763, 1.47754]
+Camera #3 center: [2.1021, 0.158148, 0.965923] -> [2.0967, 0.156027, 0.965662]
+Camera #4 center: [2.70592, 0.192729, 1.22763] -> [2.70083, 0.189335, 1.22567]
+Camera #5 center: [3.5741, 0.283486, 1.7988] -> [3.57227, 0.280222, 1.7952]
+Camera #6 center: [4.57065, 0.491592, 1.71409] -> [4.57108, 0.488761, 1.70239]
+Camera #7 center: [5.43429, 0.595725, 2.43044] -> [5.44193, 0.594676, 2.4162]
+Camera #8 center: [6.26237, 0.735749, 3.36806] -> [6.27895, 0.738564, 3.35293]
+Camera #9 center: [7.11122, 0.876328, 4.38316] -> [7.13947, 0.884613, 4.36394]
+Camera #10 center: [6.93976, 0.88308, 5.85606] -> [6.9759, 0.89556, 5.84634]
+Camera #11 center: [7.152, 1.03268, 7.19484] -> [7.20124, 1.05006, 7.18679]
+Camera #12 center: [6.75927, 1.16188, 8.21571] -> [6.81584, 1.18984, 8.21318]
+Camera #13 center: [6.28616, 1.29141, 9.1757] -> [6.35473, 1.32422, 9.19493]
+After BA tie poits: 50% old + 1% new = 51% total outliers
+After BA projections: 40% inliers with MSE=0.221449
+    Camera #0 projections: 28% inliers (407/1446) with MSE=0.238923
+    Camera #1 projections: 32% inliers (608/1877) with MSE=0.160983
+    Camera #2 projections: 37% inliers (466/1260) with MSE=0.237806
+    Camera #3 projections: 34% inliers (749/2178) with MSE=0.211448
+    Camera #4 projections: 33% inliers (704/2163) with MSE=0.230139
+    Camera #5 projections: 23% inliers (528/2250) with MSE=0.182297
+    Camera #6 projections: 28% inliers (606/2165) with MSE=0.26314
+    Camera #7 projections: 33% inliers (822/2488) with MSE=0.282942
+    Camera #8 projections: 42% inliers (1134/2724) with MSE=0.247473
+    Camera #9 projections: 45% inliers (1149/2548) with MSE=0.180772
+    Camera #10 projections: 49% inliers (1095/2233) with MSE=0.144769
+    Camera #11 projections: 60% inliers (1211/2029) with MSE=0.223139
+    Camera #12 projections: 70% inliers (999/1418) with MSE=0.243006
+    Camera #13 projections: 83% inliers (399/482) with MSE=0.336424
+Append camera #14 (0014.png) to alignment via 719 common points
+Before BA camera: k1=-0.00592803, k2=0.00964168, f=1376.76, cx=788.736, cy=497.584
+Before BA projections: 43% inliers with MSE=0.352158
+    Camera #0 projections: 40% inliers (697/1757) with MSE=0.414259
+    Camera #1 projections: 39% inliers (813/2091) with MSE=0.238174
+    Camera #2 projections: 40% inliers (543/1347) with MSE=0.271218
+    Camera #3 projections: 35% inliers (775/2211) with MSE=0.234299
+    Camera #4 projections: 33% inliers (729/2191) with MSE=0.226739
+    Camera #5 projections: 23% inliers (528/2252) with MSE=0.182297
+    Camera #6 projections: 28% inliers (606/2169) with MSE=0.26314
+    Camera #7 projections: 33% inliers (822/2488) with MSE=0.282942
+    Camera #8 projections: 42% inliers (1134/2724) with MSE=0.247473
+    Camera #9 projections: 45% inliers (1149/2550) with MSE=0.180772
+    Camera #10 projections: 49% inliers (1095/2233) with MSE=0.144769
+    Camera #11 projections: 60% inliers (1211/2031) with MSE=0.223139
+    Camera #12 projections: 70% inliers (999/1418) with MSE=0.243006
+    Camera #13 projections: 81% inliers (399/491) with MSE=0.336424
+    Camera #14 projections: 85% inliers (1250/1471) with MSE=1.3849
+After BA camera: k1=-0.0160509, k2=0.0440959, f=1364.79, cx=787.279, cy=506.051
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.08876, 0.163763, 1.47754] -> [1.09296, 0.166407, 1.47639]
+Camera #3 center: [2.0967, 0.156027, 0.965662] -> [2.11176, 0.161509, 0.972818]
+Camera #4 center: [2.70083, 0.189335, 1.22567] -> [2.72028, 0.193116, 1.23459]
+Camera #5 center: [3.57227, 0.280222, 1.7952] -> [3.60836, 0.261579, 1.80988]
+Camera #6 center: [4.57108, 0.488761, 1.70239] -> [4.60954, 0.482938, 1.72699]
+Camera #7 center: [5.44193, 0.594676, 2.4162] -> [5.48175, 0.607584, 2.45752]
+Camera #8 center: [6.27895, 0.738564, 3.35293] -> [6.30835, 0.762258, 3.40317]
+Camera #9 center: [7.13947, 0.884613, 4.36394] -> [7.15111, 0.936447, 4.42928]
+Camera #10 center: [6.9759, 0.89556, 5.84634] -> [6.97081, 0.960669, 5.89563]
+Camera #11 center: [7.20124, 1.05006, 7.18679] -> [7.19291, 1.09967, 7.20038]
+Camera #12 center: [6.81584, 1.18984, 8.21318] -> [6.82066, 1.19332, 8.23393]
+Camera #13 center: [6.35473, 1.32422, 9.19493] -> [6.37053, 1.2652, 9.23392]
+Camera #14 center: [0.556503, 0.0478501, 0.556487] -> [0.559332, 0.0654759, 0.550332]
+After BA tie poits: 47% old + 7% new = 54% total outliers
+After BA projections: 42% inliers with MSE=0.318946
+    Camera #0 projections: 40% inliers (697/1757) with MSE=0.350094
+    Camera #1 projections: 38% inliers (794/2091) with MSE=0.330068
+    Camera #2 projections: 38% inliers (518/1347) with MSE=0.305453
+    Camera #3 projections: 34% inliers (754/2211) with MSE=0.274896
+    Camera #4 projections: 32% inliers (708/2191) with MSE=0.290251
+    Camera #5 projections: 23% inliers (522/2252) with MSE=0.251394
+    Camera #6 projections: 27% inliers (595/2169) with MSE=0.297806
+    Camera #7 projections: 31% inliers (773/2488) with MSE=0.236281
+    Camera #8 projections: 40% inliers (1084/2724) with MSE=0.236097
+    Camera #9 projections: 45% inliers (1136/2550) with MSE=0.247339
+    Camera #10 projections: 48% inliers (1081/2233) with MSE=0.288764
+    Camera #11 projections: 57% inliers (1160/2031) with MSE=0.396909
+    Camera #12 projections: 67% inliers (944/1418) with MSE=0.368359
+    Camera #13 projections: 67% inliers (327/491) with MSE=0.78495
+    Camera #14 projections: 87% inliers (1276/1471) with MSE=0.362858
+Append camera #15 (0015.png) to alignment via 822 common points
+Before BA camera: k1=-0.0160509, k2=0.0440959, f=1364.79, cx=787.279, cy=506.051
+Before BA projections: 45% inliers with MSE=0.444342
+    Camera #0 projections: 40% inliers (698/1758) with MSE=0.350651
+    Camera #1 projections: 38% inliers (806/2104) with MSE=0.355447
+    Camera #2 projections: 40% inliers (568/1409) with MSE=0.38179
+    Camera #3 projections: 41% inliers (1015/2487) with MSE=0.393936
+    Camera #4 projections: 34% inliers (772/2261) with MSE=0.322213
+    Camera #5 projections: 24% inliers (552/2284) with MSE=0.301598
+    Camera #6 projections: 28% inliers (604/2180) with MSE=0.311108
+    Camera #7 projections: 31% inliers (773/2492) with MSE=0.236281
+    Camera #8 projections: 40% inliers (1086/2727) with MSE=0.236538
+    Camera #9 projections: 45% inliers (1136/2551) with MSE=0.247339
+    Camera #10 projections: 48% inliers (1083/2235) with MSE=0.293531
+    Camera #11 projections: 57% inliers (1160/2031) with MSE=0.396909
+    Camera #12 projections: 67% inliers (944/1418) with MSE=0.368359
+    Camera #13 projections: 67% inliers (327/491) with MSE=0.78495
+    Camera #14 projections: 88% inliers (1551/1765) with MSE=0.437861
+    Camera #15 projections: 72% inliers (1196/1651) with MSE=1.51152
+After BA camera: k1=-0.00729313, k2=0.00961369, f=1381.3, cx=776.316, cy=502.299
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.09296, 0.166407, 1.47639] -> [1.091, 0.165221, 1.46579]
+Camera #3 center: [2.11176, 0.161509, 0.972818] -> [2.09266, 0.160869, 0.950356]
+Camera #4 center: [2.72028, 0.193116, 1.23459] -> [2.692, 0.199297, 1.20763]
+Camera #5 center: [3.60836, 0.261579, 1.80988] -> [3.56014, 0.282064, 1.77009]
+Camera #6 center: [4.60954, 0.482938, 1.72699] -> [4.5566, 0.480716, 1.66996]
+Camera #7 center: [5.48175, 0.607584, 2.45752] -> [5.42497, 0.583571, 2.37637]
+Camera #8 center: [6.30835, 0.762258, 3.40317] -> [6.2642, 0.719254, 3.3008]
+Camera #9 center: [7.15111, 0.936447, 4.42928] -> [7.12091, 0.858741, 4.30185]
+Camera #10 center: [6.97081, 0.960669, 5.89563] -> [6.973, 0.864749, 5.77556]
+Camera #11 center: [7.19291, 1.09967, 7.20038] -> [7.20849, 1.01211, 7.11247]
+Camera #12 center: [6.82066, 1.19332, 8.23393] -> [6.8288, 1.14776, 8.13511]
+Camera #13 center: [6.37053, 1.2652, 9.23392] -> [6.37298, 1.27052, 9.11322]
+Camera #14 center: [0.559332, 0.0654759, 0.550332] -> [0.566311, 0.0639496, 0.539555]
+Camera #15 center: [1.92761, 0.131522, 0.808745] -> [1.91065, 0.135749, 0.775646]
+After BA tie poits: 50% old + 4% new = 55% total outliers
+After BA projections: 40% inliers with MSE=0.228905
+    Camera #0 projections: 25% inliers (432/1758) with MSE=0.251463
+    Camera #1 projections: 15% inliers (310/2104) with MSE=0.196538
+/home/rsmt98/Documents/photogrammetry-course/tests/test_sfm_ba.cpp:737: Failure
+Expected: (ninls) > (0.15 * nproj), actual: 310 vs 315.6
+Append camera #16 (0016.png) to alignment via 960 common points
+Before BA camera: k1=-0.00729313, k2=0.00961369, f=1381.3, cx=776.316, cy=502.299
+Before BA projections: 43% inliers with MSE=0.315167
+    Camera #0 projections: 25% inliers (433/1762) with MSE=0.252328
+    Camera #1 projections: 15% inliers (312/2106) with MSE=0.199836
+    Camera #2 projections: 31% inliers (435/1417) with MSE=0.323053
+    Camera #3 projections: 37% inliers (925/2519) with MSE=0.215762
+    Camera #4 projections: 36% inliers (883/2448) with MSE=0.329407
+    Camera #5 projections: 26% inliers (602/2353) with MSE=0.236883
+    Camera #6 projections: 29% inliers (645/2234) with MSE=0.230868
+    Camera #7 projections: 31% inliers (785/2505) with MSE=0.17486
+    Camera #8 projections: 41% inliers (1129/2744) with MSE=0.24078
+    Camera #9 projections: 45% inliers (1147/2554) with MSE=0.234166
+    Camera #10 projections: 48% inliers (1085/2239) with MSE=0.178479
+    Camera #11 projections: 57% inliers (1161/2040) with MSE=0.191889
+    Camera #12 projections: 68% inliers (970/1418) with MSE=0.256274
+    Camera #13 projections: 66% inliers (324/491) with MSE=0.179975
+    Camera #14 projections: 44% inliers (796/1806) with MSE=0.317228
+    Camera #15 projections: 87% inliers (1823/2094) with MSE=0.261814
+    Camera #16 projections: 80% inliers (1545/1933) with MSE=0.972548
+After BA camera: k1=0.110904, k2=-0.344473, f=1289.97, cx=731.856, cy=402.178
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.091, 0.165221, 1.46579] -> [1.10339, 0.215976, 1.42397]
+Camera #3 center: [2.09266, 0.160869, 0.950356] -> [2.02015, 0.175791, 0.861491]
+Camera #4 center: [2.692, 0.199297, 1.20763] -> [2.58889, 0.21197, 1.08158]
+Camera #5 center: [3.56014, 0.282064, 1.77009] -> [3.45386, 0.33523, 1.54168]
+Camera #6 center: [4.5566, 0.480716, 1.66996] -> [4.432, 0.459409, 1.30594]
+Camera #7 center: [5.42497, 0.583571, 2.37637] -> [5.3545, 0.61101, 1.90107]
+Camera #8 center: [6.2642, 0.719254, 3.3008] -> [6.26363, 0.816958, 2.69465]
+Camera #9 center: [7.12091, 0.858741, 4.30185] -> [7.17679, 1.02554, 3.52968]
+Camera #10 center: [6.973, 0.864749, 5.77556] -> [7.17321, 1.15004, 4.97675]
+Camera #11 center: [7.20849, 1.01211, 7.11247] -> [7.57645, 1.40153, 6.18731]
+Camera #12 center: [6.8288, 1.14776, 8.13511] -> [7.3584, 1.6671, 7.18585]
+Camera #13 center: [6.37298, 1.27052, 9.11322] -> [7.08916, 1.93657, 8.1397]
+Camera #14 center: [0.566311, 0.0639496, 0.539555] -> [0.556147, 0.0174172, 0.493638]
+Camera #15 center: [1.91065, 0.135749, 0.775646] -> [1.84415, 0.0705868, 0.681815]
+Camera #16 center: [2.93517, 0.207845, 1.24114] -> [2.87268, 0.182445, 1.03749]
+After BA tie poits: 50% old + 8% new = 58% total outliers
+After BA projections: 36% inliers with MSE=0.845292
+    Camera #0 projections: 21% inliers (373/1762) with MSE=0.997433
+    Camera #1 projections: 12% inliers (259/2106) with MSE=1.17738
+/home/rsmt98/Documents/photogrammetry-course/tests/test_sfm_ba.cpp:737: Failure
+Expected: (ninls) > (0.15 * nproj), actual: 259 vs 315.9
+Append camera #17 (0017.png) to alignment via 1106 common points
+Before BA camera: k1=0.110904, k2=-0.344473, f=1289.97, cx=731.856, cy=402.178
+Before BA projections: 36% inliers with MSE=0.943846
+    Camera #0 projections: 21% inliers (373/1762) with MSE=0.997433
+    Camera #1 projections: 12% inliers (260/2107) with MSE=1.17993
+    Camera #2 projections: 21% inliers (299/1420) with MSE=0.940694
+    Camera #3 projections: 24% inliers (616/2529) with MSE=1.16236
+    Camera #4 projections: 25% inliers (607/2470) with MSE=1.29455
+    Camera #5 projections: 23% inliers (587/2519) with MSE=1.13895
+    Camera #6 projections: 27% inliers (644/2360) with MSE=1.0588
+    Camera #7 projections: 29% inliers (741/2543) with MSE=0.738246
+    Camera #8 projections: 38% inliers (1044/2779) with MSE=0.758293
+    Camera #9 projections: 41% inliers (1045/2564) with MSE=0.69917
+    Camera #10 projections: 45% inliers (1017/2242) with MSE=0.61378
+    Camera #11 projections: 54% inliers (1105/2041) with MSE=0.609321
+    Camera #12 projections: 61% inliers (869/1418) with MSE=0.709625
+    Camera #13 projections: 49% inliers (243/491) with MSE=1.41756
+    Camera #14 projections: 37% inliers (661/1807) with MSE=0.729144
+    Camera #15 projections: 56% inliers (1208/2161) with MSE=0.857062
+    Camera #16 projections: 72% inliers (1696/2340) with MSE=1.14799
+    Camera #17 projections: 31% inliers (636/2072) with MSE=2.01235
+After BA camera: k1=-0.000556327, k2=0.000829651, f=1358.02, cx=751.216, cy=512.088
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.10339, 0.215976, 1.42397] -> [1.09204, 0.165943, 1.43898]
+Camera #3 center: [2.02015, 0.175791, 0.861491] -> [2.06952, 0.16351, 0.914195]
+Camera #4 center: [2.58889, 0.21197, 1.08158] -> [2.67153, 0.203094, 1.16227]
+Camera #5 center: [3.45386, 0.33523, 1.54168] -> [3.55947, 0.271825, 1.71409]
+Camera #6 center: [4.432, 0.459409, 1.30594] -> [4.53178, 0.460307, 1.59081]
+Camera #7 center: [5.3545, 0.61101, 1.90107] -> [5.40581, 0.545279, 2.27266]
+Camera #8 center: [6.26363, 0.816958, 2.69465] -> [6.25617, 0.663475, 3.1614]
+Camera #9 center: [7.17679, 1.02554, 3.52968] -> [7.1196, 0.796391, 4.13791]
+Camera #10 center: [7.17321, 1.15004, 4.97675] -> [7.01381, 0.789758, 5.57945]
+Camera #11 center: [7.57645, 1.40153, 6.18731] -> [7.29634, 0.91961, 6.88155]
+Camera #12 center: [7.3584, 1.6671, 7.18585] -> [6.95737, 1.05414, 7.89664]
+Camera #13 center: [7.08916, 1.93657, 8.1397] -> [6.54513, 1.17818, 8.8729]
+Camera #14 center: [0.556147, 0.0174172, 0.493638] -> [0.550641, 0.0599197, 0.520819]
+Camera #15 center: [1.84415, 0.0705868, 0.681815] -> [1.87414, 0.13475, 0.727977]
+Camera #16 center: [2.87268, 0.182445, 1.03749] -> [2.88544, 0.205204, 1.14159]
+Camera #17 center: [3.61264, 0.296301, 1.53126] -> [3.86501, 0.290424, 1.80566]
+After BA tie poits: 54% old + 5% new = 59% total outliers
+After BA projections: 35% inliers with MSE=0.223218
+    Camera #0 projections: 18% inliers (319/1762) with MSE=0.337631
+    Camera #1 projections: 10% inliers (203/2107) with MSE=0.346788
+/home/rsmt98/Documents/photogrammetry-course/tests/test_sfm_ba.cpp:737: Failure
+Expected: (ninls) > (0.15 * nproj), actual: 203 vs 316.05
+Append camera #18 (0018.png) to alignment via 1497 common points
+Before BA camera: k1=-0.000556327, k2=0.000829651, f=1358.02, cx=751.216, cy=512.088
+Before BA projections: 39% inliers with MSE=0.391559
+    Camera #0 projections: 18% inliers (319/1762) with MSE=0.337631
+    Camera #1 projections: 10% inliers (203/2107) with MSE=0.346788
+    Camera #2 projections: 18% inliers (261/1420) with MSE=0.204019
+    Camera #3 projections: 20% inliers (510/2530) with MSE=0.210395
+    Camera #4 projections: 20% inliers (506/2486) with MSE=0.224282
+    Camera #5 projections: 21% inliers (538/2540) with MSE=0.448246
+    Camera #6 projections: 28% inliers (687/2460) with MSE=0.415124
+    Camera #7 projections: 30% inliers (786/2664) with MSE=0.295918
+    Camera #8 projections: 37% inliers (1049/2858) with MSE=0.185063
+    Camera #9 projections: 40% inliers (1047/2591) with MSE=0.152447
+    Camera #10 projections: 43% inliers (972/2249) with MSE=0.131671
+    Camera #11 projections: 52% inliers (1052/2042) with MSE=0.178697
+    Camera #12 projections: 58% inliers (827/1418) with MSE=0.175548
+    Camera #13 projections: 48% inliers (235/491) with MSE=0.141548
+    Camera #14 projections: 32% inliers (573/1808) with MSE=0.226616
+    Camera #15 projections: 46% inliers (993/2171) with MSE=0.236633
+    Camera #16 projections: 56% inliers (1328/2377) with MSE=0.237318
+    Camera #17 projections: 87% inliers (2206/2548) with MSE=0.361137
+    Camera #18 projections: 74% inliers (1825/2464) with MSE=1.47756
+After BA camera: k1=-0.00645223, k2=0.00431294, f=1378.84, cx=769.309, cy=503.273
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.09204, 0.165943, 1.43898] -> [1.08907, 0.169541, 1.45818]
+Camera #3 center: [2.06952, 0.16351, 0.914195] -> [2.07941, 0.168351, 0.93749]
+Camera #4 center: [2.67153, 0.203094, 1.16227] -> [2.67746, 0.205416, 1.19069]
+Camera #5 center: [3.55947, 0.271825, 1.71409] -> [3.54175, 0.29644, 1.74765]
+Camera #6 center: [4.53178, 0.460307, 1.59081] -> [4.53604, 0.49187, 1.63729]
+Camera #7 center: [5.40581, 0.545279, 2.27266] -> [5.40853, 0.624952, 2.35096]
+Camera #8 center: [6.25617, 0.663475, 3.1614] -> [6.24618, 0.764485, 3.26725]
+Camera #9 center: [7.1196, 0.796391, 4.13791] -> [7.10044, 0.901313, 4.25511]
+Camera #10 center: [7.01381, 0.789758, 5.57945] -> [6.96484, 0.892135, 5.72164]
+Camera #11 center: [7.29634, 0.91961, 6.88155] -> [7.21512, 1.03121, 7.05407]
+Camera #12 center: [6.95737, 1.05414, 7.89664] -> [6.84597, 1.15653, 8.07893]
+Camera #13 center: [6.54513, 1.17818, 8.8729] -> [6.40079, 1.26598, 9.06054]
+Camera #14 center: [0.550641, 0.0599197, 0.520819] -> [0.562826, 0.0592618, 0.532386]
+Camera #15 center: [1.87414, 0.13475, 0.727977] -> [1.90194, 0.138939, 0.760162]
+Camera #16 center: [2.88544, 0.205204, 1.14159] -> [2.92895, 0.223066, 1.20906]
+Camera #17 center: [3.86501, 0.290424, 1.80566] -> [3.8914, 0.332591, 1.8843]
+Camera #18 center: [4.79359, 0.495958, 1.74018] -> [4.82644, 0.531021, 1.79465]
+After BA tie poits: 55% old + 5% new = 60% total outliers
+After BA projections: 35% inliers with MSE=0.237115
+    Camera #0 projections: 18% inliers (319/1762) with MSE=0.224346
+    Camera #1 projections: 10% inliers (202/2107) with MSE=0.193355
+/home/rsmt98/Documents/photogrammetry-course/tests/test_sfm_ba.cpp:737: Failure
+Expected: (ninls) > (0.15 * nproj), actual: 202 vs 316.05
+Append camera #19 (0019.png) to alignment via 1484 common points
+Before BA camera: k1=-0.00645223, k2=0.00431294, f=1378.84, cx=769.309, cy=503.273
+Before BA projections: 39% inliers with MSE=0.39477
+    Camera #0 projections: 18% inliers (319/1762) with MSE=0.224346
+    Camera #1 projections: 10% inliers (202/2107) with MSE=0.193355
+    Camera #2 projections: 18% inliers (257/1422) with MSE=0.169042
+    Camera #3 projections: 19% inliers (482/2530) with MSE=0.187166
+    Camera #4 projections: 15% inliers (371/2486) with MSE=0.224729
+    Camera #5 projections: 18% inliers (454/2547) with MSE=0.288429
+    Camera #6 projections: 23% inliers (582/2486) with MSE=0.329269
+    Camera #7 projections: 29% inliers (810/2755) with MSE=0.275202
+    Camera #8 projections: 37% inliers (1066/2907) with MSE=0.309219
+    Camera #9 projections: 40% inliers (1052/2607) with MSE=0.186597
+    Camera #10 projections: 43% inliers (973/2257) with MSE=0.167689
+    Camera #11 projections: 52% inliers (1057/2042) with MSE=0.201162
+    Camera #12 projections: 58% inliers (825/1418) with MSE=0.166517
+    Camera #13 projections: 48% inliers (234/491) with MSE=0.147113
+    Camera #14 projections: 30% inliers (538/1812) with MSE=0.212264
+    Camera #15 projections: 38% inliers (826/2175) with MSE=0.248681
+    Camera #16 projections: 41% inliers (971/2387) with MSE=0.213076
+    Camera #17 projections: 59% inliers (1559/2627) with MSE=0.218114
+    Camera #18 projections: 90% inliers (2669/2962) with MSE=0.289496
+    Camera #19 projections: 88% inliers (2051/2332) with MSE=1.58111
+After BA camera: k1=0.0199058, k2=0.0240975, f=1412.54, cx=752.558, cy=501.54
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.08907, 0.169541, 1.45818] -> [1.10682, 0.175066, 1.44554]
+Camera #3 center: [2.07941, 0.168351, 0.93749] -> [2.12425, 0.163346, 0.926708]
+Camera #4 center: [2.67746, 0.205416, 1.19069] -> [2.74056, 0.197504, 1.18929]
+Camera #5 center: [3.54175, 0.29644, 1.74765] -> [3.63252, 0.273036, 1.76765]
+Camera #6 center: [4.53604, 0.49187, 1.63729] -> [4.64454, 0.472461, 1.69657]
+Camera #7 center: [5.40853, 0.624952, 2.35096] -> [5.51649, 0.583409, 2.44368]
+Camera #8 center: [6.24618, 0.764485, 3.26725] -> [6.3325, 0.724367, 3.40038]
+Camera #9 center: [7.10044, 0.901313, 4.25511] -> [7.15101, 0.864474, 4.45085]
+Camera #10 center: [6.96484, 0.892135, 5.72164] -> [6.95262, 0.870755, 5.9173]
+Camera #11 center: [7.21512, 1.03121, 7.05407] -> [7.13467, 1.0135, 7.27088]
+Camera #12 center: [6.84597, 1.15653, 8.07893] -> [6.70674, 1.14013, 8.27775]
+Camera #13 center: [6.40079, 1.26598, 9.06054] -> [6.19184, 1.24595, 9.23327]
+Camera #14 center: [0.562826, 0.0592618, 0.532386] -> [0.566965, 0.0616212, 0.520151]
+Camera #15 center: [1.90194, 0.138939, 0.760162] -> [1.92466, 0.134312, 0.734644]
+Camera #16 center: [2.92895, 0.223066, 1.20906] -> [2.96439, 0.187202, 1.16835]
+Camera #17 center: [3.8914, 0.332591, 1.8843] -> [3.98195, 0.293392, 1.89728]
+Camera #18 center: [4.82644, 0.531021, 1.79465] -> [4.93725, 0.492476, 1.84826]
+Camera #19 center: [5.16441, 0.606273, 2.29672] -> [5.2827, 0.570335, 2.37308]
+After BA tie poits: 57% old + 5% new = 62% total outliers
+After BA projections: 34% inliers with MSE=0.281826
+    Camera #0 projections: 18% inliers (322/1762) with MSE=0.331597
+    Camera #1 projections: 10% inliers (201/2107) with MSE=0.305439
+/home/rsmt98/Documents/photogrammetry-course/tests/test_sfm_ba.cpp:737: Failure
+Expected: (ninls) > (0.15 * nproj), actual: 201 vs 316.05
+Append camera #20 (0020.png) to alignment via 944 common points
+Before BA camera: k1=0.0199058, k2=0.0240975, f=1412.54, cx=752.558, cy=501.54
+Before BA projections: 35% inliers with MSE=0.398164
+    Camera #0 projections: 18% inliers (322/1762) with MSE=0.331597
+    Camera #1 projections: 10% inliers (201/2107) with MSE=0.305439
+    Camera #2 projections: 18% inliers (257/1422) with MSE=0.254977
+    Camera #3 projections: 18% inliers (463/2531) with MSE=0.241149
+    Camera #4 projections: 14% inliers (359/2486) with MSE=0.273278
+    Camera #5 projections: 16% inliers (407/2548) with MSE=0.335735
+    Camera #6 projections: 17% inliers (426/2489) with MSE=0.394341
+    Camera #7 projections: 24% inliers (652/2759) with MSE=0.353923
+    Camera #8 projections: 35% inliers (1026/2969) with MSE=0.477745
+    Camera #9 projections: 40% inliers (1052/2661) with MSE=0.297745
+    Camera #10 projections: 43% inliers (984/2298) with MSE=0.236866
+    Camera #11 projections: 51% inliers (1048/2057) with MSE=0.214918
+    Camera #12 projections: 58% inliers (820/1418) with MSE=0.220729
+    Camera #13 projections: 46% inliers (236/508) with MSE=0.262336
+    Camera #14 projections: 29% inliers (530/1815) with MSE=0.262074
+    Camera #15 projections: 34% inliers (732/2175) with MSE=0.235482
+    Camera #16 projections: 31% inliers (742/2393) with MSE=0.320653
+    Camera #17 projections: 44% inliers (1170/2649) with MSE=0.305926
+    Camera #18 projections: 55% inliers (1641/2993) with MSE=0.307885
+    Camera #19 projections: 89% inliers (2330/2604) with MSE=0.356821
+    Camera #20 projections: 55% inliers (842/1531) with MSE=2.06527
+After BA camera: k1=-0.0055979, k2=-0.0135578, f=1378.99, cx=756.372, cy=509.448
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.10682, 0.175066, 1.44554] -> [1.09216, 0.1652, 1.44687]
+Camera #3 center: [2.12425, 0.163346, 0.926708] -> [2.0693, 0.165853, 0.92172]
+Camera #4 center: [2.74056, 0.197504, 1.18929] -> [2.66313, 0.201283, 1.16894]
+Camera #5 center: [3.63252, 0.273036, 1.76765] -> [3.52096, 0.278216, 1.71284]
+Camera #6 center: [4.64454, 0.472461, 1.69657] -> [4.49602, 0.479088, 1.59107]
+Camera #7 center: [5.51649, 0.583409, 2.44368] -> [5.36652, 0.579284, 2.27336]
+Camera #8 center: [6.3325, 0.724367, 3.40038] -> [6.21354, 0.710451, 3.16823]
+Camera #9 center: [7.15101, 0.864474, 4.45085] -> [7.0681, 0.848783, 4.13604]
+Camera #10 center: [6.95262, 0.870755, 5.9173] -> [6.95749, 0.832908, 5.58547]
+Camera #11 center: [7.13467, 1.0135, 7.27088] -> [7.23555, 0.960995, 6.89637]
+Camera #12 center: [6.70674, 1.14013, 8.27775] -> [6.89201, 1.08739, 7.90649]
+Camera #13 center: [6.19184, 1.24595, 9.23327] -> [6.48453, 1.18265, 8.86991]
+Camera #14 center: [0.566965, 0.0616212, 0.520151] -> [0.560379, 0.0614461, 0.525114]
+Camera #15 center: [1.92466, 0.134312, 0.734644] -> [1.89105, 0.132783, 0.740295]
+Camera #16 center: [2.96439, 0.187202, 1.16835] -> [2.91758, 0.205934, 1.17301]
+Camera #17 center: [3.98195, 0.293392, 1.89728] -> [3.86963, 0.305292, 1.8331]
+Camera #18 center: [4.93725, 0.492476, 1.84826] -> [4.79166, 0.500712, 1.73081]
+Camera #19 center: [5.2827, 0.570335, 2.37308] -> [5.13766, 0.569046, 2.22431]
+Camera #20 center: [6.40919, 0.823363, 3.85923] -> [6.34664, 0.775262, 3.56659]
+After BA tie poits: 60% old + 3% new = 63% total outliers
+After BA projections: 30% inliers with MSE=0.254084
+    Camera #0 projections: 18% inliers (314/1762) with MSE=0.264093
+    Camera #1 projections: 9% inliers (199/2107) with MSE=0.226033
+/home/rsmt98/Documents/photogrammetry-course/tests/test_sfm_ba.cpp:737: Failure
+Expected: (ninls) > (0.15 * nproj), actual: 199 vs 316.05
+Append camera #21 (0021.png) to alignment via 995 common points
+Before BA camera: k1=-0.0055979, k2=-0.0135578, f=1378.99, cx=756.372, cy=509.448
+Before BA projections: 33% inliers with MSE=0.363541
+    Camera #0 projections: 18% inliers (317/1765) with MSE=0.288222
+    Camera #1 projections: 9% inliers (199/2107) with MSE=0.226033
+    Camera #2 projections: 18% inliers (257/1422) with MSE=0.175648
+    Camera #3 projections: 18% inliers (455/2531) with MSE=0.1327
+    Camera #4 projections: 14% inliers (351/2486) with MSE=0.197582
+    Camera #5 projections: 15% inliers (379/2548) with MSE=0.229228
+    Camera #6 projections: 15% inliers (362/2489) with MSE=0.210393
+    Camera #7 projections: 15% inliers (413/2761) with MSE=0.188279
+    Camera #8 projections: 28% inliers (845/2992) with MSE=0.234962
+    Camera #9 projections: 37% inliers (1007/2719) with MSE=0.247729
+    Camera #10 projections: 42% inliers (976/2326) with MSE=0.235557
+    Camera #11 projections: 50% inliers (1032/2063) with MSE=0.262248
+    Camera #12 projections: 56% inliers (810/1456) with MSE=0.353858
+    Camera #13 projections: 38% inliers (234/616) with MSE=0.699843
+    Camera #14 projections: 29% inliers (526/1817) with MSE=0.199127
+    Camera #15 projections: 32% inliers (702/2175) with MSE=0.165014
+    Camera #16 projections: 28% inliers (659/2395) with MSE=0.190671
+    Camera #17 projections: 32% inliers (853/2659) with MSE=0.309352
+    Camera #18 projections: 38% inliers (1131/3014) with MSE=0.264231
+    Camera #19 projections: 46% inliers (1232/2657) with MSE=0.257891
+    Camera #20 projections: 83% inliers (1939/2338) with MSE=0.347147
+    Camera #21 projections: 75% inliers (1707/2264) with MSE=1.23388
+After BA camera: k1=0.00113043, k2=-0.000354319, f=1396, cx=730.046, cy=509.948
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.09216, 0.1652, 1.44687] -> [1.10898, 0.171359, 1.43045]
+Camera #3 center: [2.0693, 0.165853, 0.92172] -> [2.08461, 0.172164, 0.895909]
+Camera #4 center: [2.66313, 0.201283, 1.16894] -> [2.68448, 0.214422, 1.14294]
+Camera #5 center: [3.52096, 0.278216, 1.71284] -> [3.54835, 0.293613, 1.68706]
+Camera #6 center: [4.49602, 0.479088, 1.59107] -> [4.52047, 0.493479, 1.56462]
+Camera #7 center: [5.36652, 0.579284, 2.27336] -> [5.38948, 0.589785, 2.25293]
+Camera #8 center: [6.21354, 0.710451, 3.16823] -> [6.23373, 0.719964, 3.14667]
+Camera #9 center: [7.0681, 0.848783, 4.13604] -> [7.07564, 0.871632, 4.14656]
+Camera #10 center: [6.95749, 0.832908, 5.58547] -> [6.95134, 0.845519, 5.56475]
+Camera #11 center: [7.23555, 0.960995, 6.89637] -> [7.22626, 0.958393, 6.84099]
+Camera #12 center: [6.89201, 1.08739, 7.90649] -> [6.89866, 1.06337, 7.80829]
+Camera #13 center: [6.48453, 1.18265, 8.86991] -> [6.52915, 1.16316, 8.72191]
+Camera #14 center: [0.560379, 0.0614461, 0.525114] -> [0.561044, 0.0620592, 0.507412]
+Camera #15 center: [1.89105, 0.132783, 0.740295] -> [1.90146, 0.135827, 0.702895]
+Camera #16 center: [2.91758, 0.205934, 1.17301] -> [2.94229, 0.201405, 1.11638]
+Camera #17 center: [3.86963, 0.305292, 1.8331] -> [3.90216, 0.306825, 1.78992]
+Camera #18 center: [4.79166, 0.500712, 1.73081] -> [4.82482, 0.504675, 1.6919]
+Camera #19 center: [5.13766, 0.569046, 2.22431] -> [5.18129, 0.569693, 2.19058]
+Camera #20 center: [6.34664, 0.775262, 3.56659] -> [6.41491, 0.76639, 3.56782]
+Camera #21 center: [6.7844, 0.830201, 4.00626] -> [6.83524, 0.828982, 3.96972]
+After BA tie poits: 58% old + 7% new = 65% total outliers
+After BA projections: 29% inliers with MSE=0.642385
+    Camera #0 projections: 18% inliers (314/1765) with MSE=0.374475
+    Camera #1 projections: 9% inliers (196/2107) with MSE=0.419452
+/home/rsmt98/Documents/photogrammetry-course/tests/test_sfm_ba.cpp:737: Failure
+Expected: (ninls) > (0.15 * nproj), actual: 196 vs 316.05
+Append camera #22 (0022.png) to alignment via 812 common points
+Before BA camera: k1=0.00113043, k2=-0.000354319, f=1396, cx=730.046, cy=509.948
+Before BA projections: 29% inliers with MSE=0.688402
+    Camera #0 projections: 18% inliers (314/1765) with MSE=0.374475
+    Camera #1 projections: 9% inliers (196/2107) with MSE=0.419452
+    Camera #2 projections: 18% inliers (255/1422) with MSE=0.205851
+    Camera #3 projections: 18% inliers (453/2531) with MSE=0.177496
+    Camera #4 projections: 14% inliers (350/2486) with MSE=0.263492
+    Camera #5 projections: 15% inliers (378/2548) with MSE=0.286307
+    Camera #6 projections: 14% inliers (354/2492) with MSE=0.353406
+    Camera #7 projections: 14% inliers (374/2761) with MSE=0.492029
+    Camera #8 projections: 25% inliers (735/2992) with MSE=0.864684
+    Camera #9 projections: 33% inliers (896/2723) with MSE=1.17017
+    Camera #10 projections: 36% inliers (858/2407) with MSE=1.26759
+    Camera #11 projections: 43% inliers (904/2115) with MSE=1.31986
+    Camera #12 projections: 42% inliers (631/1489) with MSE=1.52481
+    Camera #13 projections: 19% inliers (124/647) with MSE=1.85479
+    Camera #14 projections: 29% inliers (523/1817) with MSE=0.192777
+    Camera #15 projections: 32% inliers (694/2175) with MSE=0.193585
+    Camera #16 projections: 26% inliers (629/2396) with MSE=0.210605
+    Camera #17 projections: 29% inliers (782/2661) with MSE=0.301724
+    Camera #18 projections: 30% inliers (911/3014) with MSE=0.295074
+    Camera #19 projections: 36% inliers (962/2661) with MSE=0.335235
+    Camera #20 projections: 58% inliers (1408/2422) with MSE=0.681829
+    Camera #21 projections: 71% inliers (1785/2499) with MSE=0.797335
+    Camera #22 projections: 21% inliers (299/1418) with MSE=2.07812
+After BA camera: k1=-0.00327833, k2=-0.0120065, f=1387.88, cx=721.95, cy=498.813
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.10898, 0.171359, 1.43045] -> [1.10727, 0.175055, 1.42236]
+Camera #3 center: [2.08461, 0.172164, 0.895909] -> [2.06949, 0.171772, 0.883203]
+Camera #4 center: [2.68448, 0.214422, 1.14294] -> [2.66133, 0.219483, 1.12585]
+Camera #5 center: [3.54835, 0.293613, 1.68706] -> [3.51396, 0.316039, 1.65548]
+Camera #6 center: [4.52047, 0.493479, 1.56462] -> [4.436, 0.570451, 1.52088]
+Camera #7 center: [5.38948, 0.589785, 2.25293] -> [5.29454, 0.60021, 2.13431]
+Camera #8 center: [6.23373, 0.719964, 3.14667] -> [6.21383, 0.674594, 2.99645]
+Camera #9 center: [7.07564, 0.871632, 4.14656] -> [7.1163, 0.758061, 3.94683]
+Camera #10 center: [6.95134, 0.845519, 5.56475] -> [7.07246, 0.734022, 5.44864]
+Camera #11 center: [7.22626, 0.958393, 6.84099] -> [7.41418, 0.830533, 6.90116]
+Camera #12 center: [6.89866, 1.06337, 7.80829] -> [7.02434, 1.01458, 8.01835]
+Camera #13 center: [6.52915, 1.16316, 8.72191] -> [6.54656, 1.11927, 8.92994]
+Camera #14 center: [0.561044, 0.0620592, 0.507412] -> [0.559383, 0.0556926, 0.499549]
+Camera #15 center: [1.90146, 0.135827, 0.702895] -> [1.88528, 0.130314, 0.688589]
+Camera #16 center: [2.94229, 0.201405, 1.11638] -> [2.92219, 0.200838, 1.08726]
+Camera #17 center: [3.90216, 0.306825, 1.78992] -> [3.85923, 0.321356, 1.74059]
+Camera #18 center: [4.82482, 0.504675, 1.6919] -> [4.75824, 0.514951, 1.61112]
+Camera #19 center: [5.18129, 0.569693, 2.19058] -> [5.11354, 0.574002, 2.08451]
+Camera #20 center: [6.41491, 0.76639, 3.56782] -> [6.41545, 0.691898, 3.37228]
+Camera #21 center: [6.83524, 0.828982, 3.96972] -> [6.86412, 0.760201, 3.81497]
+Camera #22 center: [6.45309, 0.710893, 5.2147] -> [6.45826, 0.743806, 5.22297]
+After BA tie poits: 63% old + 3% new = 66% total outliers
+After BA projections: 27% inliers with MSE=0.494338
+    Camera #0 projections: 18% inliers (314/1765) with MSE=0.381538
+    Camera #1 projections: 9% inliers (196/2107) with MSE=0.439535
+/home/rsmt98/Documents/photogrammetry-course/tests/test_sfm_ba.cpp:737: Failure
+Expected: (ninls) > (0.15 * nproj), actual: 196 vs 316.05
+Append camera #23 (0023.png) to alignment via 474 common points
+Before BA camera: k1=-0.00327833, k2=-0.0120065, f=1387.88, cx=721.95, cy=498.813
+Before BA projections: 26% inliers with MSE=0.529209
+    Camera #0 projections: 18% inliers (321/1775) with MSE=0.400205
+    Camera #1 projections: 9% inliers (196/2107) with MSE=0.439535
+    Camera #2 projections: 18% inliers (255/1422) with MSE=0.227947
+    Camera #3 projections: 18% inliers (452/2531) with MSE=0.192377
+    Camera #4 projections: 14% inliers (343/2486) with MSE=0.23951
+    Camera #5 projections: 15% inliers (373/2548) with MSE=0.367756
+    Camera #6 projections: 13% inliers (331/2492) with MSE=0.814505
+    Camera #7 projections: 12% inliers (344/2762) with MSE=0.636136
+    Camera #8 projections: 22% inliers (649/2992) with MSE=0.57898
+    Camera #9 projections: 28% inliers (758/2723) with MSE=0.688137
+    Camera #10 projections: 33% inliers (800/2429) with MSE=0.782492
+    Camera #11 projections: 37% inliers (866/2339) with MSE=1.10394
+    Camera #12 projections: 37% inliers (573/1552) with MSE=0.869145
+    Camera #13 projections: 16% inliers (106/651) with MSE=1.23748
+    Camera #14 projections: 29% inliers (522/1818) with MSE=0.197753
+    Camera #15 projections: 32% inliers (691/2176) with MSE=0.193685
+    Camera #16 projections: 26% inliers (618/2396) with MSE=0.228289
+    Camera #17 projections: 28% inliers (738/2663) with MSE=0.289782
+    Camera #18 projections: 27% inliers (808/3014) with MSE=0.374187
+    Camera #19 projections: 28% inliers (739/2662) with MSE=0.446877
+    Camera #20 projections: 43% inliers (1048/2427) with MSE=0.415026
+    Camera #21 projections: 46% inliers (1163/2508) with MSE=0.391495
+    Camera #22 projections: 65% inliers (1135/1757) with MSE=0.678454
+    Camera #23 projections: 12% inliers (162/1305) with MSE=2.11885
+After BA camera: k1=0.0010258, k2=-0.00552065, f=1419.09, cx=715.523, cy=538.858
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.10727, 0.175055, 1.42236] -> [1.12341, 0.144977, 1.43948]
+Camera #3 center: [2.06949, 0.171772, 0.883203] -> [2.102, 0.147632, 0.868389]
+Camera #4 center: [2.66133, 0.219483, 1.12585] -> [2.71768, 0.178231, 1.10467]
+Camera #5 center: [3.51396, 0.316039, 1.65548] -> [3.60359, 0.211258, 1.63779]
+Camera #6 center: [4.436, 0.570451, 1.52088] -> [4.59184, 0.369498, 1.46852]
+Camera #7 center: [5.29454, 0.60021, 2.13431] -> [5.51072, 0.410637, 2.13125]
+Camera #8 center: [6.21383, 0.674594, 2.99645] -> [6.45422, 0.469547, 3.03117]
+Camera #9 center: [7.1163, 0.758061, 3.94683] -> [7.35393, 0.608364, 4.04114]
+Camera #10 center: [7.07246, 0.734022, 5.44864] -> [7.27387, 0.62955, 5.55234]
+Camera #11 center: [7.41418, 0.830533, 6.90116] -> [7.56547, 0.829803, 6.89319]
+Camera #12 center: [7.02434, 1.01458, 8.01835] -> [7.22393, 0.947575, 8.01621]
+Camera #13 center: [6.54656, 1.11927, 8.92994] -> [6.76283, 1.17231, 9.17013]
+Camera #14 center: [0.559383, 0.0556926, 0.499549] -> [0.550149, 0.0654415, 0.50962]
+Camera #15 center: [1.88528, 0.130314, 0.688589] -> [1.92303, 0.114518, 0.674395]
+Camera #16 center: [2.92219, 0.200838, 1.08726] -> [3.00254, 0.147035, 1.07159]
+Camera #17 center: [3.85923, 0.321356, 1.74059] -> [3.97058, 0.231541, 1.73458]
+Camera #18 center: [4.75824, 0.514951, 1.61112] -> [4.89649, 0.356255, 1.56984]
+Camera #19 center: [5.11354, 0.574002, 2.08451] -> [5.28886, 0.38694, 2.06287]
+Camera #20 center: [6.41545, 0.691898, 3.37228] -> [6.71428, 0.406138, 3.4369]
+Camera #21 center: [6.86412, 0.760201, 3.81497] -> [7.17278, 0.460108, 3.88802]
+Camera #22 center: [6.45826, 0.743806, 5.22297] -> [6.7413, 0.499138, 5.38545]
+Camera #23 center: [6.80008, 0.564311, 6.94798] -> [6.78385, 0.640101, 6.85861]
+After BA tie poits: 64% old + 4% new = 68% total outliers
+After BA projections: 24% inliers with MSE=0.562656
+    Camera #0 projections: 17% inliers (299/1775) with MSE=0.623496
+    Camera #1 projections: 9% inliers (181/2107) with MSE=0.598527
+/home/rsmt98/Documents/photogrammetry-course/tests/test_sfm_ba.cpp:737: Failure
+Expected: (ninls) > (0.15 * nproj), actual: 181 vs 316.05
+Append camera #24 (0024.png) to alignment via 400 common points
+Before BA camera: k1=0.0010258, k2=-0.00552065, f=1419.09, cx=715.523, cy=538.858
+Before BA projections: 26% inliers with MSE=0.642908
+    Camera #0 projections: 17% inliers (299/1775) with MSE=0.623496
+    Camera #1 projections: 9% inliers (181/2107) with MSE=0.598527
+    Camera #2 projections: 18% inliers (253/1422) with MSE=0.376668
+    Camera #3 projections: 18% inliers (449/2531) with MSE=0.29293
+    Camera #4 projections: 14% inliers (340/2486) with MSE=0.374864
+    Camera #5 projections: 14% inliers (367/2548) with MSE=0.498278
+    Camera #6 projections: 13% inliers (329/2492) with MSE=0.405759
+    Camera #7 projections: 12% inliers (327/2762) with MSE=0.340953
+    Camera #8 projections: 21% inliers (616/2992) with MSE=0.353711
+    Camera #9 projections: 26% inliers (701/2723) with MSE=0.304175
+    Camera #10 projections: 30% inliers (738/2432) with MSE=0.700841
+    Camera #11 projections: 30% inliers (701/2360) with MSE=0.885116
+    Camera #12 projections: 42% inliers (847/2038) with MSE=0.914039
+    Camera #13 projections: 14% inliers (96/676) with MSE=1.61878
+    Camera #14 projections: 28% inliers (515/1818) with MSE=0.436582
+    Camera #15 projections: 31% inliers (684/2176) with MSE=0.390031
+    Camera #16 projections: 25% inliers (610/2396) with MSE=0.57901
+    Camera #17 projections: 27% inliers (709/2664) with MSE=0.496668
+    Camera #18 projections: 26% inliers (778/3014) with MSE=0.495664
+    Camera #19 projections: 25% inliers (673/2666) with MSE=0.504525
+    Camera #20 projections: 32% inliers (769/2427) with MSE=0.569655
+    Camera #21 projections: 34% inliers (852/2508) with MSE=0.525751
+    Camera #22 projections: 47% inliers (828/1774) with MSE=0.699191
+    Camera #23 projections: 55% inliers (972/1752) with MSE=1.25332
+    Camera #24 projections: 49% inliers (739/1498) with MSE=1.43429
+After BA camera: k1=-0.0078053, k2=-0.0124301, f=1377.54, cx=765.176, cy=496.754
+Camera #0 center: [0, 0, 0] -> [0, 0, 0]
+Camera #1 center: [0.421769, 0.0956361, 0.901646] -> [0.421769, 0.0956361, 0.901646]
+Camera #2 center: [1.12341, 0.144977, 1.43948] -> [1.09875, 0.170391, 1.46301]
+Camera #3 center: [2.102, 0.147632, 0.868389] -> [2.08888, 0.163522, 0.933073]
+Camera #4 center: [2.71768, 0.178231, 1.10467] -> [2.68773, 0.200746, 1.18455]
+Camera #5 center: [3.60359, 0.211258, 1.63779] -> [3.55231, 0.290799, 1.73228]
+Camera #6 center: [4.59184, 0.369498, 1.46852] -> [4.53365, 0.473006, 1.59243]
+Camera #7 center: [5.51072, 0.410637, 2.13125] -> [5.42658, 0.554774, 2.25642]
+Camera #8 center: [6.45422, 0.469547, 3.03117] -> [6.35279, 0.587196, 3.15591]
+Camera #9 center: [7.35393, 0.608364, 4.04114] -> [7.27714, 0.658803, 4.13794]
+Camera #10 center: [7.27387, 0.62955, 5.55234] -> [7.18983, 0.647457, 5.68417]
+Camera #11 center: [7.56547, 0.829803, 6.89319] -> [7.48968, 0.772621, 7.1297]
+Camera #12 center: [7.22393, 0.947575, 8.01621] -> [7.10086, 0.958354, 8.2041]
+Camera #13 center: [6.76283, 1.17231, 9.17013] -> [6.62843, 1.15767, 9.14289]
+Camera #14 center: [0.550149, 0.0654415, 0.50962] -> [0.566207, 0.0581476, 0.531359]
+Camera #15 center: [1.92303, 0.114518, 0.674395] -> [1.90955, 0.129456, 0.754148]
+Camera #16 center: [3.00254, 0.147035, 1.07159] -> [2.94664, 0.206765, 1.19527]
+Camera #17 center: [3.97058, 0.231541, 1.73458] -> [3.90391, 0.325641, 1.86193]
+Camera #18 center: [4.89649, 0.356255, 1.56984] -> [4.82694, 0.508908, 1.73906]
+Camera #19 center: [5.28886, 0.38694, 2.06287] -> [5.1616, 0.583368, 2.22458]
+Camera #20 center: [6.71428, 0.406138, 3.4369] -> [6.49332, 0.623317, 3.55076]
+Camera #21 center: [7.17278, 0.460108, 3.88802] -> [6.9517, 0.673174, 4.01006]
+Camera #22 center: [6.7413, 0.499138, 5.38545] -> [6.5382, 0.628449, 5.47838]
+Camera #23 center: [6.78385, 0.640101, 6.85861] -> [6.5924, 0.773379, 6.91916]
+Camera #24 center: [6.94457, 0.941146, 8.04622] -> [6.7795, 0.97593, 8.19882]
+After BA tie poits: 64% old + 5% new = 69% total outliers
+After BA projections: 25% inliers with MSE=0.433883
+    Camera #0 projections: 17% inliers (294/1775) with MSE=0.17839
+    Camera #1 projections: 8% inliers (173/2107) with MSE=0.116953
+/home/rsmt98/Documents/photogrammetry-course/tests/test_sfm_ba.cpp:737: Failure
+Expected: (ninls) > (0.15 * nproj), actual: 173 vs 316.05
+[  FAILED  ] SFM.ReconstructNViews (64916 ms)
+[----------] 1 test from SFM (64916 ms total)
+
+[----------] Global test environment tear-down
+[==========] 1 test from 1 test suite ran. (64916 ms total)
+[  PASSED  ] 0 tests.
+[  FAILED  ] 1 test, listed below:
+[  FAILED  ] SFM.ReconstructNViews
+
+ 1 FAILED TEST
