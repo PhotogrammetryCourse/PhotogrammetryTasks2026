@@ -3,3 +3,8 @@
 build
 cmake-build*
 data/src/test_sfm/saharov/*.JPG
+build-*/
+.vscode
+.cache
+.venv
+data/debug

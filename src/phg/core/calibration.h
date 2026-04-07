@@ -23,6 +23,9 @@ namespace phg {
         double k2_;
         int width_;
         int height_;
+
+        private:
+            constexpr double radial_distortion_at(double r2) const;
     };
 
 }
