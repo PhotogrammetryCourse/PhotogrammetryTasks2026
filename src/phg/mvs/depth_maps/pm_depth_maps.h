@@ -31,6 +31,9 @@ public:
     {
         cameras_PtoWorld.resize(ncameras);
         cameras_RtoWorld.resize(ncameras);
+        camera_centers.resize(ncameras);
+        total_hyps = 0;
+        winner_hyp_hits.resize(9);
 
         rassert(cameras_imgs.size() == ncameras, 2815841251015);
         rassert(cameras_imgs_grey.size() == ncameras, 2815841251014);
@@ -46,6 +49,7 @@ public:
 
             cameras_PtoWorld[ci] = invP(cameras_PtoLocal[ci]);
             cameras_RtoWorld[ci] = extractR(cameras_PtoWorld[ci]);
+            camera_centers[ci] = unproject(vector3d(0.5, 0.5, 0.0), calibration, cameras_PtoWorld[ci]);
         }
     }
 
@@ -69,7 +73,9 @@ protected:
 
     float estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const vector3d& global_normal, size_t neighb_cam);
     float avgCost(std::vector<float>& costs);
-    void tryToPropagateDonor(ptrdiff_t ni, ptrdiff_t nj, int chessboard_pattern_step, std::vector<float>& hypos_depth, std::vector<vector3f>& hypos_normal, std::vector<float>& hypos_cost);
+    bool tryToPropagateDonor(ptrdiff_t ni, ptrdiff_t nj, int chessboard_pattern_step, std::vector<float>& hypos_depth, std::vector<vector3f>& hypos_normal, std::vector<float>& hypos_cost, std::vector<vector2d> &hypos_pos);
+    bool tryToPropagateDonorGroup(
+        ptrdiff_t x, ptrdiff_t y, int chessboard_pattern_step, std::vector<float>& hypos_depth, std::vector<vector3f>& hypos_normal, std::vector<float>& hypos_cost, std::vector<vector2d> &hypos_pos, const std::initializer_list<std::pair<ptrdiff_t, ptrdiff_t>>& offsets);
 
     void printCurrentStats();
     void debugCurrentPoints(const std::string& label);
@@ -82,6 +88,7 @@ protected:
     const std::vector<matrix34d>& cameras_PtoLocal; // матрица переводящая глобальную систему координат мира в систему координат i-ой камеры (смотрящей по оси +Z)
     std::vector<matrix34d> cameras_PtoWorld; // матрица переводящая локальную систему координат i-ой камеры (смотрящей по оси +Z) в глобальную систему координат мира
     std::vector<matrix3d> cameras_RtoWorld; // матрица поворота из локальной системы координат i-ой камеры (смотрящей по оси +Z) в нлобальную систему координат мира
+    std::vector<vector3d> camera_centers; // центры в глобальных координатах
 
     const phg::Calibration& calibration;
 
@@ -94,6 +101,10 @@ protected:
     cv::Mat cost_map;
 
     int iter; // номер итерации
+
+    size_t total_hyps;
+    std::vector<int> winner_hyp_hits;
+
 };
 
 }
