@@ -37,6 +37,10 @@ cv::Vec3d phg::Calibration::project(const cv::Vec3d &point) const
 
     // TODO 11: добавьте учет радиальных искажений (k1_, k2_) (после деления на Z, но до умножения на f)
 
+    double r = x * x + y * y;
+    double d = 1.0 + k1_ * r + k2_ * r * r;
+    x *= d;
+    y *= d;
 
     x *= f_;
     y *= f_;
@@ -56,6 +60,17 @@ cv::Vec3d phg::Calibration::unproject(const cv::Vec2d &pixel) const
     y /= f_;
 
     // TODO 12: добавьте учет радиальных искажений, когда реализуете - подумайте: почему строго говоря это - не симметричная формула формуле из project? (но лишь приближение)
-
+    // В project мы преобразовываем точку нелинейно (в этом собственно и смысл радиальных искажений), и это преобразование в общем случае необратимо. 
+    // Можно приблизится итеративным методом.
+    
+    double x_orig = x;
+    double y_orig = y;
+    for (int i = 0; i < 10; i++) {
+        double r = x * x + y * y;
+        double d = 1.0 + k1_ * r + k2_ * r * r;
+        x = x_orig / d;
+        y = y_orig / d;
+    }
+    
     return cv::Vec3d(x, y, 1.0);
 }
