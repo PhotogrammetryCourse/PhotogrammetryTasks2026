@@ -22,7 +22,7 @@
 #include <ceres/ceres.h>
 
 // TODO включите Bundle Adjustment (но из любопытства посмотрите как ведет себя реконструкция без BA например для saharov32 без BA)
-#define ENABLE_BA                             0
+#define ENABLE_BA                             1
 
 // TODO когда заработает при малом количестве фотографий - увеличьте это ограничение до 100 чтобы попробовать обработать все фотографии (если же успешно будут отрабаывать только N фотографий - отправьте PR выставив здесь это N)
 #define NIMGS_LIMIT                           10 // сколько фотографий обрабатывать (можно выставить меньше чтобы ускорить экспериментирование, или в случае если весь датасет не выравнивается)
@@ -40,7 +40,7 @@
 // Datasets:
 
 // достаточно чтобы у вас работало на этом датасете, тестирование на Travis CI тоже ведется на нем
-#define DATASET_DIR                  "saharov32"
+#define DATASET_DIR                   "saharov32" // "../../../../../../../data/src/datasets/saharov32" // "saharov32" // "../../../../../../../data/src/datasets/temple47"
 #define DATASET_DOWNSCALE            1 // картинки уже уменьшены в 4 раза (оригинальные вы можете скачать по ссылке из saharov32/LINK.txt)
 #define DATASET_F                    (1585.5 / DATASET_DOWNSCALE)
 
@@ -139,6 +139,8 @@ TEST (SFM, ReconstructNViews) {
     std::vector<std::string> imgs_labels;
     {
         std::ifstream in(std::string("data/src/datasets/") + DATASET_DIR + "/ordered_filenames.txt");
+        // print data path 
+        // std::cout << "Reading images from: " << std::string("data/src/datasets/") + DATASET_DIR + "/ordered_filenames.txt" << std::endl;
         size_t nimages = 0;
         in >> nimages;
         std::cout << nimages << " images" << std::endl;
@@ -282,9 +284,14 @@ TEST (SFM, ReconstructNViews) {
         std::vector<vector3d> tie_points_and_cameras;
         std::vector<cv::Vec3b> tie_points_colors;
         generateTiePointsCloud(tie_points, tracks, keypoints, imgs, aligned, cameras, ncameras, tie_points_and_cameras, tie_points_colors);
+        // print directory where point cloud is exported
+        std::cout << "Exporting point cloud with tie points and cameras to: " << std::string("data/debug/test_sfm_ba/") + DATASET_DIR + "/point_cloud_" + to_string(ncameras) + "_cameras.ply" << std::endl;
         phg::exportPointCloud(tie_points_and_cameras, std::string("data/debug/test_sfm_ba/") + DATASET_DIR + "/point_cloud_" + to_string(ncameras) + "_cameras.ply", tie_points_colors);
 
 #if ENABLE_BA
+
+
+
         runBA(tie_points, tracks, keypoints, cameras, ncameras, calib);
 #endif
         generateTiePointsCloud(tie_points, tracks, keypoints, imgs, aligned, cameras, ncameras, tie_points_and_cameras, tie_points_colors);
@@ -372,6 +379,7 @@ TEST (SFM, ReconstructNViews) {
     }
 }
 
+
 class ReprojectionError {
 public:
     ReprojectionError(double x, double y) : observed_x(x), observed_y(y)
@@ -382,7 +390,8 @@ public:
                     const T* camera_intrinsics, // внутренние калибровочные параметры камеры: [5] = {k1, k2, f, cx, cy} (одни и те же для всех кадров, т.к. снято на одну и ту же камеру)
                     const T* point_global,      // 3D точка: [3]  = {x, y, z}
                     T* residuals) const {       // невязка:  [2]  = {dx, dy}
-        // TODO реализуйте функцию проекции, все нужно делать в типе T чтобы ceres-solver мог под него подставить как Jet (очень рекомендую посмотреть Jet.h - как класная статья из википедии!), так и double
+        // DONE TODO реализуйте функцию проекции, все нужно делать в типе T чтобы ceres-solver мог 
+        // под него подставить как Jet (очень рекомендую посмотреть Jet.h - как класная статья из википедии!), так и double
 
         // translation[3] - сдвиг в локальную систему координат камеры
 
@@ -392,25 +401,41 @@ public:
 
         // Проецируем точку на фокальную плоскость матрицы (т.е. плоскость Z=фокальная длина)
 
+        const T* translation = camera_extrinsics + 0;
+        const T* rotation = camera_extrinsics + 3;
+        T point_local[3];
+        ceres::AngleAxisRotatePoint(rotation, point_global, point_local);
+        point_local[0] += translation[0];
+        point_local[1] += translation[1];
+        point_local[2] += translation[2];
+
+        T xp = point_local[0] / point_local[2];
+        T yp = point_local[1] / point_local[2];
 #if ENABLE_INSTRINSICS_K1_K2
         // k1, k2 - коэффициенты радиального искажения (radial distortion)
+        T r2 = xp * xp + yp * yp;
+        T radial_distortion = T(1.0) + camera_intrinsics[0] * r2 + camera_intrinsics[1] * r2 * r2;
+        xp *= radial_distortion;
+        yp *= radial_distortion;
 #endif
-
+        // f == camera_intrinsics[2]
         // Домножаем на f, тем самым переводя в пиксели
-
         // Из координат когда точка (0, 0) - центр оптической оси
         // Переходим в координаты когда точка (0, 0) - левый верхний угол картинки
         // cx, cy - координаты центра оптической оси (обычно это центр картинки, но часто он чуть смещен)
-
+        T predicted_x = camera_intrinsics[2] * xp + camera_intrinsics[3];
+        T predicted_y = camera_intrinsics[2] * yp + camera_intrinsics[4];
         // Теперь по спроецированным координатам не забудьте посчитать невязку репроекции
-
+        residuals[0] = predicted_x - T(observed_x);
+        residuals[1] = predicted_y - T(observed_y);
         return true;
-        // TODO сверьте эту функцию с вашей реализацией проекции в src/phg/core/calibration.cpp (они должны совпадать)
+        // DONE TODO сверьте эту функцию с вашей реализацией проекции в src/phg/core/calibration.cpp (они должны совпадать)
     }
 protected:
     double observed_x;
     double observed_y;
 };
+
 
 void printCamera(double* camera_intrinsics)
 {
@@ -435,9 +460,17 @@ void runBA(std::vector<vector3d> &tie_points,
     ASSERT_NEAR(calib.cy_, 0.0, 0.3 * calib.height());
 
     // внутренние калибровочные параметры камеры: [5] = {k1, k2, f, cx, cy}
-    // TODO: преобразуйте calib в блок параметров камеры (ее внутренних характеристик) для оптимизации в BA
+    // DONE TODO: преобразуйте calib в блок параметров камеры (ее внутренних характеристик) 
+    // для оптимизации в BA
     double camera_intrinsics[5];
     std::cout << "Before BA ";
+
+    camera_intrinsics[0] = calib.k1_; // k1
+    camera_intrinsics[1] = calib.k2_; // k2
+    camera_intrinsics[2] = calib.f_; // f
+    camera_intrinsics[3] = calib.cx_ + calib.width() * 0.5;
+    camera_intrinsics[4] = calib.cy_ + calib.height() * 0.5;
+
     printCamera(camera_intrinsics);
 
     const int CAMERA_EXTRINSICS_NPARAMS = 6;
@@ -460,16 +493,20 @@ void runBA(std::vector<vector3d> &tie_points,
         // > axis-angle rotation representations. Templated for use with autodifferentiation.
         // поэтому нужно транспонировать:
         matrix3d Rt = R.t();
-        ceres::RotationMatrixToAngleAxis(&(Rt(0, 0)), rotation_angle_axis);
 
-        for (int d = 0; d < 3; ++d) {
-            translation[d] = O[d];
-        }
+        ceres::RotationMatrixToAngleAxis(&(R(0,0)), rotation_angle_axis);
+        vector3d t = -R * O;
+        for (int d = 0; d < 3; ++d) translation[d] = t[d];
+
+        // ceres::RotationMatrixToAngleAxis(&(Rt(0, 0)), rotation_angle_axis);
+        // for (int d = 0; d < 3; ++d) {
+        //     translation[d] = O[d];
+        // }
     }
 
     // остались только блоки параметров для 3D точек, но их аллоцировать не обязательно, т.к. мы можем их оптимизировать напрямую в tie_points массиве
 
-    // TODO по хорошему, должна быть среднеквадратичным отклонением от наблюдаемой ошибки а не константой. Можно оставить так для простоты, можно поправить и сделать правильно
+    // DONE TODO по хорошему, должна быть среднеквадратичным отклонением от наблюдаемой ошибки а не константой. Можно оставить так для простоты, можно поправить и сделать правильно
     const double sigma = 2.0; // измеряется в пикселях
 
     double inliers_mse = 0.0;
@@ -563,8 +600,9 @@ void runBA(std::vector<vector3d> &tie_points,
 //http://ceres-solver.org/nnls_solving.html
     if (ENABLE_BA) {
         ceres::Solver::Options options;
-        options.linear_solver_type = ceres::DENSE_SCHUR;
+        options.linear_solver_type = ceres::SPARSE_SCHUR; //;  ceres::DENSE_SCHUR; // ceres::SPARSE_SCHUR; // ceres::ITERATIVE_SCHUR;
         options.minimizer_progress_to_stdout = verbose;
+        // options.max_num_iterations = 100;
         ceres::Solver::Summary summary;
         Solve(options, &problem, &summary);
 
@@ -574,9 +612,17 @@ void runBA(std::vector<vector3d> &tie_points,
     }
 
     std::cout << "After BA ";
-    printCamera(camera_intrinsics);
-    // TODO преобразуйте параметры камеры в обратную сторону, чтобы последующая резекция учла актуальное представление о пространстве:
+    
+    // DONE TODO преобразуйте параметры камеры в обратную сторону, чтобы последующая резекция учла актуальное представление о пространстве:
     // calib.* = camera_intrinsics[*];
+    calib.k1_ = camera_intrinsics[0];
+    calib.k2_ = camera_intrinsics[1];
+    calib.f_ = camera_intrinsics[2];
+
+    calib.cx_ = camera_intrinsics[3]- calib.width() * 0.5;
+    calib.cy_ = camera_intrinsics[4] - calib.height() * 0.5;
+    printCamera(camera_intrinsics);
+
 
     ASSERT_NEAR(calib.f_ , DATASET_F, 0.2 * DATASET_F);
     ASSERT_NEAR(calib.cx_, 0.0, 0.3 * calib.width());
@@ -649,8 +695,23 @@ void runBA(std::vector<vector3d> &tie_points,
             }
 
             if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA) {
-                // TODO выполните проверку случая когда два луча почти параллельны, чтобы не было странных точек улетающих на бесконечность (например чтобы угол был хотя бы 2.5 градуса)
+                // TODO выполните проверку случая когда два луча почти параллельны, 
+                // чтобы не было странных точек улетающих на бесконечность (например чтобы угол был хотя бы 2.5 градуса)
                 // should_be_disabled = true;
+
+                cv::Vec3d ray1 = normalize(track_point - camera_origin);
+                cv::Vec3d ray2 = normalize(track_point - camera_origin);
+                
+                //  angle between rays 
+                double dot_product = ray1.dot(ray2);
+                double angle_radians = acos(std::abs(dot_product)); // abs() handles both acute and obtuse angles
+                double angle_degrees = angle_radians * 180.0 / CV_PI;
+                double min_angle_threshold = 2.5; // degrees
+                if (angle_degrees < min_angle_threshold) {
+                    should_be_disabled = true;
+                    break;
+                }
+
             }
 
             {
