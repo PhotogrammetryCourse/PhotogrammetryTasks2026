@@ -40,7 +40,7 @@
 // Datasets:
 
 // достаточно чтобы у вас работало на этом датасете, тестирование на Travis CI тоже ведется на нем
-#define DATASET_DIR                   "saharov32" // "../../../../../../../data/src/datasets/saharov32" // "saharov32" // "../../../../../../../data/src/datasets/temple47"
+#define DATASET_DIR                   "saharov32" //"../../../../../../../data/src/datasets/saharov32" // "saharov32" // "../../../../../../../data/src/datasets/temple47"
 #define DATASET_DOWNSCALE            1 // картинки уже уменьшены в 4 раза (оригинальные вы можете скачать по ссылке из saharov32/LINK.txt)
 #define DATASET_F                    (1585.5 / DATASET_DOWNSCALE)
 
@@ -423,11 +423,11 @@ public:
         // Из координат когда точка (0, 0) - центр оптической оси
         // Переходим в координаты когда точка (0, 0) - левый верхний угол картинки
         // cx, cy - координаты центра оптической оси (обычно это центр картинки, но часто он чуть смещен)
-        T predicted_x = camera_intrinsics[2] * xp + camera_intrinsics[3];
-        T predicted_y = camera_intrinsics[2] * yp + camera_intrinsics[4];
+        T predicted_x = xp * camera_intrinsics[2]  + camera_intrinsics[3];
+        T predicted_y = yp * camera_intrinsics[2]  + camera_intrinsics[4];
         // Теперь по спроецированным координатам не забудьте посчитать невязку репроекции
-        residuals[0] = predicted_x - T(observed_x);
-        residuals[1] = predicted_y - T(observed_y);
+        residuals[0] = predicted_x - observed_x;
+        residuals[1] = predicted_y - observed_y;
         return true;
         // DONE TODO сверьте эту функцию с вашей реализацией проекции в src/phg/core/calibration.cpp (они должны совпадать)
     }
@@ -435,7 +435,6 @@ protected:
     double observed_x;
     double observed_y;
 };
-
 
 void printCamera(double* camera_intrinsics)
 {
@@ -493,15 +492,11 @@ void runBA(std::vector<vector3d> &tie_points,
         // > axis-angle rotation representations. Templated for use with autodifferentiation.
         // поэтому нужно транспонировать:
         matrix3d Rt = R.t();
+        ceres::RotationMatrixToAngleAxis(&(Rt(0, 0)), rotation_angle_axis);
 
-        ceres::RotationMatrixToAngleAxis(&(R(0,0)), rotation_angle_axis);
-        vector3d t = -R * O;
-        for (int d = 0; d < 3; ++d) translation[d] = t[d];
-
-        // ceres::RotationMatrixToAngleAxis(&(Rt(0, 0)), rotation_angle_axis);
-        // for (int d = 0; d < 3; ++d) {
-        //     translation[d] = O[d];
-        // }
+        for (int d = 0; d < 3; ++d) {
+            translation[d] = O[d];
+        }
     }
 
     // остались только блоки параметров для 3D точек, но их аллоцировать не обязательно, т.к. мы можем их оптимизировать напрямую в tie_points массиве
@@ -600,9 +595,8 @@ void runBA(std::vector<vector3d> &tie_points,
 //http://ceres-solver.org/nnls_solving.html
     if (ENABLE_BA) {
         ceres::Solver::Options options;
-        options.linear_solver_type = ceres::SPARSE_SCHUR; //;  ceres::DENSE_SCHUR; // ceres::SPARSE_SCHUR; // ceres::ITERATIVE_SCHUR;
+        options.linear_solver_type = ceres::DENSE_SCHUR; //;  ceres::DENSE_SCHUR; // ceres::SPARSE_SCHUR; // ceres::ITERATIVE_SCHUR;
         options.minimizer_progress_to_stdout = verbose;
-        // options.max_num_iterations = 100;
         ceres::Solver::Summary summary;
         Solve(options, &problem, &summary);
 
@@ -672,6 +666,8 @@ void runBA(std::vector<vector3d> &tie_points,
 
         vector3d track_point = tie_points[i];
 
+        std::vector<vector3d> rays;
+        const double cos_min_ray_angle = std::cos(2.5 * CV_PI / 180.0);
         for (size_t ci = 0; ci < track.img_kpt_pairs.size(); ++ci) {
             int camera_id = track.img_kpt_pairs[ci].first;
 
@@ -694,24 +690,42 @@ void runBA(std::vector<vector3d> &tie_points,
                 }
             }
 
-            if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA) {
-                // TODO выполните проверку случая когда два луча почти параллельны, 
-                // чтобы не было странных точек улетающих на бесконечность (например чтобы угол был хотя бы 2.5 градуса)
-                // should_be_disabled = true;
+            // if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA) {
+            //     // TODO выполните проверку случая когда два луча почти параллельны, 
+            //     // чтобы не было странных точек улетающих на бесконечность (например чтобы угол был хотя бы 2.5 градуса)
+            //     // should_be_disabled = true;
 
-                cv::Vec3d ray1 = normalize(track_point - camera_origin);
-                cv::Vec3d ray2 = normalize(track_point - camera_origin);
+            //     cv::Vec3d ray1 = normalize(track_point - camera_origin);
+            //     cv::Vec3d ray2 = normalize(track_point - camera_origin);
                 
-                //  angle between rays 
-                double dot_product = ray1.dot(ray2);
-                double angle_radians = acos(std::abs(dot_product)); // abs() handles both acute and obtuse angles
-                double angle_degrees = angle_radians * 180.0 / CV_PI;
-                double min_angle_threshold = 2.5; // degrees
-                if (angle_degrees < min_angle_threshold) {
-                    should_be_disabled = true;
-                    break;
-                }
+            //     //  angle between rays 
+            //     double dot_product = ray1.dot(ray2);
+            //     double angle_radians = acos(std::abs(dot_product)); // abs() handles both acute and obtuse angles
+            //     double angle_degrees = angle_radians * 180.0 / CV_PI;
+            //     double min_angle_threshold = 2.5; // degrees
+            //     if (angle_degrees < min_angle_threshold) {
+            //         should_be_disabled = true;
+            //         break;
+            //     }
 
+            // }
+
+
+             if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA) {
+                vector3d ray = track_point - camera_origin;
+                double ray_norm = cv::norm(ray);
+                if (ray_norm == 0.0) {
+                    should_be_disabled = true;
+                } else {
+                    ray /= ray_norm;
+                    for (const auto &prev_ray : rays) {
+                        if (ray.dot(prev_ray) > cos_min_ray_angle) {
+                            should_be_disabled = true;
+                            break;
+                        }
+                    }
+                    rays.push_back(ray);
+                }
             }
 
             {
