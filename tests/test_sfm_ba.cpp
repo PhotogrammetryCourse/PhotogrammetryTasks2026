@@ -40,7 +40,7 @@
 // Datasets:
 
 // достаточно чтобы у вас работало на этом датасете, тестирование на Travis CI тоже ведется на нем
-#define DATASET_DIR                   "saharov32" //"../../../../../../../data/src/datasets/saharov32" // "saharov32" // "../../../../../../../data/src/datasets/temple47"
+#define DATASET_DIR                   "saharov32" // "../../../../../../../data/src/datasets/saharov32" // "saharov32" // "../../../../../../../data/src/datasets/temple47"
 #define DATASET_DOWNSCALE            1 // картинки уже уменьшены в 4 раза (оригинальные вы можете скачать по ссылке из saharov32/LINK.txt)
 #define DATASET_F                    (1585.5 / DATASET_DOWNSCALE)
 
@@ -379,7 +379,6 @@ TEST (SFM, ReconstructNViews) {
     }
 }
 
-
 class ReprojectionError {
 public:
     ReprojectionError(double x, double y) : observed_x(x), observed_y(y)
@@ -400,14 +399,19 @@ public:
         // (P.S. у камеры всмысле вращения три степени свободы)
 
         // Проецируем точку на фокальную плоскость матрицы (т.е. плоскость Z=фокальная длина)
-
+        // const T* translation = camera_extrinsics;
+        // T point_almost_local[3];
+        // for (size_t i = 0; i < 3; i++)
+        //     point_almost_local[i] = point_global[i] - translation[i];
+        
         const T* translation = camera_extrinsics + 0;
         const T* rotation = camera_extrinsics + 3;
         T point_local[3];
-        ceres::AngleAxisRotatePoint(rotation, point_global, point_local);
-        point_local[0] += translation[0];
-        point_local[1] += translation[1];
-        point_local[2] += translation[2];
+        T point_local2[3];
+        for (size_t i = 0; i < 3; i++)
+            point_local2[i] = point_global[i] - translation[i];
+        ceres::AngleAxisRotatePoint(rotation, point_local2, point_local);
+
 
         T xp = point_local[0] / point_local[2];
         T yp = point_local[1] / point_local[2];
@@ -435,6 +439,7 @@ protected:
     double observed_x;
     double observed_y;
 };
+
 
 void printCamera(double* camera_intrinsics)
 {
@@ -666,8 +671,6 @@ void runBA(std::vector<vector3d> &tie_points,
 
         vector3d track_point = tie_points[i];
 
-        std::vector<vector3d> rays;
-        const double cos_min_ray_angle = std::cos(2.5 * CV_PI / 180.0);
         for (size_t ci = 0; ci < track.img_kpt_pairs.size(); ++ci) {
             int camera_id = track.img_kpt_pairs[ci].first;
 
@@ -690,6 +693,27 @@ void runBA(std::vector<vector3d> &tie_points,
                 }
             }
 
+            if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA) {
+                std::vector <int> point_cameras_ids;
+                for (auto pair : track.img_kpt_pairs) {
+                    point_cameras_ids.push_back(pair.first);
+                }
+                vector3d ray_dir = cv::normalize(track_point - camera_origin);
+                const double min_angle = 2.5 * 3.14159265358979323846 / 180.0;
+                for (int camera_id2 : point_cameras_ids) {
+                    if (camera_id == camera_id2) continue;
+                    matrix3d R2; vector3d camera_origin2;
+                    phg::decomposeUndistortedPMatrix(R2, camera_origin2, cameras[camera_id2]);
+
+                    vector3d ray_dir2 = cv::normalize(track_point - camera_origin2);
+                    double angle = acos(std::min(std::max(ray_dir.dot(ray_dir2), -1.0), 1.0));
+                    if (angle < min_angle) {
+                        should_be_disabled = true;
+                        break;
+                    }
+                }
+            }
+           
             // if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA) {
             //     // TODO выполните проверку случая когда два луча почти параллельны, 
             //     // чтобы не было странных точек улетающих на бесконечность (например чтобы угол был хотя бы 2.5 градуса)
@@ -711,22 +735,22 @@ void runBA(std::vector<vector3d> &tie_points,
             // }
 
 
-             if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA) {
-                vector3d ray = track_point - camera_origin;
-                double ray_norm = cv::norm(ray);
-                if (ray_norm == 0.0) {
-                    should_be_disabled = true;
-                } else {
-                    ray /= ray_norm;
-                    for (const auto &prev_ray : rays) {
-                        if (ray.dot(prev_ray) > cos_min_ray_angle) {
-                            should_be_disabled = true;
-                            break;
-                        }
-                    }
-                    rays.push_back(ray);
-                }
-            }
+            //  if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA) {
+            //     vector3d ray = track_point - camera_origin;
+            //     double ray_norm = cv::norm(ray);
+            //     if (ray_norm == 0.0) {
+            //         should_be_disabled = true;
+            //     } else {
+            //         ray /= ray_norm;
+            //         for (const auto &prev_ray : rays) {
+            //             if (ray.dot(prev_ray) > cos_min_ray_angle) {
+            //                 should_be_disabled = true;
+            //                 break;
+            //             }
+            //         }
+            //         rays.push_back(ray);
+            //     }
+            // }
 
             {
                 const double* params[3];

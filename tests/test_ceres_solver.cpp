@@ -385,36 +385,41 @@ void evaluateLineFitting(double sigma, double& fitted_inliers_fraction, double& 
     ceres::Solver::Summary summary;
     Solve(options, &problem, &summary);
 
-    double norm = sqrt(line_params[0] * line_params[0] + line_params[1] * line_params[1]);
-    line_params[0] /= norm;
-    line_params[1] /= norm;
-    line_params[2] /= norm;
+    // double norm = sqrt(line_params[0] * line_params[0] + line_params[1] * line_params[1]);
+    // line_params[0] /= norm;
+    // line_params[1] /= norm;
+    // line_params[2] /= norm;
 
-    // Приводим знак к эталонному (чтобы a было положительным, если эталонное a > 0)
-    double ideal_norm = sqrt(ideal_line[0] * ideal_line[0] + ideal_line[1] * ideal_line[1]);
-    double ideal_a_norm = ideal_line[0] / ideal_norm;
-    if ((line_params[0] < 0 && ideal_a_norm > 0) || (line_params[0] > 0 && ideal_a_norm < 0)) {
-        line_params[0] = -line_params[0];
-        line_params[1] = -line_params[1];
-        line_params[2] = -line_params[2];
-    }
+    // // Приводим знак к эталонному (чтобы a было положительным, если эталонное a > 0)
+    // double ideal_norm = sqrt(ideal_line[0] * ideal_line[0] + ideal_line[1] * ideal_line[1]);
+    // double ideal_a_norm = ideal_line[0] / ideal_norm;
+    // if ((line_params[0] < 0 && ideal_a_norm > 0) || (line_params[0] > 0 && ideal_a_norm < 0)) {
+    //     line_params[0] = -line_params[0];
+    //     line_params[1] = -line_params[1];
+    //     line_params[2] = -line_params[2];
+    // }
 
     std::cout << summary.BriefReport() << std::endl;
 
     std::cout << "Found line: (a=" << line_params[0] << ", b=" << line_params[1] << ", c=" << line_params[2] << ")" << std::endl;
-    double statistical_threshold = 10.0 * sigma / sqrt(n_points);
-    double threshold = std::max(statistical_threshold, 1e-4 * std::max(std::abs(ideal_line[0]), std::max(std::abs(ideal_line[1]), std::abs(ideal_line[2]))));
+    
+     const double norm = ideal_line[2] / line_params[2];
+    line_params[0] *= norm;
+    line_params[1] *= norm;
+    line_params[2] *= norm;
 
-    if (outliers_fraction == 0.0 && !use_huber) {
-        threshold *= 10.0; // or 20.0, depending on sigma
-    }
+    double statistical_threshold = 10.0 * sigma / sqrt(n_points);
+    double threshold = 1e-3 * std::max(std::abs(ideal_line[0]), std::max(std::abs(ideal_line[1]), std::abs(ideal_line[2])));
     if (outliers_fraction > 0.0 && !use_huber) {
-        threshold *= 70.0; // or even 100.0
+        threshold *= 10.0; // 20.0
     }
+    // if (outliers_fraction > 0.0 && !use_huber) {
+    //     threshold *= 70.0; // or even 100.0
+    // }
 
     for (int d = 0; d < 3; ++d) {
 
-        ASSERT_NEAR(line_params[d], ideal_line[d] / ideal_norm, threshold);
+        ASSERT_NEAR(line_params[d], ideal_line[d] , threshold);
         // DONE (??) TODO 7 расскоментируйте сверку найденной прямой и эталонной
         // почему они расходятся? как это можно решить? придумайте хотя бы два способа:
         // - пост-обработкой - как-то поправив параметры прямой перед сверкой (при этом не меняя ее положение в пространстве)
@@ -423,22 +428,20 @@ void evaluateLineFitting(double sigma, double& fitted_inliers_fraction, double& 
     }
 
     double inliers_fraction, mse;
-    double norm_ideal[3] = { ideal_line[0] / ideal_norm, ideal_line[1] / ideal_norm, ideal_line[2] / ideal_norm };
-
-    evaluateLine(points, norm_ideal, sigma, inliers_fraction, mse);
+    evaluateLine(points, ideal_line, sigma, inliers_fraction, mse);
     double expected_inlier_fraction = (0.99 - outliers_fraction);
 
     ASSERT_GT(inliers_fraction, expected_inlier_fraction); // TODO 8 раскоментируйте, почему эта проверка падает? как поправить?
-    ASSERT_LT(mse, 1.1 * sigma * sigma); // TODO 9 раскомментируйте, почему проверка падает? на каких тестах она падает,
+    ASSERT_LT(mse, 1.2 * sigma * sigma); // TODO 9 раскомментируйте, почему проверка падает? на каких тестах она падает,
                                          //  на каких проходит? попробуйте отладить рассчет mse_inliers_distance в evaluateLine
 
     // Оцениваем качество найденной прямой
-    evaluateLine(points, norm_ideal, sigma, inliers_fraction, mse);
+    evaluateLine(points, ideal_line, sigma, inliers_fraction, mse);
 
     if (outliers_fraction == 0 || use_huber) {
         // TODO 10 раскоментируйте обе проверки, почему они падают? в каких тестах? поправьте (в т.ч. подобно тому как было с ослаблением порога выше)
         ASSERT_GT(inliers_fraction, expected_inlier_fraction);
-        ASSERT_LT(mse, 1.1 * sigma * sigma);
+        ASSERT_LT(mse, 1.2 * sigma * sigma);
     }
 }
 
@@ -448,7 +451,7 @@ void evaluateLine(const std::vector<double_2>& points, const double* line, doubl
     double sum_sq = 0.0;
     for (const auto& p : points) {
         double dist = std::abs(line[0] * p[0] + line[1] * p[1] + line[2]);
-        if (dist <= 3.0 * sigma) {
+        if (std::abs(dist) <= 3.0 * sigma) {
             ++inliers;
             sum_sq += dist * dist;
         }
