@@ -3,3 +3,11 @@
 build
 cmake-build*
 data/src/test_sfm/saharov/*.JPG
+**/*_cl.h
+.idea
+build
+cmake-build*
+.github
+4.11.0.zip
+.cache
+opencv-4.11.0
