@@ -35,6 +35,7 @@
 #define ENABLE_OUTLIERS_FILTRATION_COLINEAR   1
 #define ENABLE_OUTLIERS_FILTRATION_NEGATIVE_Z 1
 
+
 //________________________________________________________________________________
 // Datasets:
 
