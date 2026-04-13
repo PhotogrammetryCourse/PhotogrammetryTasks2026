@@ -689,7 +689,7 @@ void runBA(std::vector<vector3d> &tie_points,
                         phg::decomposeUndistortedPMatrix(R1, O1, cameras[track.img_kpt_pairs[ci1].first]);
                         vector3d ray1 = track_point - O1;
                         double norm1 = cv::norm(ray1);
-                        if (norm1 == 0.0) continue
+                        if (norm1 == 0.0) continue;
                         ray1 /= norm1;
 
                         double cos_angle = std::clamp(ray0.dot(ray1), -1.0, 1.0);
