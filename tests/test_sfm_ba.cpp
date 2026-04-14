@@ -407,7 +407,7 @@ public:
 #if ENABLE_INSTRINSICS_K1_K2
         // k1, k2 - коэффициенты радиального искажения (radial distortion)
 #endif
-        T r = ceres::hypot(x, y);
+        T r = x * x + y * y;
         T k1 = camera_intrinsics[0];
         T k2 = camera_intrinsics[1];
         T L = 1.0 + k1 * r + k2 * r * r;
