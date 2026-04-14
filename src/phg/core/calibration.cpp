@@ -2,7 +2,7 @@
 #include <phg/sfm/defines.h>
 #include "calibration.h"
 
-const int NUM_ITER = 10;
+const int NUM_ITER = 100;
 
 phg::Calibration::Calibration(int width, int height)
     : width_(width)
