@@ -36,7 +36,11 @@ cv::Vec3d phg::Calibration::project(const cv::Vec3d &point) const
     double y = point[1] / point[2];
 
     // TODO 11: добавьте учет радиальных искажений (k1_, k2_) (после деления на Z, но до умножения на f)
+    double rSq = x * x + y * y;
+    double rad = 1.0 + k1_ * rSq + k2_ * rSq * rSq;
 
+    x *= rad;
+    y *= rad;
 
     x *= f_;
     y *= f_;
@@ -56,6 +60,18 @@ cv::Vec3d phg::Calibration::unproject(const cv::Vec2d &pixel) const
     y /= f_;
 
     // TODO 12: добавьте учет радиальных искажений, когда реализуете - подумайте: почему строго говоря это - не симметричная формула формуле из project? (но лишь приближение)
+    // Потому что мы не знаем, какой для текущей точки был изначальный радиус, а найти его уже сложно
+
+    // https://stackoverflow.com/questions/61798590/understanding-legacy-code-algorithm-to-remove-radial-lens-distortion
+    double xd, yd;
+    for (int i = 0; i < 10; i++) {
+        double rSq = xd * xd + yd * yd;
+        double rad = 1 + k1_ * rSq + k2_ * rSq * rSq;
+        xd = x / rad;
+        yd = y / rad;
+    }
+    x = xd;
+    y = yd;
 
     return cv::Vec3d(x, y, 1.0);
 }
