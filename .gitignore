@@ -2,7 +2,10 @@
 .idea
 build
 cmake-build*
-data/src/test_sfm/saharov/*.JPG
+opencv-4.11.0
+4.11.0.zip
+data
+.cachedata/src/test_sfm/saharov/*.JPG
 **/*_cl.h
 .idea
 build
