@@ -67,18 +67,18 @@ cv::Vec3d phg::Calibration::unproject(const cv::Vec2d &pixel) const
     double x_next = x;
     double y_next = y;
     for(int i = 0; i < NUM_ITER; ++i) {
-        double r = x * x + y * y;
+        double r = x_next * x_next + y_next * y_next;
         double L = 1.0 + k1_ * r + k2_ * r * r;
         x_next = x / L;
         y_next = y / L;
 
-        double delta = std::max(std::abs(x_next - x), std::abs(y_next - y));
+        double delta = std::max(std::abs(x_next * L - x), std::abs(y_next * L - y));
         if (delta < 1e-10) {
             break;
         }
-        x = x_next;
-        y = y_next;
+        x_next = x / L;
+        y_next = y / L;
     }
 
-    return cv::Vec3d(x, y, 1.0);
+    return cv::Vec3d(x_next, y_next, 1.0);
 }
