@@ -25,7 +25,7 @@
 #define ENABLE_BA                             1
 
 // TODO когда заработает при малом количестве фотографий - увеличьте это ограничение до 100 чтобы попробовать обработать все фотографии (если же успешно будут отрабаывать только N фотографий - отправьте PR выставив здесь это N)
-#define NIMGS_LIMIT                           32 // сколько фотографий обрабатывать (можно выставить меньше чтобы ускорить экспериментирование, или в случае если весь датасет не выравнивается)
+#define NIMGS_LIMIT                           10 // сколько фотографий обрабатывать (можно выставить меньше чтобы ускорить экспериментирование, или в случае если весь датасет не выравнивается)
 #define INTRINSICS_CALIBRATION_MIN_IMGS       5 // начиная со скольки камер начинать оптимизировать внутренние параметры камеры (фокальную длину и т.п.) - из соображений что "пока камер мало - наблюдений может быть недостаточно чтобы не сойтись к ложной внутренней модели камеры"
 
 #define ENABLE_INSTRINSICS_K1_K2              1 // TODO учитывать ли радиальную дисторсию - коэффициенты k1, k2 попробуйте с ним и и без saharov32, заметна ли разница?
@@ -35,13 +35,6 @@
 #define ENABLE_OUTLIERS_FILTRATION_3_SIGMA    1
 #define ENABLE_OUTLIERS_FILTRATION_COLINEAR   1
 #define ENABLE_OUTLIERS_FILTRATION_NEGATIVE_Z 1
-
-// ALL_ENABLED_NIMGS_LIMIT_10
-// DISABLED_BA
-// DISABLED_INSTRINSICS_K1_K2
-// DISABLED_OUTLIERS_FILTRATION_3_SIGMA
-// DISABLED_OUTLIERS_FILTRATION_COLINEAR
-// DISABLED_OUTLIERS_FILTRATION_NEGATIVE_Z
 
 //________________________________________________________________________________
 // Datasets:
