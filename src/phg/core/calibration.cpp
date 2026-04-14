@@ -1,6 +1,7 @@
 #include <phg/sfm/defines.h>
 #include "calibration.h"
 
+#include <cmath>
 
 phg::Calibration::Calibration(int width, int height)
     : width_(width)
@@ -35,8 +36,10 @@ cv::Vec3d phg::Calibration::project(const cv::Vec3d &point) const
     double x = point[0] / point[2];
     double y = point[1] / point[2];
 
-    // TODO 11: добавьте учет радиальных искажений (k1_, k2_) (после деления на Z, но до умножения на f)
-
+    const double r2 = x * x + y * y;
+    const double radial = 1.0 + k1_ * r2 + k2_ * r2 * r2;
+    x *= radial;
+    y *= radial;
 
     x *= f_;
     y *= f_;
@@ -55,7 +58,14 @@ cv::Vec3d phg::Calibration::unproject(const cv::Vec2d &pixel) const
     x /= f_;
     y /= f_;
 
-    // TODO 12: добавьте учет радиальных искажений, когда реализуете - подумайте: почему строго говоря это - не симметричная формула формуле из project? (но лишь приближение)
+    double xu = x;
+    double yu = y;
+    for (int i = 0; i < 5; ++i) {
+        const double r2 = xu * xu + yu * yu;
+        const double radial = 1.0 + k1_ * r2 + k2_ * r2 * r2;
+        xu = x / radial;
+        yu = y / radial;
+    }
 
-    return cv::Vec3d(x, y, 1.0);
+    return cv::Vec3d(xu, yu, 1.0);
 }

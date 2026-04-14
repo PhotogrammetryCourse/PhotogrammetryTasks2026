@@ -6,6 +6,8 @@
 #include <opencv2/features2d/features2d.hpp>
 
 #include <fstream>
+#include <cmath>
+#include <limits>
 #include <libutils/misc.h>
 #include <libutils/timer.h>
 #include <libutils/rasserts.h>
@@ -22,7 +24,7 @@
 #include <ceres/ceres.h>
 
 // TODO включите Bundle Adjustment (но из любопытства посмотрите как ведет себя реконструкция без BA например для saharov32 без BA)
-#define ENABLE_BA                             0
+#define ENABLE_BA                             1
 
 // TODO когда заработает при малом количестве фотографий - увеличьте это ограничение до 100 чтобы попробовать обработать все фотографии (если же успешно будут отрабаывать только N фотографий - отправьте PR выставив здесь это N)
 #define NIMGS_LIMIT                           10 // сколько фотографий обрабатывать (можно выставить меньше чтобы ускорить экспериментирование, или в случае если весь датасет не выравнивается)
@@ -382,30 +384,34 @@ public:
                     const T* camera_intrinsics, // внутренние калибровочные параметры камеры: [5] = {k1, k2, f, cx, cy} (одни и те же для всех кадров, т.к. снято на одну и ту же камеру)
                     const T* point_global,      // 3D точка: [3]  = {x, y, z}
                     T* residuals) const {       // невязка:  [2]  = {dx, dy}
-        // TODO реализуйте функцию проекции, все нужно делать в типе T чтобы ceres-solver мог под него подставить как Jet (очень рекомендую посмотреть Jet.h - как класная статья из википедии!), так и double
+        const T* translation = camera_extrinsics + 0;
+        const T* rotation = camera_extrinsics + 3;
 
-        // translation[3] - сдвиг в локальную систему координат камеры
+        T shifted_point[3] = {
+            point_global[0] - translation[0],
+            point_global[1] - translation[1],
+            point_global[2] - translation[2]
+        };
 
-        // rotation[3] - angle-axis rotation, поворачиваем точку point->p (чтобы перейти в локальную систему координат камеры)
-        // подробнее см. https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation
-        // (P.S. у камеры всмысле вращения три степени свободы)
+        T point_camera[3];
+        ceres::AngleAxisRotatePoint(rotation, shifted_point, point_camera);
 
-        // Проецируем точку на фокальную плоскость матрицы (т.е. плоскость Z=фокальная длина)
+        T x = point_camera[0] / point_camera[2];
+        T y = point_camera[1] / point_camera[2];
 
 #if ENABLE_INSTRINSICS_K1_K2
-        // k1, k2 - коэффициенты радиального искажения (radial distortion)
+        const T r2 = x * x + y * y;
+        const T radial = T(1.0) + camera_intrinsics[0] * r2 + camera_intrinsics[1] * r2 * r2;
+        x *= radial;
+        y *= radial;
 #endif
 
-        // Домножаем на f, тем самым переводя в пиксели
+        const T px = camera_intrinsics[2] * x + camera_intrinsics[3];
+        const T py = camera_intrinsics[2] * y + camera_intrinsics[4];
 
-        // Из координат когда точка (0, 0) - центр оптической оси
-        // Переходим в координаты когда точка (0, 0) - левый верхний угол картинки
-        // cx, cy - координаты центра оптической оси (обычно это центр картинки, но часто он чуть смещен)
-
-        // Теперь по спроецированным координатам не забудьте посчитать невязку репроекции
-
+        residuals[0] = px - T(observed_x);
+        residuals[1] = py - T(observed_y);
         return true;
-        // TODO сверьте эту функцию с вашей реализацией проекции в src/phg/core/calibration.cpp (они должны совпадать)
     }
 protected:
     double observed_x;
@@ -435,8 +441,13 @@ void runBA(std::vector<vector3d> &tie_points,
     ASSERT_NEAR(calib.cy_, 0.0, 0.3 * calib.height());
 
     // внутренние калибровочные параметры камеры: [5] = {k1, k2, f, cx, cy}
-    // TODO: преобразуйте calib в блок параметров камеры (ее внутренних характеристик) для оптимизации в BA
-    double camera_intrinsics[5];
+    double camera_intrinsics[5] = {
+        calib.k1_,
+        calib.k2_,
+        calib.f_,
+        calib.cx_ + 0.5 * calib.width(),
+        calib.cy_ + 0.5 * calib.height()
+    };
     std::cout << "Before BA ";
     printCamera(camera_intrinsics);
 
@@ -471,6 +482,7 @@ void runBA(std::vector<vector3d> &tie_points,
 
     // TODO по хорошему, должна быть среднеквадратичным отклонением от наблюдаемой ошибки а не константой. Можно оставить так для простоты, можно поправить и сделать правильно
     const double sigma = 2.0; // измеряется в пикселях
+    const double inlier_threshold2 = (3.0 * sigma) * (3.0 * sigma);
 
     double inliers_mse = 0.0;
     size_t inliers = 0;
@@ -509,7 +521,7 @@ void runBA(std::vector<vector3d> &tie_points,
                 params[2] = point3d_params;
                 keypoint_reprojection_residual->Evaluate(params, residual, NULL);
                 double error2 = residual[0] * residual[0] + residual[1] * residual[1];
-                if (error2 < 3.0 * sigma) {
+                if (error2 < inlier_threshold2) {
                     inliers_mse += error2;
                     ++inliers;
                     cameras_inliers_mse[camera_id] += error2;
@@ -575,8 +587,11 @@ void runBA(std::vector<vector3d> &tie_points,
 
     std::cout << "After BA ";
     printCamera(camera_intrinsics);
-    // TODO преобразуйте параметры камеры в обратную сторону, чтобы последующая резекция учла актуальное представление о пространстве:
-    // calib.* = camera_intrinsics[*];
+    calib.k1_ = camera_intrinsics[0];
+    calib.k2_ = camera_intrinsics[1];
+    calib.f_ = camera_intrinsics[2];
+    calib.cx_ = camera_intrinsics[3] - 0.5 * calib.width();
+    calib.cy_ = camera_intrinsics[4] - 0.5 * calib.height();
 
     ASSERT_NEAR(calib.f_ , DATASET_F, 0.2 * DATASET_F);
     ASSERT_NEAR(calib.cx_, 0.0, 0.3 * calib.width());
@@ -626,6 +641,38 @@ void runBA(std::vector<vector3d> &tie_points,
 
         vector3d track_point = tie_points[i];
 
+        if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA && track.img_kpt_pairs.size() >= 2) {
+            const double min_sin_angle = std::sin(2.5 * CV_PI / 180.0);
+            bool has_good_baseline = false;
+            std::vector<vector3d> view_dirs;
+            view_dirs.reserve(track.img_kpt_pairs.size());
+
+            for (const auto &img_kpt : track.img_kpt_pairs) {
+                matrix3d R_tmp;
+                vector3d camera_origin_tmp;
+                phg::decomposeUndistortedPMatrix(R_tmp, camera_origin_tmp, cameras[img_kpt.first]);
+                vector3d dir = track_point - camera_origin_tmp;
+                const double dir_norm = cv::norm(dir);
+                if (dir_norm > 0.0) {
+                    view_dirs.push_back(dir / dir_norm);
+                }
+            }
+
+            for (size_t vi = 0; vi < view_dirs.size() && !has_good_baseline; ++vi) {
+                for (size_t vj = vi + 1; vj < view_dirs.size(); ++vj) {
+                    const double sin_angle = cv::norm(view_dirs[vi].cross(view_dirs[vj]));
+                    if (sin_angle >= min_sin_angle) {
+                        has_good_baseline = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!has_good_baseline) {
+                should_be_disabled = true;
+            }
+        }
+
         for (size_t ci = 0; ci < track.img_kpt_pairs.size(); ++ci) {
             int camera_id = track.img_kpt_pairs[ci].first;
 
@@ -648,11 +695,6 @@ void runBA(std::vector<vector3d> &tie_points,
                 }
             }
 
-            if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA) {
-                // TODO выполните проверку случая когда два луча почти параллельны, чтобы не было странных точек улетающих на бесконечность (например чтобы угол был хотя бы 2.5 градуса)
-                // should_be_disabled = true;
-            }
-
             {
                 const double* params[3];
                 double residual[2] = {-1.0};
@@ -661,7 +703,7 @@ void runBA(std::vector<vector3d> &tie_points,
                 params[2] = point3d_params;
                 keypoint_reprojection_residual->Evaluate(params, residual, NULL);
                 double error2 = residual[0] * residual[0] + residual[1] * residual[1];
-                if (error2 < 3.0 * sigma) {
+                if (error2 < inlier_threshold2) {
                     inliers_mse += error2;
                     ++inliers;
                     cameras_inliers_mse[camera_id] += error2;
@@ -687,7 +729,7 @@ void runBA(std::vector<vector3d> &tie_points,
     for (size_t camera_id = 0; camera_id < ncameras; ++camera_id) {
         size_t ninls = cameras_inliers[camera_id];
         size_t nproj = cameras_nprojections[camera_id];
-        double mse = (cameras_inliers_mse[camera_id] / ninls);
+        double mse = ninls > 0 ? (cameras_inliers_mse[camera_id] / ninls) : std::numeric_limits<double>::infinity();
         std::cout << "    Camera #" << camera_id << " projections: " << to_percent(ninls, nproj) << "% inliers "
                   << "(" << ninls << "/" << nproj << ") with MSE=" << mse << std::endl;
         ASSERT_GT(ninls, 0.15 * nproj);
