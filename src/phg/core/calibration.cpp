@@ -62,15 +62,11 @@ cv::Vec3d phg::Calibration::unproject(const cv::Vec2d &pixel) const
 
     // TODO 12: добавьте учет радиальных искажений, когда реализуете - подумайте: почему строго говоря это - не симметричная формула формуле из project? (но лишь приближение)
 
-    // деление на полином не является математически обратной функцией к тому полиному, который используется в project.
-
     double x_next = x;
     double y_next = y;
     for(int i = 0; i < NUM_ITER; ++i) {
         double r = x_next * x_next + y_next * y_next;
         double L = 1.0 + k1_ * r + k2_ * r * r;
-        x_next = x / L;
-        y_next = y / L;
 
         double delta = std::max(std::abs(x_next * L - x), std::abs(y_next * L - y));
         if (delta < 1e-10) {
