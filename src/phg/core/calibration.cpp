@@ -1,3 +1,4 @@
+#include <cmath>
 #include <phg/sfm/defines.h>
 #include "calibration.h"
 
@@ -10,8 +11,6 @@ phg::Calibration::Calibration(int width, int height)
     , k1_(0)
     , k2_(0)
 {
-    // 50mm guess
-
     double diag_35mm = 36.0 * 36.0 + 24.0 * 24.0;
     double diag_pix = (double) width * (double) width + (double) height * (double) height;
 
@@ -35,8 +34,10 @@ cv::Vec3d phg::Calibration::project(const cv::Vec3d &point) const
     double x = point[0] / point[2];
     double y = point[1] / point[2];
 
-    // TODO 11: добавьте учет радиальных искажений (k1_, k2_) (после деления на Z, но до умножения на f)
-
+    double r2 = x * x + y * y;
+    double distortion = 1.0 + k1_ * r2 + k2_ * r2 * r2;
+    x *= distortion;
+    y *= distortion;
 
     x *= f_;
     y *= f_;
@@ -49,13 +50,20 @@ cv::Vec3d phg::Calibration::project(const cv::Vec3d &point) const
 
 cv::Vec3d phg::Calibration::unproject(const cv::Vec2d &pixel) const
 {
-    double x = pixel[0] - cx_ - width_ * 0.5;
-    double y = pixel[1] - cy_ - height_ * 0.5;
+    double xd = pixel[0] - cx_ - width_ * 0.5;
+    double yd = pixel[1] - cy_ - height_ * 0.5;
 
-    x /= f_;
-    y /= f_;
+    xd /= f_;
+    yd /= f_;
 
-    // TODO 12: добавьте учет радиальных искажений, когда реализуете - подумайте: почему строго говоря это - не симметричная формула формуле из project? (но лишь приближение)
+    double x = xd;
+    double y = yd;
+    for (int iter = 0; iter < 5; ++iter) {
+        double r2 = x * x + y * y;
+        double distortion = 1.0 + k1_ * r2 + k2_ * r2 * r2;
+        x = xd / distortion;
+        y = yd / distortion;
+    }
 
     return cv::Vec3d(x, y, 1.0);
 }
