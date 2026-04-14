@@ -37,6 +37,10 @@ cv::Vec3d phg::Calibration::project(const cv::Vec3d &point) const
 
     // TODO 11: добавьте учет радиальных искажений (k1_, k2_) (после деления на Z, но до умножения на f)
 
+    double r2 = x * x + y * y;
+    double radial = 1.0 + k1_ * r2 + k2_ * r2 * r2;
+    x *= radial;
+    y *= radial;
 
     x *= f_;
     y *= f_;
@@ -56,6 +60,15 @@ cv::Vec3d phg::Calibration::unproject(const cv::Vec2d &pixel) const
     y /= f_;
 
     // TODO 12: добавьте учет радиальных искажений, когда реализуете - подумайте: почему строго говоря это - не симметричная формула формуле из project? (но лишь приближение)
+    // потому что нет аналитической формулы для корней полинома 5-й степени, приходится аппроксимировать
 
-    return cv::Vec3d(x, y, 1.0);
+    double xd = x, yd = y;
+    for (int i = 0; i < 5; ++i) {
+        double r2 = xd * xd + yd * yd;
+        double radial = 1.0 + k1_ * r2 + k2_ * r2 * r2;
+        xd = x / radial;
+        yd = y / radial;
+    }
+
+    return cv::Vec3d(xd, yd, 1.0);
 }
