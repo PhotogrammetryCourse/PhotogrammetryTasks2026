@@ -547,7 +547,7 @@ phg::computeDescriptors(const std::vector<cv::KeyPoint> &kpts, const std::vector
         float x = kp.pt.x / scale;
         float y = kp.pt.y / scale;
 
-        float kp_sigma_octave = (float) (sigma0 * std::pow(2.0, (double) layer / s));
+        float kp_sigma_octave = (float) (sigma0 * std::pow(2.0, (kp.size / (2.f * scale)) / s)); //HERE: используется целый layer, а не дробный из subpixel-оптимизации. Точное значение есть в kp.size: kp.size / (2.f * scale)
 
         // размер патча в котором считаем дескриптор в пикселях октавы
         float spatial_bin_width = spatial_bin_width_sigmas * kp_sigma_octave;

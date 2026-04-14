@@ -2,6 +2,8 @@
 
 #include <opencv2/calib3d/calib3d.hpp>
 #include <iostream>
+#include <cmath>
+#include <algorithm>
 
 namespace {
 
@@ -84,8 +86,8 @@ namespace {
             double w1 = ws1[i];
 
             // 8 elements of matrix + free term as needed by gauss routine
-//            A.push_back({TODO});
-//            A.push_back({TODO});
+            A.push_back({x0*w1, y0*w1, w0*w1, 0, 0, 0, -x1*x0, -x1*y0, x1*w0});
+            A.push_back({0, 0, 0, x0*w1, y0*w1, w0*w1, -y1*x0, -y1*y0, y1*w0});
         }
 
         int res = gauss(A, H);
@@ -100,12 +102,12 @@ namespace {
         if (res == std::numeric_limits<int>::max()) {
             std::cerr << "gauss: infinitely many solutions found" << std::endl;
             std::cerr << "gauss: xs0: ";
-            for (int i = 0; i < 4; ++i) {
-                std::cerr << xs0[i] << ", ";
+            for (double i : xs0) {
+                std::cerr << i << ", ";
             }
             std::cerr << "\ngauss: ys0: ";
-            for (int i = 0; i < 4; ++i) {
-                std::cerr << ys0[i] << ", ";
+            for (double i : ys0) {
+                std::cerr << i << ", ";
             }
             std::cerr << std::endl;
         }
@@ -162,63 +164,119 @@ namespace {
             throw std::runtime_error("findHomography: points_lhs.size() != points_rhs.size()");
         }
 
-        // TODO Дополнительный балл, если вместо обычной версии будет использована модификация a-contrario RANSAC
+        // Дополнительный балл, если вместо обычной версии будет использована модификация a-contrario RANSAC (реализуем как раз ее!)
         // * [1] Automatic Homographic Registration of a Pair of Images, with A Contrario Elimination of Outliers. (Lionel Moisan, Pierre Moulon, Pascal Monasse)
         // * [2] Adaptive Structure from Motion with a contrario model estimation. (Pierre Moulon, Pascal Monasse, Renaud Marlet)
         // * (простое описание для понимания)
         // * [3] http://ikrisoft.blogspot.com/2015/01/ransac-with-contrario-approach.html
+        //
+        // Идея: вместо фиксированного порога ошибки репроекции используем NFA (Number of False Alarms).
+        // NFA(k) = C(n,p) * C(n-p, k-p) * alpha(r_k)^(k-p)
+        // где p=4 (минимальная выборка для гомографии),
+        // alpha(r) = pi * r^2 / A — вероятность попадания случайной точки в круг радиуса r (H0: равномерное распределение),
+        // r_k — k-я по величине невязка (отсортированная).
+        // Модель принимается, если NFA < 1 (log(NFA) < 0).
+        // Оптимальный порог k* выбирается как argmin_k NFA(k) для каждой гипотезы.
 
-//        const int n_matches = points_lhs.size();
-//
-//        // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
-//        const int n_trials = TODO;
-//
-//        const int n_samples = TODO;
-//        uint64_t seed = 1;
-//        const double reprojection_error_threshold_px = 2;
-//
-//        int best_support = 0;
-//        cv::Mat best_H;
-//
-//        std::vector<int> sample;
-//        for (int i_trial = 0; i_trial < n_trials; ++i_trial) {
-//            randomSample(sample, n_matches, n_samples, &seed);
-//
-//            cv::Mat H = estimateHomography4Points(points_lhs[sample[0]], points_lhs[sample[1]], points_lhs[sample[2]], points_lhs[sample[3]],
-//                                                  points_rhs[sample[0]], points_rhs[sample[1]], points_rhs[sample[2]], points_rhs[sample[3]]);
-//
-//            int support = 0;
-//            for (int i_point = 0; i_point < n_matches; ++i_point) {
-//                try {
-//                    cv::Point2d proj = phg::transformPoint(points_lhs[i_point], H);
-//                    if (cv::norm(proj - cv::Point2d(points_rhs[i_point])) < reprojection_error_threshold_px) {
-//                        ++support;
-//                    }
-//                } catch (const std::exception &e)
-//                {
-//                    std::cerr << e.what() << std::endl;
-//                }
-//            }
-//
-//            if (support > best_support) {
-//                best_support = support;
-//                best_H = H;
-//
-//                std::cout << "estimateHomographyRANSAC : support: " << best_support << "/" << n_matches << std::endl;
-//
-//                if (best_support == n_matches) {
-//                    break;
-//                }
-//            }
-//        }
-//
-//        std::cout << "estimateHomographyRANSAC : best support: " << best_support << "/" << n_matches << std::endl;
-//
-//        if (best_support == 0) {
-//            throw std::runtime_error("estimateHomographyRANSAC : failed to estimate homography");
-//        }
-//
-//        return best_H;
+        const int n_matches = static_cast<int>(points_lhs.size());
+
+        const int n_trials = 1000;
+        uint64_t seed = 1;
+
+        const int n_samples = 4;
+
+        // Оценка площади области целевого изображения для нулевой гипотезы H0
+        // (при H0 точки равномерно распределены в этой области)
+        float min_x = std::numeric_limits<float>::max(), max_x = -std::numeric_limits<float>::max();
+        float min_y = std::numeric_limits<float>::max(), max_y = -std::numeric_limits<float>::max();
+        for (const auto &pt : points_rhs) {
+            min_x = std::min(min_x, pt.x);
+            max_x = std::max(max_x, pt.x);
+            min_y = std::min(min_y, pt.y);
+            max_y = std::max(max_y, pt.y);
+        }
+        double area = static_cast<double>(max_x - min_x) * (max_y - min_y);
+        area = std::max(area, 1.0);
+
+        // log C(n, p) — число возможных минимальных подвыборок
+        double log_c_n_p = std::lgamma(n_matches + 1) - std::lgamma(n_samples + 1) - std::lgamma(n_matches - n_samples + 1);
+
+        double best_log_nfa = 0.0;
+        cv::Mat best_H;
+        int best_support = 0;
+
+        std::vector<int> sample;
+        std::vector<double> residuals(n_matches);
+        std::vector<double> sorted_residuals(n_matches);
+
+        for (int i_trial = 0; i_trial < n_trials; ++i_trial) {
+            randomSample(sample, n_matches, n_samples, &seed);
+
+            cv::Mat H;
+            try {
+                H = estimateHomography4Points(points_lhs[sample[0]], points_lhs[sample[1]], points_lhs[sample[2]], points_lhs[sample[3]],
+                                              points_rhs[sample[0]], points_rhs[sample[1]], points_rhs[sample[2]], points_rhs[sample[3]]);
+            } catch (const std::exception &e) {
+                continue;
+            }
+
+            for (int i = 0; i < n_matches; ++i) {
+                try {
+                    cv::Point2d proj = phg::transformPoint(points_lhs[i], H);
+                    residuals[i] = cv::norm(proj - cv::Point2d(points_rhs[i]));
+                } catch (const std::exception &e) {
+                    residuals[i] = 1e10;
+                    std::cerr << e.what() << std::endl;
+                }
+            }
+
+            sorted_residuals = residuals;
+            std::sort(sorted_residuals.begin(), sorted_residuals.end());
+
+            // Для каждого k (возможное число инлаеров) вычисляем NFA в лог-пространстве:
+            // log(NFA(k)) = log C(n,p) + log C(n-p, k-p) + (k-p) * log(pi * r_k^2 / A)
+            // Ищем k* = argmin_k log(NFA(k))
+            double trial_best_log_nfa = std::numeric_limits<double>::max();
+            int trial_best_k = 0;
+
+            int m = n_matches - n_samples;
+
+            for (int k = n_samples + 1; k <= n_matches; ++k) {
+                double r_k = sorted_residuals[k - 1];
+                double alpha = CV_PI * r_k * r_k / area;
+                if (alpha >= 1.0) break; // alpha >= 1 => NFA растёт дальше
+                if (alpha <= 0.0) continue;
+
+                int j = k - n_samples;
+                double log_c_m_j = std::lgamma(m + 1) - std::lgamma(j + 1) - std::lgamma(m - j + 1);
+                double log_nfa = log_c_n_p + log_c_m_j + j * std::log(alpha);
+
+                if (log_nfa < trial_best_log_nfa) {
+                    trial_best_log_nfa = log_nfa;
+                    trial_best_k = k;
+                }
+            }
+
+            if (trial_best_log_nfa < best_log_nfa) {
+                best_log_nfa = trial_best_log_nfa;
+                best_H = H;
+                best_support = trial_best_k;
+
+                std::cout << "AC-RANSAC: log(NFA)=" << best_log_nfa
+                          << ", support=" << best_support << "/" << n_matches << std::endl;
+
+                if (best_support == n_matches) break;
+            }
+        }
+
+        std::cout << "AC-RANSAC: best log(NFA)=" << best_log_nfa
+                  << ", support=" << best_support << "/" << n_matches << std::endl;
+
+        if (best_H.empty()) {
+            throw std::runtime_error("AC-RANSAC: no meaningful model found (log(NFA) >= 0)");
+        }
+
+        return best_H;
     }
 
 }
@@ -238,7 +296,22 @@ cv::Mat phg::findHomographyCV(const std::vector<cv::Point2f> &points_lhs, const 
 // таким преобразованием внутри занимается функции cv::perspectiveTransform и cv::warpPerspective
 cv::Point2d phg::transformPoint(const cv::Point2d &pt, const cv::Mat &T)
 {
-    throw std::runtime_error("not implemented yet");
+    cv::Mat T64;
+    T.convertTo(T64, CV_64FC1);
+    const double *t = T64.ptr<double>();
+
+    double x = pt.x;
+    double y = pt.y;
+
+    double wx = t[0] * x + t[1] * y + t[2];
+    double wy = t[3] * x + t[4] * y + t[5];
+    double w  = t[6] * x + t[7] * y + t[8];
+
+    if (std::abs(w) < 1e-12) {
+        throw std::runtime_error("transformPoint: w is near zero");
+    }
+
+    return {wx / w, wy / w};
 }
 
 cv::Point2d phg::transformPointCV(const cv::Point2d &pt, const cv::Mat &T) {
