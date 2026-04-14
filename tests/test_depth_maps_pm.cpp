@@ -33,44 +33,44 @@
 
 TEST(test_depth_maps_pm, SingleDepthMap)
 {
-    // TODO этот код надо раскомментировать чтобы запустить тестирование:
-    // Dataset dataset = loadDataset(DATASET_DIR, DATASET_DOWNSCALE);
-    // phg::PMDepthMapsBuilder builder(dataset.ncameras, dataset.cameras_imgs, dataset.cameras_imgs_grey, dataset.cameras_labels, dataset.cameras_P, dataset.calibration);
-    //
-    // size_t ci = 2; // строим карту глубины для третьей камеры (индексация с нуля)
-    // size_t cameras_limit = 5; // учитывая первые пять фотографий датасета, т.е. две камеры слева и две камеры справа
-    //
-    // dataset.ncameras = cameras_limit;
-    // cv::Mat depth_map, normal_map, cost_map;
-    // builder.buildDepthMap(ci, depth_map, cost_map, normal_map, dataset.cameras_depth_min[ci], dataset.cameras_depth_max[ci]);
+    // subset(0, 5) более корректно позволяет учесть первые пять фотографий датасета.
+    // Этот метод согласованно обрезает все массивы в датасете, в то время как простое
+    // присваивание dataset.ncameras = 5 по сути меняет только счётчик камер, а сами векторы
+    // при этом остаются от полного датасета.
+    Dataset dataset = loadDataset(DATASET_DIR, DATASET_DOWNSCALE).subset(0, 5);
+    phg::PMDepthMapsBuilder builder(dataset.ncameras, dataset.cameras_imgs, dataset.cameras_imgs_grey, dataset.cameras_labels, dataset.cameras_P, dataset.calibration);
+
+    size_t ci = 2; // строим карту глубины для третьей камеры (индексация с нуля)
+
+    cv::Mat depth_map, normal_map, cost_map;
+    builder.buildDepthMap(ci, depth_map, normal_map, cost_map, dataset.cameras_depth_min[ci], dataset.cameras_depth_max[ci]);
 }
 
 TEST(test_depth_maps_pm, AllDepthMaps)
 {
-    // TODO этот код можно раскомментировать чтобы построить много карт глубины и сохранить их облака точек:
-    // Dataset full_dataset = loadDataset(DATASET_DIR, DATASET_DOWNSCALE);
-    //
-    // const size_t ref_camera_shift = 2;
-    // const size_t to_shift = 5;
-    //
-    // std::vector<cv::Vec3d> all_points;
-    // std::vector<cv::Vec3b> all_colors;
-    // std::vector<cv::Vec3d> all_normals;
-    //
-    // size_t ndepth_maps = 0;
-    //
-    // for (size_t from = 0; from + to_shift <= full_dataset.ncameras; ++from) {
-    //     size_t to = from + to_shift;
-    //
-    //     Dataset dataset = full_dataset.subset(from, to);
-    //
-    //     phg::PMDepthMapsBuilder builder(dataset.ncameras, dataset.cameras_imgs, dataset.cameras_imgs_grey, dataset.cameras_labels, dataset.cameras_P, dataset.calibration);
-    //     cv::Mat depth_map, normal_map, cost_map;
-    //     builder.buildDepthMap(ref_camera_shift, depth_map, cost_map, normal_map, dataset.cameras_depth_min[ref_camera_shift], dataset.cameras_depth_max[ref_camera_shift]);
-    //     phg::PMDepthMapsBuilder::buildGoodPoints(depth_map, normal_map, cost_map, dataset.cameras_imgs[ref_camera_shift], dataset.calibration, builder.getCameraPtoWorld(ref_camera_shift), all_points, all_colors, all_normals);
-    //     ++ndepth_maps;
-    //
-    //     std::string tie_points_filename = std::string("data/debug/test_depth_maps_pm/") + getTestName() + "/all_points_" + to_string(ndepth_maps) + ".ply";
-    //     phg::exportPointCloud(all_points, tie_points_filename, all_colors, all_normals);
-    // }
+    Dataset full_dataset = loadDataset(DATASET_DIR, DATASET_DOWNSCALE);
+
+    const size_t ref_camera_shift = 2;
+    const size_t to_shift = 5;
+
+    std::vector<cv::Vec3d> all_points;
+    std::vector<cv::Vec3b> all_colors;
+    std::vector<cv::Vec3d> all_normals;
+
+    size_t ndepth_maps = 0;
+
+    for (size_t from = 0; from + to_shift <= full_dataset.ncameras; ++from) {
+        size_t to = from + to_shift;
+
+        Dataset dataset = full_dataset.subset(from, to);
+
+        phg::PMDepthMapsBuilder builder(dataset.ncameras, dataset.cameras_imgs, dataset.cameras_imgs_grey, dataset.cameras_labels, dataset.cameras_P, dataset.calibration);
+        cv::Mat depth_map, normal_map, cost_map;
+        builder.buildDepthMap(ref_camera_shift, depth_map, normal_map, cost_map, dataset.cameras_depth_min[ref_camera_shift], dataset.cameras_depth_max[ref_camera_shift]);
+        phg::PMDepthMapsBuilder::buildGoodPoints(depth_map, normal_map, cost_map, dataset.cameras_imgs[ref_camera_shift], dataset.calibration, builder.getCameraPtoWorld(ref_camera_shift), all_points, all_colors, all_normals);
+        ++ndepth_maps;
+
+        std::string tie_points_filename = std::string("data/debug/test_depth_maps_pm/") + getTestName() + "/all_points_" + std::to_string(ndepth_maps) + ".ply";
+        phg::exportPointCloud(all_points, tie_points_filename, all_colors, all_normals);
+    }
 }
