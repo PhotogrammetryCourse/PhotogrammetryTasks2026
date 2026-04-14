@@ -11,3 +11,5 @@ cmake-build*
 4.11.0.zip
 .cache
 opencv-4.11.0
+ceres-solver-2.2.0
+2.2.0.zip
