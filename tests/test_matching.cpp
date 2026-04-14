@@ -19,8 +19,8 @@
 
 
 // TODO enable both toggles for testing custom detector & matcher
-#define ENABLE_MY_DESCRIPTOR 0
-#define ENABLE_MY_MATCHING 0
+#define ENABLE_MY_DESCRIPTOR 1
+#define ENABLE_MY_MATCHING 1
 #define ENABLE_GPU_BRUTEFORCE_MATCHER 0
 
 // TODO disable for local testing but do not commit
@@ -560,7 +560,7 @@ TEST (MATCHING, SimpleMatching) {
     EXPECT_LT(time_my, 1.5 * time_cv);
     EXPECT_LT(time_my, 0.1 * time_bruteforce);
 
-#if ENABLE_GPU_BRUTEFORCE_MATCHER
+#if ENABLE_GPU_BRUTEFORCE_MATCHER && !SERVER_TESTING
     EXPECT_LT(time_bruteforce_gpu, time_bruteforce);
 #endif
 
