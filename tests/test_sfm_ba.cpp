@@ -25,13 +25,14 @@
 #define ENABLE_BA                             1
 
 // TODO когда заработает при малом количестве фотографий - увеличьте это ограничение до 100 чтобы попробовать обработать все фотографии (если же успешно будут отрабаывать только N фотографий - отправьте PR выставив здесь это N)
-#define NIMGS_LIMIT                           10 // сколько фотографий обрабатывать (можно выставить меньше чтобы ускорить экспериментирование, или в случае если весь датасет не выравнивается)
+#define NIMGS_LIMIT                           100 // сколько фотографий обрабатывать (можно выставить меньше чтобы ускорить экспериментирование, или в случае если весь датасет не выравнивается)
 #define INTRINSICS_CALIBRATION_MIN_IMGS       5 // начиная со скольки камер начинать оптимизировать внутренние параметры камеры (фокальную длину и т.п.) - из соображений что "пока камер мало - наблюдений может быть недостаточно чтобы не сойтись к ложной внутренней модели камеры"
 
 #define ENABLE_INSTRINSICS_K1_K2              1 // TODO учитывать ли радиальную дисторсию - коэффициенты k1, k2 попробуйте с ним и и без saharov32, заметна ли разница?
 #define INTRINSIC_K1_K2_MIN_IMGS              7 // начиная со скольки камер начинать оптимизировать k1, k2
 
 // TODO попробуйте повыключать эти фильтрации выбросов, насколько изменился результат?
+// Я попробовал выключить только коллинеарность, было лень ждать CI для остальных. Камеры вообще перестали выравниваться)
 #define ENABLE_OUTLIERS_FILTRATION_3_SIGMA    1
 #define ENABLE_OUTLIERS_FILTRATION_COLINEAR   1
 #define ENABLE_OUTLIERS_FILTRATION_NEGATIVE_Z 1
@@ -48,10 +49,11 @@
 // скачайте их фотографии в папку data/src/datasets/DATASETNAME/ по ссылке из файла LINK.txt в папке датасета:
 
 // saharov32 и herzjesu25 - приятные датасеты, вероятно их оба получится выравнять целиком
-//#define DATASET_DIR                  "herzjesu25"
-//#define DATASET_DOWNSCALE            2 // для ускорения SIFT
-//#define DATASET_F                    (2761.5 / DATASET_DOWNSCALE) // see herzjesu25/K.txt
+// #define DATASET_DIR                  "herzjesu25"
+// #define DATASET_DOWNSCALE            2 // для ускорения SIFT
+// #define DATASET_F                    (2761.5 / DATASET_DOWNSCALE) // see herzjesu25/K.txt
 // TODO почему фокальная длина меняется от того что мы уменьшаем картинку? почему именно в такой пропорции? может надо домножать? или делить на downscale^2 ?
+// Потому что фокальная длина измеряется в пикселях, причем линейно, потому что это длина. Если мы даунскейлим в 2 раза, мы уменьшаем количество пикселей по каждому измерению в 2 раза, поэтому тут это тоже надо учесть.
 
 // но temple47 - не вышло, я не разобрался в чем с ним проблема, может быть слишком мало точек, может критерии фильтрации выкидышей для него слишком строги
 //#define DATASET_DIR                  "temple47"
@@ -384,25 +386,49 @@ public:
                     T* residuals) const {       // невязка:  [2]  = {dx, dy}
         // TODO реализуйте функцию проекции, все нужно делать в типе T чтобы ceres-solver мог под него подставить как Jet (очень рекомендую посмотреть Jet.h - как класная статья из википедии!), так и double
 
+        T x = point_global[0];
+        T y = point_global[1];
+        T z = point_global[2];
+
         // translation[3] - сдвиг в локальную систему координат камеры
+        x -= camera_extrinsics[0]; y -= camera_extrinsics[1]; z -= camera_extrinsics[2];
 
         // rotation[3] - angle-axis rotation, поворачиваем точку point->p (чтобы перейти в локальную систему координат камеры)
         // подробнее см. https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation
         // (P.S. у камеры всмысле вращения три степени свободы)
+        T rotation[3];
+        rotation[0] = camera_extrinsics[3]; rotation[1] = camera_extrinsics[4]; rotation[2] = camera_extrinsics[5];
+        T pt[3]{x, y, z};
+        T rotated[3];
+        ceres::AngleAxisRotatePoint(rotation, pt, rotated);
+        x = rotated[0]; y = rotated[1]; z = rotated[2];
 
         // Проецируем точку на фокальную плоскость матрицы (т.е. плоскость Z=фокальная длина)
+        if (ceres::abs(z) < 1e-4) {
+            residuals[0] = T(1e3);
+            residuals[1] = T(1e3);
+            return true;
+        }
+        x /= z; y /= z;
 
 #if ENABLE_INSTRINSICS_K1_K2
         // k1, k2 - коэффициенты радиального искажения (radial distortion)
+        T r2 = x*x + y*y;
+        T mult = T(1) + camera_intrinsics[0] * r2 + camera_intrinsics[1] * r2 * r2;
+        x *= mult; y *= mult;
 #endif
 
         // Домножаем на f, тем самым переводя в пиксели
+        x *= camera_intrinsics[2]; y *= camera_intrinsics[2];
 
         // Из координат когда точка (0, 0) - центр оптической оси
         // Переходим в координаты когда точка (0, 0) - левый верхний угол картинки
         // cx, cy - координаты центра оптической оси (обычно это центр картинки, но часто он чуть смещен)
+        x += camera_intrinsics[3]; y += camera_intrinsics[4];
 
         // Теперь по спроецированным координатам не забудьте посчитать невязку репроекции
+        residuals[0] = x - observed_x;
+        residuals[1] = y - observed_y;
 
         return true;
         // TODO сверьте эту функцию с вашей реализацией проекции в src/phg/core/calibration.cpp (они должны совпадать)
@@ -437,6 +463,11 @@ void runBA(std::vector<vector3d> &tie_points,
     // внутренние калибровочные параметры камеры: [5] = {k1, k2, f, cx, cy}
     // TODO: преобразуйте calib в блок параметров камеры (ее внутренних характеристик) для оптимизации в BA
     double camera_intrinsics[5];
+    camera_intrinsics[0] = calib.k1_;
+    camera_intrinsics[1] = calib.k2_;
+    camera_intrinsics[2] = calib.f_;
+    camera_intrinsics[3] = calib.cx_ + calib.width_ * 0.5;
+    camera_intrinsics[4] = calib.cy_ + calib.height_ * 0.5;
     std::cout << "Before BA ";
     printCamera(camera_intrinsics);
 
@@ -576,7 +607,11 @@ void runBA(std::vector<vector3d> &tie_points,
     std::cout << "After BA ";
     printCamera(camera_intrinsics);
     // TODO преобразуйте параметры камеры в обратную сторону, чтобы последующая резекция учла актуальное представление о пространстве:
-    // calib.* = camera_intrinsics[*];
+    calib.k1_ = camera_intrinsics[0];
+    calib.k2_ = camera_intrinsics[1];
+    calib.f_ = camera_intrinsics[2];
+    calib.cx_ = camera_intrinsics[3] - calib.width_ * 0.5;
+    calib.cy_ = camera_intrinsics[4] - calib.height_ * 0.5;
 
     ASSERT_NEAR(calib.f_ , DATASET_F, 0.2 * DATASET_F);
     ASSERT_NEAR(calib.cx_, 0.0, 0.3 * calib.width());
@@ -650,7 +685,36 @@ void runBA(std::vector<vector3d> &tie_points,
 
             if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA) {
                 // TODO выполните проверку случая когда два луча почти параллельны, чтобы не было странных точек улетающих на бесконечность (например чтобы угол был хотя бы 2.5 градуса)
-                // should_be_disabled = true;
+                const double deg_thresh = 2;
+
+                vector3d ray1 = track_point - camera_origin;
+                double norm1 = norm(ray1);
+                if (norm1 > 1e-12) {
+                    ray1 /= norm1;
+
+                    for (size_t cj = 0; cj < track.img_kpt_pairs.size(); ++cj) {
+                        int camera_id2 = track.img_kpt_pairs[cj].first;
+                        if (camera_id2 == camera_id) {
+                            continue;
+                        }
+
+                        matrix3d R2;
+                        vector3d camera_origin2;
+                        phg::decomposeUndistortedPMatrix(R2, camera_origin2, cameras[camera_id2]);
+
+                        vector3d ray2 = track_point - camera_origin2;
+                        double norm2 = norm(ray2);
+                        if (norm2 <= 1e-12) {
+                            continue;
+                        }
+                        ray2 /= norm2;
+
+                        if (ray1.dot(ray2) > std::cos(deg_thresh * M_PI / 180.0)) {
+                            should_be_disabled = true;
+                            break;
+                        }
+                    }
+                }
             }
 
             {

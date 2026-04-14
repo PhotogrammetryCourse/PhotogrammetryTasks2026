@@ -47,24 +47,25 @@ cv::Vec3d phg::Calibration::project(const cv::Vec3d &point) const
     x += cx_ + width_ * 0.5;
     y += cy_ + height_ * 0.5;
 
-    return cv::Vec3d(x, y, 1.0);
+    return {x, y, 1.0};
 }
 
 cv::Vec3d phg::Calibration::unproject(const cv::Vec2d &pixel) const
 {
-    double x = pixel[0] - cx_ - width_ * 0.5;
-    double y = pixel[1] - cy_ - height_ * 0.5;
+    double xd = (pixel[0] - cx_ - width_ * 0.5) / f_;
+    double yd = (pixel[1] - cy_ - height_ * 0.5) / f_;
 
-    x /= f_;
-    y /= f_;
+    double x = xd;
+    double y = yd;
 
     // TODO 12: добавьте учет радиальных искажений, когда реализуете - подумайте: почему строго говоря это - не симметричная формула формуле из project? (но лишь приближение)
-    // это приближение, потому что мы считаем r2 по искаженным x и y, в отличие от project. Можно добавить итеративный подход для увеличения точности, но это все равно будет приближение
-    double r2_estimated = x*x + y*y;
-    double mult = (1 + k1_ * r2_estimated + k2_ * r2_estimated * r2_estimated);
+    // это приближение, потому что мы считаем r2 по искаженным x и y, в отличие от project. Итеративный подход увеличивает точность, но это все равно приближение
+    for (int i = 0; i < 5; ++i) {
+        double r2 = x * x + y * y;
+        double mult = 1.0 + k1_ * r2 + k2_ * r2 * r2;
+        x = xd / mult;
+        y = yd / mult;
+    }
 
-    x /= mult;
-    y /= mult;
-
-    return cv::Vec3d(x, y, 1.0);
+    return {x, y, 1.0};
 }
