@@ -25,10 +25,7 @@
 
 #define GAUSSIAN_NOISE_STDDEV 1.0
 
-// TODO ENABLE ME
-// TODO ENABLE ME
-// TODO ENABLE ME
-#define ENABLE_MY_SIFT_TESTING 0
+#define ENABLE_MY_SIFT_TESTING 1
 
 #define DENY_CREATE_REF_DATA 1
 
@@ -304,7 +301,7 @@ void evaluateDetection(const cv::Mat& M, double minRecall, cv::Mat img0 = cv::Ma
             std::cout << log_prefix << "average size ratio between matched points: " << (size_ratio_sum / n_matched) << std::endl;
             if (angle_diff_sum != 0.0) {
                 std::cout << log_prefix << "average angle difference between matched points: " << (angle_diff_sum / n_matched) << " degrees" << std::endl;
-                // TODO почему SIFT менее точно угадывает средний угол отклонения? изменяется ли ситуация если выкрутить параметр ORIENTATION_VOTES_PEAK_RATIO=0.999? почему?
+                // почему SIFT менее точно угадывает средний угол отклонения? изменяется ли ситуация если выкрутить параметр ORIENTATION_VOTES_PEAK_RATIO=0.999? почему?
             }
             if (desc_dist_sum != 0.0 && desc_rand_dist_sum != 0.0) {
                 std::cout << log_prefix << "average descriptor distance between matched points: " << (desc_dist_sum / n_matched) << " (random distance: " << (desc_rand_dist_sum / n_matched)
