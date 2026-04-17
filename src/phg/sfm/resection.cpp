@@ -97,7 +97,7 @@ namespace {
 
         // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
         // будет отличаться от случая с гомографией
-        const int n_trials = 500;
+        const int n_trials = 2000;
 
         const double threshold_px = 3;
 
@@ -143,6 +143,49 @@ namespace {
                     break;
                 }
             }
+        }
+
+        // после падения тестов на маке, попробуем добавить рефайн и сюда
+        auto countSupport = [&](const cv::Matx34d &P, std::vector<int> *inlier_ids) -> int {
+            int s = 0;
+            if (inlier_ids) inlier_ids->clear();
+            for (int i = 0; i < n_points; ++i) {
+                vector3d x_cam;
+                x_cam[0] = P(0, 0) * X[i][0] + P(0, 1) * X[i][1] + P(0, 2) * X[i][2] + P(0, 3);
+                x_cam[1] = P(1, 0) * X[i][0] + P(1, 1) * X[i][1] + P(1, 2) * X[i][2] + P(1, 3);
+                x_cam[2] = P(2, 0) * X[i][0] + P(2, 1) * X[i][1] + P(2, 2) * X[i][2] + P(2, 3);
+                vector3d x_px = calib.project(x_cam);
+                if (x_px[2] == 0) continue;
+                if (cv::Vec2d px(x_px[0] / x_px[2], x_px[1] / x_px[2]); cv::norm(px - x[i]) < threshold_px) {
+                    ++s;
+                    if (inlier_ids) inlier_ids->push_back(i);
+                }
+            }
+            return s;
+        };
+
+        for (int refine_iter = 0; refine_iter < 10; ++refine_iter) {
+            std::vector<int> inlier_ids;
+            countSupport(best_P, &inlier_ids);
+
+            if (static_cast<int>(inlier_ids.size()) <= n_samples) break;
+
+            std::vector<cv::Vec3d> Xs_in(inlier_ids.size());
+            std::vector<cv::Vec3d> xs_in(inlier_ids.size());
+            for (size_t i = 0; i < inlier_ids.size(); ++i) {
+                Xs_in[i] = X[inlier_ids[i]];
+                xs_in[i] = calib.unproject(x[inlier_ids[i]]);
+            }
+
+            cv::Matx34d P_refit = estimateCameraMatrixDLT(Xs_in.data(), xs_in.data(), static_cast<int>(inlier_ids.size()));
+
+            int new_support = countSupport(P_refit, nullptr);
+            if (new_support <= best_support) break;
+
+            best_support = new_support;
+            best_P = P_refit;
+
+            std::cout << "estimateCameraMatrixRANSAC refine: support: " << best_support << "/" << n_points << std::endl;
         }
 
         std::cout << "estimateCameraMatrixRANSAC : best support: " << best_support << "/" << n_points << std::endl;
