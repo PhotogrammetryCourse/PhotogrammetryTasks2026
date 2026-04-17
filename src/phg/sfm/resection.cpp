@@ -87,8 +87,7 @@ namespace {
 
 
     // По трехмерным точкам и их проекциям на изображении определяем положение камеры
-    cv::Matx34d estimateCameraMatrixRANSAC(const phg::Calibration &calib, const std::vector<cv::Vec3d> &X, const std::vector<cv::Vec2d> &x)
-    {
+    cv::Matx34d estimateCameraMatrixRANSAC(const phg::Calibration &calib, const std::vector<cv::Vec3d> &X, const std::vector<cv::Vec2d> &x) {
         if (X.size() != x.size()) {
             throw std::runtime_error("estimateCameraMatrixRANSAC: X.size() != x.size()");
         }
@@ -97,9 +96,9 @@ namespace {
 
         // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
         // будет отличаться от случая с гомографией
-        const int n_trials = 2000;
+        const int n_trials = 10000;
 
-        const double threshold_px = 3;
+        const double threshold_px = 5;
 
         const int n_samples = 6;
         uint64_t seed = 1;
@@ -166,7 +165,17 @@ namespace {
 
         for (int refine_iter = 0; refine_iter < 10; ++refine_iter) {
             std::vector<int> inlier_ids;
-            countSupport(best_P, &inlier_ids);
+            double wide_threshold = 2.0 * threshold_px;
+            for (int i = 0; i < n_points; ++i) {
+                vector3d x_cam;
+                x_cam[0] = best_P(0,0)*X[i][0] + best_P(0,1)*X[i][1] + best_P(0,2)*X[i][2] + best_P(0,3);
+                x_cam[1] = best_P(1,0)*X[i][0] + best_P(1,1)*X[i][1] + best_P(1,2)*X[i][2] + best_P(1,3);
+                x_cam[2] = best_P(2,0)*X[i][0] + best_P(2,1)*X[i][1] + best_P(2,2)*X[i][2] + best_P(2,3);
+                vector3d x_px = calib.project(x_cam);
+                if (x_px[2] == 0) continue;
+                cv::Vec2d px(x_px[0]/x_px[2], x_px[1]/x_px[2]);
+                if (cv::norm(px - x[i]) < wide_threshold) inlier_ids.push_back(i);
+            }
 
             if (static_cast<int>(inlier_ids.size()) <= n_samples) break;
 
