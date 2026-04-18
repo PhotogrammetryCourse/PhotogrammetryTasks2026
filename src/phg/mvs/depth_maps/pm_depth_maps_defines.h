@@ -12,6 +12,7 @@
 #define COST_PATCH_RADIUS           5
 
 #define COSTS_K_RATIO               1.2f
+#define MAX_COST               1.2f
 #define COSTS_BEST_K_LIMIT          5
 
 #define VERBOSE_LOGGING
