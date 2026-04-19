@@ -10,6 +10,8 @@ double dot(const vector3d& a, const vector3d& b) { return a.dot(b); }
 
 float norm2(const vector3f& v) { return dot(v, v); }
 
+float norm(const vector3f& v) { return sqrtf(norm2(v)); }
+
 vector3f randomNormalObservedFromCamera(const matrix3d& RtoWorld, FastRandom& r)
 {
     vector3d local_n = r.nextPointFromSphere();

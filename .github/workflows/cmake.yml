@@ -25,6 +25,7 @@ jobs:
           bash .github/scripts/linux/install_opencl_cpu_driver.sh
           bash .github/scripts/linux/install_eigen3.sh
           bash .github/scripts/linux/install_ceres_solver.sh
+          bash .github/scripts/linux/install_cgal.sh
 
       - name: Install macos dependencies
         if: runner.os == 'macOS'
@@ -33,6 +34,7 @@ jobs:
           bash .github/scripts/macos/install_opencv.sh
           bash .github/scripts/macos/install_eigen3.sh
           bash .github/scripts/macos/install_ceres_solver.sh
+          bash .github/scripts/macos/install_cgal.sh
 
       - name: Install windows dependencies
         if: runner.os == 'Windows'
@@ -41,6 +43,7 @@ jobs:
           .github/scripts/windows/install_opencv.ps1
           .github/scripts/windows/install_eigen3.ps1
           .github/scripts/windows/install_ceres_solver.ps1
+          .github/scripts/windows/install_cgal.ps1
 
       - name: Configure CMake (Linux)
         if: runner.os == 'Linux'
@@ -112,12 +115,7 @@ jobs:
             Copy-Item "$vcpkgBin\*.dll" $exeDir -Force
           }
 
-      - name: Run test_ceres_solver (Windows)
+      - name: Run test_mesh_min_cut (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: .\build\${{ env.BUILD_TYPE }}\test_ceres_solver.exe
-
-      - name: Run test_sfm_ba (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: .\build\${{ env.BUILD_TYPE }}\test_sfm_ba.exe
+        run: .\build\${{ env.BUILD_TYPE }}\test_mesh_min_cut.exe

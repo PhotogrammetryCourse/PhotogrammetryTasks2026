@@ -18,6 +18,9 @@ matrix34d invP(const matrix34d& P);
 vector3d project(const vector3d& global_point, const phg::Calibration& calibration, const matrix34d& PtoLocal);
 vector3d unproject(const vector3d& pixel, const phg::Calibration& calibration, const matrix34d& PtoWorld);
 
+void buildPoints(
+    const cv::Mat& depth_map, const cv::Mat& img, const matrix34d& PtoLocal, const Calibration& calibration, std::vector<vector3d>& points, std::vector<double>& radiuses, std::vector<vector3d>& normals, std::vector<cv::Vec3b>& colors);
+
 class PMDepthMapsBuilder {
 public:
     PMDepthMapsBuilder(const size_t& ncameras, const std::vector<cv::Mat>& cameras_imgs, const std::vector<cv::Mat>& cameras_imgs_grey, const std::vector<std::string>& cameras_labels, const std::vector<matrix34d>& cameras_P,
