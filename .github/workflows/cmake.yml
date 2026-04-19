@@ -72,11 +72,21 @@ jobs:
         shell: pwsh
         run: |
           $OpenCV_DIR = Get-Content .deps/opencv_dir.txt
+          $CGAL_DIR = Get-Content .deps/cgal_dir.txt
+          $GMP_LIBRARIES = Get-Content .deps/gmp_lib.txt
+          $MPFR_LIBRARIES = Get-Content .deps/mpfr_lib.txt
+          $Boost_INCLUDE_DIR = Get-Content .deps/boost_include_dir.txt
           $env:VCPKG_INSTALLATION_ROOT = ""
           cmake -S . -B build -G "Visual Studio 17 2022" -A x64 `
               -DOpenCV_DIR="$OpenCV_DIR" `
               -DEigen3_DIR="C:\eigen-3.4.0\share\eigen3\cmake" `
               -DCMAKE_PREFIX_PATH="C:\ceres-solver220" `
+              -DGMP_LIBRARIES="$GMP_LIBRARIES" `
+              -DGMP_INCLUDE_DIR="$Boost_INCLUDE_DIR" `
+              -DMPFR_LIBRARIES="$MPFR_LIBRARIES" `
+              -DMPFR_INCLUDE_DIR="$Boost_INCLUDE_DIR" `
+              -DBoost_INCLUDE_DIR="$Boost_INCLUDE_DIR" `
+              -DCGAL_DIR="$CGAL_DIR" `
               -DCMAKE_TOOLCHAIN_FILE="C:\vcpkg\scripts\buildsystems\vcpkg.cmake" `
               -DVCPKG_TARGET_TRIPLET="x64-windows" `
               -DCMAKE_CONFIGURATION_TYPES="Debug;RelWithDebInfo"
