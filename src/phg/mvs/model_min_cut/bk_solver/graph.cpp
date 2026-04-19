@@ -69,7 +69,7 @@ template <typename captype, typename tcaptype, typename flowtype>
 template <typename captype, typename tcaptype, typename flowtype>
 	void Graph<captype, tcaptype, flowtype>::add_tweights(node_id _i, captype cap_source, captype cap_sink)
 {
-	register captype delta = nodes[_i] . tr_cap;
+	captype delta = nodes[_i] . tr_cap;
 	if (delta > 0) cap_source += delta;
 	else           cap_sink   -= delta;
 	flow += (cap_source < cap_sink) ? cap_source : cap_sink;
