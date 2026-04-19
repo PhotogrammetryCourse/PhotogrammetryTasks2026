@@ -51,9 +51,12 @@ vector3d unproject(const vector3d& pixel, const phg::Calibration& calibration, c
 {
     double depth = pixel[2]; // на самом деле это не глубина, это координата по оси +Z (вдоль которой смотрит камера в ее локальной системе координат)
 
-    vector3d local_point; // TODO 102 пустите луч pixel из calibration а затем возьмите ан нем точку у которой по оси +Z координата=depth
+    // DONE 102 пустите луч pixel из calibration а затем возьмите ан нем точку у которой по оси +Z координата=depth
+    vector3d local_point = calibration.unproject({pixel[0], pixel[1]});
+    local_point *= depth / local_point[2];
 
-    vector3d global_point; // TODO 103 переведите точку из локальной системы в глобальную
+    // DONE 103 переведите точку из локальной системы в глобальную
+    vector3d global_point = PtoWorld * homogenize(local_point);
 
     return global_point;
 }
@@ -95,6 +98,7 @@ void PMDepthMapsBuilder::refinement()
     timer t;
     verbose_cout << "Iteration #" << iter << "/" << NITERATIONS << ": refinement..." << std::endl;
 
+    std::vector<int> hi_win_count(9, 0);
 #pragma omp parallel for schedule(dynamic, 1)
     for (ptrdiff_t j = 0; j < height; ++j) {
         for (ptrdiff_t i = 0; i < width; ++i) {
@@ -112,16 +116,32 @@ void PMDepthMapsBuilder::refinement()
                 n0 = normal_map.at<vector3f>(j, i);
 
                 // 2) случайной пертурбации текущей гипотезы (мутация и уточнение того что уже смогли найти)
-                dp = r.nextf(d0 * 0.5f, d0 * 1.5); // TODO 104: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
-                np = cv::normalize(n0 + randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r) * 0.5); // TODO 105: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+                // DONE CHECK 104: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+
+                // COMMENT
+                // Я не заметила сильное улучшение результата, наверно вклад refinement в результат не такой выраженный как у propagation
+                double delta = 1 - (double) iter / NITERATIONS;
+                double delta_min = 1.0 - 0.5 * delta;
+                double delta_max = 1.0 + 0.5 * delta;
+                dp = r.nextf(d0 * delta_min, d0 * delta_max);
+
+//                dp = r.nextf(d0 * 0.5f, d0 * 1.5f);
+
+                // DONE CHECK 105: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+                np = cv::normalize(n0 + randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r) * delta);
+
+//                np = cv::normalize(n0 + randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r) * 0.5);
 
                 dp = std::max(ref_depth_min, std::min(ref_depth_max, dp));
 
                 // 3) новой случайной гипотезы из фрустума поиска (новые идеи, вечный поиск во всем пространстве)
-                // TODO 106: создайте случайную гипотезу dr+nr, вам поможет:
+                // DONE 106: создайте случайную гипотезу dr+nr, вам поможет:
                 //  - r.nextf(...)
                 //  - ref_depth_min, ref_depth_max
                 //  - randomNormalObservedFromCamera - поможет создать нормаль которая гарантированно смотрит на нас
+
+                dr = r.nextf(ref_depth_min, ref_depth_max);
+                nr = randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r);
             }
 
             float best_depth = d0;
@@ -135,6 +155,7 @@ void PMDepthMapsBuilder::refinement()
             vector3f normals[3] = { n0, nr, np };
 
             // перебираем все комбинации этих гипотез, т.е. 3х3=9 вариантов
+            size_t best_hi = 0;
             for (size_t hi = 0; hi < 3 * 3; ++hi) {
                 // эту комбинацию-гипотезу мы сейчас рассматриваем как очередного кандидата
                 float d = depths[hi / 3];
@@ -154,19 +175,35 @@ void PMDepthMapsBuilder::refinement()
                 float total_cost = avgCost(costs);
 
                 // WTA (winner takes all)
+                // DONE CHECK 206: добавьте подсчет статистики, какая комбинация гипотез чаще всего побеждает?
+                // есть ли комбинации на которых мы можем сэкономить?
+                // а какие гипотезы при refinement рассматривает например Colmap?
+
+                // COMMENT
+                // На первой итерации почти всегда выигрывает комбинация 2-х гипотез, то есть небольшое уточнение того, что мы уже нашли
+                // или 3-x гипотез - случайные
+                // На следующих итерациях преобладает комбинация 1-х гипотез
+                // Как будто комбинации 3-й и 2-й гипотез бесполезные, потому что мы или хотим чуть-чуть сдвинуться и посмотреть, либо что-то новое попробовать
+                // а пытаться уйти куда-то от хорошей гипотезы, поменяв что-то одно, скорее не сработает, чем сработает
+
                 if (total_cost < best_cost) {
+                    best_hi = hi;
                     best_depth = d;
                     best_normal = n;
-                    best_cost = total_cost; // TODO 206: добавьте подсчет статистики, какая комбинация гипотез чаще всего побеждает? есть ли комбинации на которых мы можем сэкономить? а какие гипотезы при refinement рассматривает например
-                                            // Colmap?
+                    best_cost = total_cost;
                 }
             }
-
+            hi_win_count[best_hi]++;
             depth_map.at<float>(j, i) = best_depth;
             normal_map.at<vector3f>(j, i) = best_normal;
             cost_map.at<float>(j, i) = best_cost;
         }
     }
+
+    verbose_cout << "WTA: " << std::endl
+        << hi_win_count[0] << ' ' << hi_win_count[1] << ' ' << hi_win_count[2] << std::endl
+        << hi_win_count[3] << ' ' << hi_win_count[4] << ' ' << hi_win_count[5] << std::endl
+        << hi_win_count[6] << ' ' << hi_win_count[7] << ' ' << hi_win_count[8] << std::endl;
 
     verbose_cout << "refinement done in " << t.elapsed() << " s: ";
 #ifdef VERBOSE_LOGGING
@@ -330,8 +367,16 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
             patch0.push_back(cameras_imgs_grey[ref_cam].at<unsigned char>(nj, ni) / 255.0f);
 
             vector3d point_on_ray = unproject(vector3d(ni + 0.5, nj + 0.5, 1.0), calibration, cameras_PtoWorld[ref_cam]);
-            vector3d camera_center = unproject(
-                vector3d(ni + 0.5, nj + 0.5, 0.0), calibration, cameras_PtoWorld[ref_cam]); // TODO 204: это немного неестественный способ, можно поправить его на более явный вариант, например хранить центр камер в поле cameras_O
+            vector3d camera_center = cameras_0[ref_cam];
+            vector3d camera_center_check = unproject(
+                vector3d(ni + 0.5, nj + 0.5, 0.0), calibration, cameras_PtoWorld[ref_cam]);
+            if (camera_center_check[0] != camera_center[0] || camera_center_check[1] != camera_center[1]
+                    && camera_center_check[2] != camera_center[2]) {
+                verbose_cout << "ERROR: " << camera_center_check[0] << ":" << camera_center[0] << ' '
+                    <<  camera_center_check[1] << ":" << camera_center[1] << ' '
+                        <<  camera_center_check[2] << ":" << camera_center[2] << std::endl;
+            }
+            // DONE 204: это немного неестественный способ, можно поправить его на более явный вариант, например хранить центр камер в поле cameras_O
 
             vector3d ray_dir = cv::normalize(point_on_ray - camera_center);
             vector3d ray_org = camera_center;
@@ -348,18 +393,55 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
             double x = neighb_proj[0];
             double y = neighb_proj[1];
 
-            // TODO 205: замените этот наивный вариант nearest neighbor сэмплирования текстуры на билинейную интерполяцию (учтите что центр пикселя - .5 после запятой)
-            ptrdiff_t u = x;
-            ptrdiff_t v = y;
+            // DONE 205: замените этот наивный вариант nearest neighbor сэмплирования текстуры на билинейную интерполяцию
+            //  (учтите что центр пикселя - .5 после запятой)
+            // COMMENT
+            // До этого to do мы брали ближайший пиксель - что плохо для точности определения глубины
+            // + разрывы между полученными пикселями
 
-            // TODO 108: добавьте проверку "попали ли мы в камеру номер neighb_cam?" если не попали - возвращаем NO_COST
 
-            float intensity = cameras_imgs_grey[neighb_cam].at<unsigned char>(v, u) / 255.0f;
+            int u_left = std::floor(x);
+            int v_left = std::floor(y);
+            int u_right = u_left + 1;
+            int v_right = v_left + 1;
+
+            float u_left_part = (float) (x - u_left) / (u_right - u_left);
+            float v_left_part = (float) (y - v_left) / (v_right - v_left);
+
+//            ptrdiff_t u = x;
+//            ptrdiff_t v = y;
+
+            // DONE 108: добавьте проверку "попали ли мы в камеру номер neighb_cam?"
+            // если не попали - возвращаем NO_COST
+
+            if (u_left < 0 || u_right >= width || v_left < 0 || v_right >= height) {
+                return NO_COST;
+            }
+
+//            if (u < 0 || u >= width || v < 0 || v >= height) {
+//                return NO_COST;
+//            }
+
+            float intensity_l_l = cameras_imgs_grey[neighb_cam].at<unsigned char>(v_left, u_left) / 255.0f;
+            float intensity_l_r = cameras_imgs_grey[neighb_cam].at<unsigned char>(v_left, u_right) / 255.0f;
+            float intensity_r_l = cameras_imgs_grey[neighb_cam].at<unsigned char>(v_right, u_left) / 255.0f;
+            float intensity_r_r = cameras_imgs_grey[neighb_cam].at<unsigned char>(v_right, u_right) / 255.0f;
+
+            float intensity_r1 =
+                    intensity_l_l * (1 - u_left_part) + intensity_r_l * u_left_part;
+
+            float intensity_r2 =
+                    intensity_l_r * (1 - u_left_part) + intensity_r_r * u_left_part;
+
+            float intensity =
+                    intensity_r1 * (1 - v_left_part) + intensity_r2 * v_left_part;
+
+//            float intensity = cameras_imgs_grey[neighb_cam].at<unsigned char>(v, u) / 255.0f;
             patch1.push_back(intensity);
         }
     }
 
-    // TODO 109: реализуйте ZNCC https://en.wikipedia.org/wiki/Cross-correlation#Zero-normalized_cross-correlation_(ZNCC)
+    // DONE 109: реализуйте ZNCC https://en.wikipedia.org/wiki/Cross-correlation#Zero-normalized_cross-correlation_(ZNCC)
     // или слайд #25 в лекции 5 про SGM и Cost-функции - https://my.compscicenter.ru/attachments/classes/slides_w2n8WNLY/photogrammetry_lecture_090321.pdf
     rassert(patch0.size() == patch1.size(), 12489185129326);
     size_t n = patch0.size();
@@ -377,6 +459,19 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
     mean1 /= n;
     // ...
     float zncc = 0.0f;
+
+    double delta0_2 = 0, delta1_2 = 0;
+    for (size_t k = 0; k < n; ++k) {
+        zncc += (patch0[k] - mean0) * (patch1[k] - mean1);
+        delta0_2 += (patch0[k] - mean0) * (patch0[k] - mean0);
+        delta1_2 += (patch1[k] - mean1) * (patch1[k] - mean1);
+    }
+
+    double delta = std::sqrt(delta0_2 * delta1_2);
+//    verbose_cout << "ZNCC: " << zncc << std::endl;
+    if (delta > 0) {
+        zncc /= delta;
+    }
 
     // ZNCC в диапазоне [-1; 1], 1: идеальное совпадение, -1: ничего общего
     rassert(zncc == zncc, 23141241210380); // проверяем что не nan
@@ -403,9 +498,28 @@ float PMDepthMapsBuilder::avgCost(std::vector<float>& costs)
     float cost_sum = best_cost;
     float cost_w = 1.0f;
 
-    // TODO 110 реализуйте какое-то "усреднение cost-ов по всем соседям", с ограничением что участвуют только COSTS_BEST_K_LIMIT лучших
-    // TODO 111 добавьте к этому усреднению еще одно ограничение: если cost больше чем best_cost*COSTS_K_RATIO - то такой cost подозрительно плохой и мы его не хотим учитывать (вероятно occlusion)
-    // TODO 112 а что если в пикселе occlusion, но best_cost - большой и поэтому отсечение по best_cost*COSTS_K_RATIO не срабатывает? можно ли это отсечение как-то выправить для такого случая?
+    // DONE 110 реализуйте какое-то "усреднение cost-ов по всем соседям", с ограничением что участвуют только COSTS_BEST_K_LIMIT лучших
+    // DONE 111 добавьте к этому усреднению еще одно ограничение: если cost больше чем best_cost*COSTS_K_RATIO - то такой cost подозрительно плохой и мы его не хотим учитывать (вероятно occlusion)
+
+    float border = best_cost * COSTS_K_RATIO;
+    if (border > COSTS_LIMIT) {
+        border = COSTS_LIMIT;
+    }
+    for (size_t k = 1; k < COSTS_BEST_K_LIMIT; k++) {
+        if (costs[k] > border) {
+            continue;
+        }
+        cost_sum += costs[k];
+        cost_w += 1;
+    }
+
+
+    // COMMENT 112 а что если в пикселе occlusion, но best_cost - большой и поэтому отсечение по best_cost*COSTS_K_RATIO не срабатывает?
+    // можно ли это отсечение как-то выправить для такого случая?
+
+    //  Каждый cost лежит в [0; 1] (NO_COST=1), чем ближе cost к нулю - тем лучше сопоставление
+    //  Если значение cost > COSTS_LIMIT, то сопоставление вероятно очень плохое и мы не хотим его использовать
+
     // TODO 207 а что если добавить какой-нибудь бонус в случае если больше чем Х камер засчиталось? улучшается/ухудшается ли от этого что-то на herzjezu25? а при большем числе фотографий
 
     float avg_cost = cost_sum / cost_w;
