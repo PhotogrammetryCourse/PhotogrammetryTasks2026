@@ -34,15 +34,15 @@
 TEST(test_depth_maps_pm, SingleDepthMap)
 {
     // TODO этот код надо раскомментировать чтобы запустить тестирование:
-    // Dataset dataset = loadDataset(DATASET_DIR, DATASET_DOWNSCALE);
-    // phg::PMDepthMapsBuilder builder(dataset.ncameras, dataset.cameras_imgs, dataset.cameras_imgs_grey, dataset.cameras_labels, dataset.cameras_P, dataset.calibration);
-    //
-    // size_t ci = 2; // строим карту глубины для третьей камеры (индексация с нуля)
-    // size_t cameras_limit = 5; // учитывая первые пять фотографий датасета, т.е. две камеры слева и две камеры справа
-    //
-    // dataset.ncameras = cameras_limit;
-    // cv::Mat depth_map, normal_map, cost_map;
-    // builder.buildDepthMap(ci, depth_map, cost_map, normal_map, dataset.cameras_depth_min[ci], dataset.cameras_depth_max[ci]);
+    Dataset dataset = loadDataset(DATASET_DIR, DATASET_DOWNSCALE);
+    phg::PMDepthMapsBuilder builder(dataset.ncameras, dataset.cameras_imgs, dataset.cameras_imgs_grey, dataset.cameras_labels, dataset.cameras_P, dataset.calibration);
+    
+    size_t ci = 2; // строим карту глубины для третьей камеры (индексация с нуля)
+    size_t cameras_limit = 5; // учитывая первые пять фотографий датасета, т.е. две камеры слева и две камеры справа
+    
+    dataset.ncameras = cameras_limit;
+    cv::Mat depth_map, normal_map, cost_map;
+    builder.buildDepthMap(ci, depth_map, cost_map, normal_map, dataset.cameras_depth_min[ci], dataset.cameras_depth_max[ci]);
 }
 
 TEST(test_depth_maps_pm, AllDepthMaps)
