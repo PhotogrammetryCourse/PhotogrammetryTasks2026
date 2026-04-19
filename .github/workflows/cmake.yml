@@ -128,4 +128,6 @@ jobs:
       - name: Run test_mesh_min_cut (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: .\build\${{ env.BUILD_TYPE }}\test_mesh_min_cut.exe
+        run: |
+          $env:OPENCV_IO_ENABLE_OPENEXR = "1"
+          .\build\${{ env.BUILD_TYPE }}\test_mesh_min_cut.exe
