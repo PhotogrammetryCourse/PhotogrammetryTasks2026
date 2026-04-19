@@ -78,7 +78,11 @@ set(CMAKE_BUILD_TYPE_BEFORE_CGAL ${CMAKE_BUILD_TYPE})
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "RelWithDebInfo")
     set(CMAKE_BUILD_TYPE "Release")
 endif ()
-include(${CGAL_USE_FILE})
+# Newer CGAL packages may not define CGAL_USE_FILE at all; the imported
+# targets from find_package(CGAL ...) are sufficient in that case.
+if (DEFINED CGAL_USE_FILE AND CGAL_USE_FILE)
+    include(${CGAL_USE_FILE})
+endif ()
 set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE_BEFORE_CGAL})
 
 set(CGAL_DEPENDENCIES_LIBRARIES ${MPFR_LIBRARIES} ${GMP_LIBRARIES})
