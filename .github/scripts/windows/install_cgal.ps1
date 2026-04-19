@@ -29,10 +29,15 @@ try {
   & .\bootstrap-vcpkg.bat
   if ($LASTEXITCODE -ne 0) { throw "bootstrap-vcpkg failed" }
 
-  # CGAL's vcpkg build expects yasm-tool to be present beforehand.
-  Write-Host "Installing yasm-tool for vcpkg..."
-  & .\vcpkg install yasm-tool:x86-windows
-  if ($LASTEXITCODE -ne 0) { throw "vcpkg install yasm-tool failed" }
+  # Older vcpkg setups used yasm-tool; newer registries may not ship this port.
+  $YasmToolPort = Join-Path $VcpkgRoot "ports\yasm-tool"
+  if (Test-Path $YasmToolPort) {
+    Write-Host "Installing yasm-tool for vcpkg..."
+    & .\vcpkg install yasm-tool:x86-windows
+    if ($LASTEXITCODE -ne 0) { throw "vcpkg install yasm-tool failed" }
+  } else {
+    Write-Host "Skipping yasm-tool: port is not present in this vcpkg registry."
+  }
 
   Write-Host "Installing CGAL and its dependencies via vcpkg..."
   & .\vcpkg install cgal --triplet $Triplet
