@@ -29,6 +29,7 @@ public:
         , cameras_PtoLocal(cameras_P)
         , calibration(calibration)
     {
+        cameras_O.resize(ncameras);
         cameras_PtoWorld.resize(ncameras);
         cameras_RtoWorld.resize(ncameras);
 
@@ -44,8 +45,10 @@ public:
             rassert(cameras_imgs_grey[ci].rows == calibration.height(), 23812989251034);
             rassert(cameras_imgs_grey[ci].channels() == 1, 23812989251035);
 
-            cameras_PtoWorld[ci] = invP(cameras_PtoLocal[ci]);
-            cameras_RtoWorld[ci] = extractR(cameras_PtoWorld[ci]);
+            auto& pto = cameras_PtoWorld[ci];
+            pto = invP(cameras_PtoLocal[ci]);
+            cameras_RtoWorld[ci] = extractR(pto);
+            cameras_O[ci] = vector3d(pto(0, 3), pto(1, 3), pto(2, 3));
         }
     }
 
@@ -69,7 +72,7 @@ protected:
 
     float estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const vector3d& global_normal, size_t neighb_cam);
     float avgCost(std::vector<float>& costs);
-    void tryToPropagateDonor(ptrdiff_t ni, ptrdiff_t nj, int chessboard_pattern_step, std::vector<float>& hypos_depth, std::vector<vector3f>& hypos_normal, std::vector<float>& hypos_cost);
+    void tryToPropagateDonor(ptrdiff_t i, ptrdiff_t j, ptrdiff_t ni, ptrdiff_t nj, int chessboard_pattern_step, std::vector<float>& hypos_depth, std::vector<vector3f>& hypos_normal, std::vector<float>& hypos_cost);
 
     void printCurrentStats();
     void debugCurrentPoints(const std::string& label);
@@ -78,7 +81,7 @@ protected:
     const std::vector<cv::Mat>& cameras_imgs;
     const std::vector<cv::Mat>& cameras_imgs_grey;
     const std::vector<std::string>& cameras_labels;
-
+    std::vector<vector3d> cameras_O;
     const std::vector<matrix34d>& cameras_PtoLocal; // матрица переводящая глобальную систему координат мира в систему координат i-ой камеры (смотрящей по оси +Z)
     std::vector<matrix34d> cameras_PtoWorld; // матрица переводящая локальную систему координат i-ой камеры (смотрящей по оси +Z) в глобальную систему координат мира
     std::vector<matrix3d> cameras_RtoWorld; // матрица поворота из локальной системы координат i-ой камеры (смотрящей по оси +Z) в нлобальную систему координат мира
