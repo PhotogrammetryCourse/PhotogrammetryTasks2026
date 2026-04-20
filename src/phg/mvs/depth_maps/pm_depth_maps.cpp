@@ -51,9 +51,13 @@ vector3d unproject(const vector3d& pixel, const phg::Calibration& calibration, c
 {
     double depth = pixel[2]; // на самом деле это не глубина, это координата по оси +Z (вдоль которой смотрит камера в ее локальной системе координат)
 
-    vector3d local_point; // TODO 102 пустите луч pixel из calibration а затем возьмите ан нем точку у которой по оси +Z координата=depth
+    // TODO 102 пустите луч pixel из calibration а затем возьмите ан нем точку у которой по оси +Z координата=depth
+    vector2d pixel_xy(pixel[0], pixel[1]);
+    vector3d ray_dir = calibration.unproject(pixel_xy);
+    vector3d local_point = ray_dir * depth;
 
-    vector3d global_point; // TODO 103 переведите точку из локальной системы в глобальную
+    // TODO 103 переведите точку из локальной системы в глобальную
+    vector3d global_point = PtoWorld * homogenize(local_point);
 
     return global_point;
 }
@@ -95,6 +99,8 @@ void PMDepthMapsBuilder::refinement()
     timer t;
     verbose_cout << "Iteration #" << iter << "/" << NITERATIONS << ": refinement..." << std::endl;
 
+    std::vector<size_t> wins_stats(3 * 3, 0);
+
 #pragma omp parallel for schedule(dynamic, 1)
     for (ptrdiff_t j = 0; j < height; ++j) {
         for (ptrdiff_t i = 0; i < width; ++i) {
@@ -112,8 +118,16 @@ void PMDepthMapsBuilder::refinement()
                 n0 = normal_map.at<vector3f>(j, i);
 
                 // 2) случайной пертурбации текущей гипотезы (мутация и уточнение того что уже смогли найти)
-                dp = r.nextf(d0 * 0.5f, d0 * 1.5); // TODO 104: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
-                np = cv::normalize(n0 + randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r) * 0.5); // TODO 105: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+                // TODO 104: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+                // TODO 105: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+                float progress = (float)iter / NITERATIONS; // 0..1
+                float deviation_factor = 1.0f - progress; // 1.0 at start, 0.0 at end
+                
+                float depth_deviation = 0.5f * deviation_factor;
+                float normal_deviation = 0.5f * deviation_factor;
+                
+                dp = r.nextf(d0 * (1.0f - depth_deviation), d0 * (1.0f + depth_deviation));
+                np = cv::normalize(n0 + randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r) * normal_deviation);
 
                 dp = std::max(ref_depth_min, std::min(ref_depth_max, dp));
 
@@ -122,6 +136,8 @@ void PMDepthMapsBuilder::refinement()
                 //  - r.nextf(...)
                 //  - ref_depth_min, ref_depth_max
                 //  - randomNormalObservedFromCamera - поможет создать нормаль которая гарантированно смотрит на нас
+                dr = r.nextf(ref_depth_min, ref_depth_max);
+                nr = randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r);
             }
 
             float best_depth = d0;
@@ -133,6 +149,8 @@ void PMDepthMapsBuilder::refinement()
 
             float depths[3] = { d0, dr, dp };
             vector3f normals[3] = { n0, nr, np };
+
+            size_t best_hi = 0;
 
             // перебираем все комбинации этих гипотез, т.е. 3х3=9 вариантов
             for (size_t hi = 0; hi < 3 * 3; ++hi) {
@@ -159,8 +177,12 @@ void PMDepthMapsBuilder::refinement()
                     best_normal = n;
                     best_cost = total_cost; // TODO 206: добавьте подсчет статистики, какая комбинация гипотез чаще всего побеждает? есть ли комбинации на которых мы можем сэкономить? а какие гипотезы при refinement рассматривает например
                                             // Colmap?
+                    best_hi = hi;
                 }
             }
+
+            #pragma omp atomic
+            wins_stats[best_hi]++;
 
             depth_map.at<float>(j, i) = best_depth;
             normal_map.at<vector3f>(j, i) = best_normal;
@@ -171,6 +193,12 @@ void PMDepthMapsBuilder::refinement()
     verbose_cout << "refinement done in " << t.elapsed() << " s: ";
 #ifdef VERBOSE_LOGGING
     printCurrentStats();
+    verbose_cout << "hypothesis wins: ";
+    for (size_t hi = 0; hi < wins_stats.size(); ++hi) {
+        verbose_cout << wins_stats[hi];
+        if (hi + 1 < wins_stats.size()) verbose_cout << ", ";
+    }
+    verbose_cout << std::endl;
 #endif
 #ifdef DEBUG_DIR
     debugCurrentPoints(to_string(ref_cam) + "_" + to_string(iter) + "_refinement");
@@ -353,8 +381,24 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
             ptrdiff_t v = y;
 
             // TODO 108: добавьте проверку "попали ли мы в камеру номер neighb_cam?" если не попали - возвращаем NO_COST
-
-            float intensity = cameras_imgs_grey[neighb_cam].at<unsigned char>(v, u) / 255.0f;
+            if (x < 0.0 || x >= calibration.width() - 1.0 || y < 0.0 || y >= calibration.height() - 1.0) {
+                return NO_COST;
+            }
+            
+            int x0 = (int)x;
+            int y0 = (int)y;
+            int x1 = x0 + 1;
+            int y1 = y0 + 1;
+            
+            float dx = x - x0;
+            float dy = y - y0;
+            
+            float i00 = cameras_imgs_grey[neighb_cam].at<unsigned char>(y0, x0) / 255.0f;
+            float i01 = cameras_imgs_grey[neighb_cam].at<unsigned char>(y0, x1) / 255.0f;
+            float i10 = cameras_imgs_grey[neighb_cam].at<unsigned char>(y1, x0) / 255.0f;
+            float i11 = cameras_imgs_grey[neighb_cam].at<unsigned char>(y1, x1) / 255.0f;
+            
+            float intensity = (1.0f - dx) * (1.0f - dy) * i00 + dx * (1.0f - dy) * i01 + (1.0f - dx) * dy * i10 + dx * dy * i11;
             patch1.push_back(intensity);
         }
     }
@@ -363,6 +407,10 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
     // или слайд #25 в лекции 5 про SGM и Cost-функции - https://my.compscicenter.ru/attachments/classes/slides_w2n8WNLY/photogrammetry_lecture_090321.pdf
     rassert(patch0.size() == patch1.size(), 12489185129326);
     size_t n = patch0.size();
+    if (n == 0) {
+        return NO_COST;
+    }
+    
     float mean0 = 0.0f;
     float mean1 = 0.0f;
     // ...
@@ -375,8 +423,24 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
     }
     mean0 /= n;
     mean1 /= n;
-    // ...
+    
+    float numerator = 0.0f;
+    float sum_sq0 = 0.0f;
+    float sum_sq1 = 0.0f;
+    for (size_t k = 0; k < n; ++k) {
+        float diff0 = patch0[k] - mean0;
+        float diff1 = patch1[k] - mean1;
+        numerator += diff0 * diff1;
+        sum_sq0 += diff0 * diff0;
+        sum_sq1 += diff1 * diff1;
+    }
+    
     float zncc = 0.0f;
+    if (sum_sq0 > 0.0f && sum_sq1 > 0.0f) {
+        zncc = numerator / std::sqrt(sum_sq0 * sum_sq1);
+    } else {
+        zncc = 1.0f;
+    }
 
     // ZNCC в диапазоне [-1; 1], 1: идеальное совпадение, -1: ничего общего
     rassert(zncc == zncc, 23141241210380); // проверяем что не nan
@@ -400,14 +464,31 @@ float PMDepthMapsBuilder::avgCost(std::vector<float>& costs)
 
     float best_cost = costs[0];
 
-    float cost_sum = best_cost;
-    float cost_w = 1.0f;
-
+    float cost_sum = 0.0f;
+    float cost_w = 0.0f;
+    
     // TODO 110 реализуйте какое-то "усреднение cost-ов по всем соседям", с ограничением что участвуют только COSTS_BEST_K_LIMIT лучших
     // TODO 111 добавьте к этому усреднению еще одно ограничение: если cost больше чем best_cost*COSTS_K_RATIO - то такой cost подозрительно плохой и мы его не хотим учитывать (вероятно occlusion)
     // TODO 112 а что если в пикселе occlusion, но best_cost - большой и поэтому отсечение по best_cost*COSTS_K_RATIO не срабатывает? можно ли это отсечение как-то выправить для такого случая?
+    float threshold = best_cost * COSTS_K_RATIO;
+    if (best_cost > NO_COST * 0.8f) {
+        threshold = GOOD_COST * COSTS_K_RATIO;
+    }
+    
+    size_t limit = std::min(costs.size(), (size_t)COSTS_BEST_K_LIMIT);
+    for (size_t i = 0; i < limit; ++i) {
+        float cost = costs[i];
+        if (cost <= threshold) {
+            cost_sum += cost;
+            cost_w += 1.0f;
+        }
+    }
+    
     // TODO 207 а что если добавить какой-нибудь бонус в случае если больше чем Х камер засчиталось? улучшается/ухудшается ли от этого что-то на herzjezu25? а при большем числе фотографий
-
+    if (cost_w == 0.0f) {
+        return NO_COST;
+    }
+    
     float avg_cost = cost_sum / cost_w;
     return avg_cost;
 }
