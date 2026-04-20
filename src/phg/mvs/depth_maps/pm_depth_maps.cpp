@@ -1,4 +1,6 @@
 #include "pm_depth_maps.h"
+
+#include <optional>
 #include <libutils/fast_random.h>
 #include <libutils/timer.h>
 #include <phg/utils/point_cloud_export.h>
@@ -51,9 +53,10 @@ vector3d unproject(const vector3d& pixel, const phg::Calibration& calibration, c
 {
     double depth = pixel[2]; // на самом деле это не глубина, это координата по оси +Z (вдоль которой смотрит камера в ее локальной системе координат)
 
-    vector3d local_point; // TODO 102 пустите луч pixel из calibration а затем возьмите ан нем точку у которой по оси +Z координата=depth
+    vector3d local_point = calibration.unproject({pixel[0], pixel[1]}); // TODO 102 пустите луч pixel из calibration а затем возьмите ан нем точку у которой по оси +Z координата=depth
+    local_point *= depth / local_point[2];
 
-    vector3d global_point; // TODO 103 переведите точку из локальной системы в глобальную
+    vector3d global_point = PtoWorld *  homogenize(local_point); // TODO 103 переведите точку из локальной системы в глобальную
 
     return global_point;
 }
@@ -112,8 +115,11 @@ void PMDepthMapsBuilder::refinement()
                 n0 = normal_map.at<vector3f>(j, i);
 
                 // 2) случайной пертурбации текущей гипотезы (мутация и уточнение того что уже смогли найти)
-                dp = r.nextf(d0 * 0.5f, d0 * 1.5); // TODO 104: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
-                np = cv::normalize(n0 + randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r) * 0.5); // TODO 105: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+                // TODO 104: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+                // как будто да
+                dp = r.nextf(d0 * 0.5f * (1 + ((float)iter / (float)NITERATIONS)), d0 * (1.5 - 0.5 * ((float)iter / (float)NITERATIONS)));
+                // TODO 105: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+                np = cv::normalize(n0 + randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r) * 0.5 * (1 - (float)iter / (float)NITERATIONS));
 
                 dp = std::max(ref_depth_min, std::min(ref_depth_max, dp));
 
@@ -122,6 +128,11 @@ void PMDepthMapsBuilder::refinement()
                 //  - r.nextf(...)
                 //  - ref_depth_min, ref_depth_max
                 //  - randomNormalObservedFromCamera - поможет создать нормаль которая гарантированно смотрит на нас
+                float mid = (ref_depth_min + ref_depth_max) * 0.5f;
+                float range = (ref_depth_max - ref_depth_min) * 0.5f;
+
+                dr = mid + range * r.nextf(-1.0f, 1.0f);
+                nr = cv::normalize(randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r));
             }
 
             float best_depth = d0;
@@ -232,25 +243,97 @@ void PMDepthMapsBuilder::propagation()
                  * o o o o o o o o o o o
                  * o o o o o C o o o o o
                  */
-                tryToPropagateDonor(i - 1, j + 0, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i + 0, j - 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i + 1, j + 0, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i + 0, j + 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                auto chooseBestDonor = [this](std::initializer_list<std::pair<ptrdiff_t, ptrdiff_t>> candidates)
+                {
+                    std::optional<std::pair<ptrdiff_t, ptrdiff_t>> best;
+                    float best_cost = std::numeric_limits<float>::infinity();
 
-                tryToPropagateDonor(i - 2, j - 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i - 1, j - 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i + 1, j - 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i + 2, j - 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i + 2, j + 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i + 1, j + 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i - 1, j + 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i - 2, j + 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    for (auto [x, y] : candidates) {
+                        if (x < 0 || x >= width || y < 0 || y >= height) {
+                            continue;
+                        }
 
-                // в таких случаях очень приятно использовать множественный курсор (чтобы скопировав четыре строки выше, затем просто колесиком мышки сделать четыре каретки для того чтобы дважды вставить *PROPAGATION_STEP):
-                tryToPropagateDonor(i - 1 * PROPAGATION_STEP, j + 0 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i + 0 * PROPAGATION_STEP, j - 1 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i + 1 * PROPAGATION_STEP, j + 0 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor(i + 0 * PROPAGATION_STEP, j + 1 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                        float c = cost_map.at<float>(y, x);
+                        if (c == NO_COST) {
+                            continue;
+                        }
+
+                        if (!best || c < best_cost) {
+                            best = {x, y};
+                            best_cost = c;
+                        }
+                    }
+
+                    return best;
+                };
+                {
+                    auto best = chooseBestDonor({{i, j - 1}, {i - 1, j - 2}, {i + 1, j - 2}});
+                    if (best) {
+                        tryToPropagateDonor(best->first, best->second, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    }
+                }
+                {
+                    auto best = chooseBestDonor({{i, j + 1}, {i - 1, j + 2}, {i + 1, j + 2}});
+                    if (best) {
+                        tryToPropagateDonor(best->first, best->second, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    }
+                }
+                {
+                    auto best = chooseBestDonor({{i + 1, j}, {i + 2, j + 1}, {i + 2, j - 1}});
+                    if (best) {
+                        tryToPropagateDonor(best->first, best->second, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    }
+                }
+                {
+                    auto best = chooseBestDonor({{i - 1, j}, {i - 2, j + 1}, {i - 2, j - 1}});
+                    if (best) {
+                        tryToPropagateDonor(best->first, best->second, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    }
+                }
+                {
+                    auto best = chooseBestDonor({{i, j - 3}, {i, j - PROPAGATION_STEP}});
+                    if (best) {
+                        tryToPropagateDonor(best->first, best->second, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    }
+                }
+                {
+                    auto best = chooseBestDonor({{i, j + 3}, {i, j + PROPAGATION_STEP}});
+                    if (best) {
+                        tryToPropagateDonor(best->first, best->second, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    }
+                }
+                {
+                    auto best = chooseBestDonor({{i - 3, j}, {i - PROPAGATION_STEP, j}});
+                    if (best) {
+                        tryToPropagateDonor(best->first, best->second, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    }
+                }
+                {
+                    auto best = chooseBestDonor({{i + 3, j}, {i + PROPAGATION_STEP, j}});
+                    if (best) {
+                        tryToPropagateDonor(best->first, best->second, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    }
+                }
+
+                // tryToPropagateDonor(i - 1, j + 0, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i + 0, j - 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i + 1, j + 0, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i + 0, j + 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                //
+                // tryToPropagateDonor(i - 2, j - 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i - 1, j - 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i + 1, j - 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i + 2, j - 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i + 2, j + 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i + 1, j + 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i - 1, j + 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i - 2, j + 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                //
+                // // в таких случаях очень приятно использовать множественный курсор (чтобы скопировав четыре строки выше, затем просто колесиком мышки сделать четыре каретки для того чтобы дважды вставить *PROPAGATION_STEP):
+                // tryToPropagateDonor(i - 1 * PROPAGATION_STEP, j + 0 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i + 0 * PROPAGATION_STEP, j - 1 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i + 1 * PROPAGATION_STEP, j + 0 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                // tryToPropagateDonor(i + 0 * PROPAGATION_STEP, j + 1 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
 
                 // TODO 201 переделайте чтобы было как в ACMH:
                 // TODO 202 - паттерн донорства
@@ -349,12 +432,30 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
             double y = neighb_proj[1];
 
             // TODO 205: замените этот наивный вариант nearest neighbor сэмплирования текстуры на билинейную интерполяцию (учтите что центр пикселя - .5 после запятой)
-            ptrdiff_t u = x;
-            ptrdiff_t v = y;
+            const auto& img = cameras_imgs_grey[neighb_cam];
 
-            // TODO 108: добавьте проверку "попали ли мы в камеру номер neighb_cam?" если не попали - возвращаем NO_COST
+            double fx = x - 0.5;
+            double fy = y - 0.5;
 
-            float intensity = cameras_imgs_grey[neighb_cam].at<unsigned char>(v, u) / 255.0f;
+            ptrdiff_t x0 = std::floor(fx);
+            ptrdiff_t y0 = std::floor(fy);
+            ptrdiff_t x1 = x0 + 1;
+            ptrdiff_t y1 = y0 + 1;
+
+            if (x0 < 0 || y0 < 0 || x1 >= img.cols || y1 >= img.rows) return NO_COST;
+
+            double dx = fx - x0;
+            double dy = fy - y0;
+
+            float i00 = img.at<unsigned char>(y0, x0) / 255.0f;
+            float i10 = img.at<unsigned char>(y0, x1) / 255.0f;
+            float i01 = img.at<unsigned char>(y1, x0) / 255.0f;
+            float i11 = img.at<unsigned char>(y1, x1) / 255.0f;
+
+            float i0 = (1.0 - dx) * i00 + dx * i10;
+            float i1 = (1.0 - dx) * i01 + dx * i11;
+            float intensity = (1.0 - dy) * i0 + dy * i1;
+
             patch1.push_back(intensity);
         }
     }
@@ -365,18 +466,33 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
     size_t n = patch0.size();
     float mean0 = 0.0f;
     float mean1 = 0.0f;
-    // ...
+    float sigma0 = 0.0f;
+    float sigma1 = 0.0f;
     for (size_t k = 0; k < n; ++k) {
         float a = patch0[k];
         float b = patch1[k];
         mean0 += a;
         mean1 += b;
-        // ...
     }
     mean0 /= n;
     mean1 /= n;
-    // ...
-    float zncc = 0.0f;
+
+    float s = 0.0f;
+
+    for (size_t k = 0; k < n; ++k) {
+        float d0 = patch0[k] - mean0;
+        float d1 = patch1[k] - mean1;
+
+        s += d0 * d1;
+        sigma0 += d0 * d0;
+        sigma1 += d1 * d1;
+    }
+    float zncc;
+    if (std::sqrt(sigma0) * std::sqrt(sigma1) < 1e-3) {
+        zncc = 0.0f;
+    } else {
+        zncc = s / (std::sqrt(sigma0) * std::sqrt(sigma1));
+    }
 
     // ZNCC в диапазоне [-1; 1], 1: идеальное совпадение, -1: ничего общего
     rassert(zncc == zncc, 23141241210380); // проверяем что не nan
@@ -400,13 +516,40 @@ float PMDepthMapsBuilder::avgCost(std::vector<float>& costs)
 
     float best_cost = costs[0];
 
-    float cost_sum = best_cost;
-    float cost_w = 1.0f;
+    float cost_sum = 0;
+    float cost_w = 0;
+
+    size_t nbases = std::min(static_cast<size_t>(3), costs.size());
+    float base_cost = 0.0f;
+    for (size_t i = 0; i < nbases; ++i)
+        base_cost += costs[i];
+    base_cost /= nbases;
+
+    int valid = 0;
 
     // TODO 110 реализуйте какое-то "усреднение cost-ов по всем соседям", с ограничением что участвуют только COSTS_BEST_K_LIMIT лучших
+    for (size_t i = 0; i < COSTS_BEST_K_LIMIT && i < costs.size(); ++i) {
+        float cost = costs[i];
+        if (cost > base_cost * COSTS_K_RATIO) {
+            continue;
+        }
+
+        float weight = std::exp(-cost / 0.1f);
+        cost_sum += cost * weight;
+        cost_w += weight;
+        valid++;
+    }
+
+    if (valid < 2 || cost_w == 0.0f) {
+        return NO_COST;
+    }
+
+
     // TODO 111 добавьте к этому усреднению еще одно ограничение: если cost больше чем best_cost*COSTS_K_RATIO - то такой cost подозрительно плохой и мы его не хотим учитывать (вероятно occlusion)
     // TODO 112 а что если в пикселе occlusion, но best_cost - большой и поэтому отсечение по best_cost*COSTS_K_RATIO не срабатывает? можно ли это отсечение как-то выправить для такого случая?
+    // можно частично поправить усреднением
     // TODO 207 а что если добавить какой-нибудь бонус в случае если больше чем Х камер засчиталось? улучшается/ухудшается ли от этого что-то на herzjezu25? а при большем числе фотографий
+    // мне показалсь, что от награды не очень много пользы, в отличие от строгого фильтра, который убирает мусор на небе и зданиях. но мусора все еще много и я не знаю что с ним делать( Если угрублять фильтр то инлайеров становится как то слишком мало, другие методики котоыре я попробовал, в частности награда, не помогают
 
     float avg_cost = cost_sum / cost_w;
     return avg_cost;
