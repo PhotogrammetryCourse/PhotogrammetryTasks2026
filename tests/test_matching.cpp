@@ -737,7 +737,6 @@ TEST (MATCHING, Scale200) {
     testMatchingTransformWrapper(angleDegreesClockwise, scale);
 }
 
-
 TEST (MATCHING, Rotate10Scale90) {
     double angleDegreesClockwise = 10;
     double scale = 0.9;

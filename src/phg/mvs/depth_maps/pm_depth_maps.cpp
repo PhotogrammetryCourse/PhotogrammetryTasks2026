@@ -51,9 +51,16 @@ vector3d unproject(const vector3d& pixel, const phg::Calibration& calibration, c
 {
     double depth = pixel[2]; // на самом деле это не глубина, это координата по оси +Z (вдоль которой смотрит камера в ее локальной системе координат)
 
-    vector3d local_point; // TODO 102 пустите луч pixel из calibration а затем возьмите ан нем точку у которой по оси +Z координата=depth
+    const vector3d local_dir = calibration.unproject(vector2d(pixel[0], pixel[1]));
+    const double t = depth / local_dir[2];
+    // vector3d local_point; // TODO 102 пустите луч pixel из calibration а затем возьмите ан нем точку у которой по оси +Z координата=depth
 
-    vector3d global_point; // TODO 103 переведите точку из локальной системы в глобальную
+    const vector3d local_point = local_dir * t;
+    // vector3d global_point; // TODO 103 переведите точку из локальной системы в глобальную
+    vector3d global_point;
+    global_point[0] = PtoWorld(0, 0) * local_point[0] + PtoWorld(0, 1) * local_point[1] + PtoWorld(0, 2) * local_point[2] + PtoWorld(0, 3);
+    global_point[1] = PtoWorld(1, 0) * local_point[0] + PtoWorld(1, 1) * local_point[1] + PtoWorld(1, 2) * local_point[2] + PtoWorld(1, 3);
+    global_point[2] = PtoWorld(2, 0) * local_point[0] + PtoWorld(2, 1) * local_point[1] + PtoWorld(2, 2) * local_point[2] + PtoWorld(2, 3);
 
     return global_point;
 }
@@ -111,17 +118,34 @@ void PMDepthMapsBuilder::refinement()
                 d0 = depth_map.at<float>(j, i);
                 n0 = normal_map.at<vector3f>(j, i);
 
-                // 2) случайной пертурбации текущей гипотезы (мутация и уточнение того что уже смогли найти)
-                dp = r.nextf(d0 * 0.5f, d0 * 1.5); // TODO 104: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
-                np = cv::normalize(n0 + randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r) * 0.5); // TODO 105: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+                const float alpha = 1.0f - (float)iter / (float)NITERATIONS;
+                const float d0_safe = (d0 == NO_DEPTH) ? r.nextf(ref_depth_min, ref_depth_max) : d0;
 
+                // 2) случайной пертурбации текущей гипотезы (мутация и уточнение того что уже смогли найти)
+                // TODO 104: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+                const float depth_mul_low  = 1.0f - 0.5f * alpha; // at start: 0.5, at end: 1.0
+                const float depth_mul_high = 1.0f + 0.5f * alpha; // at start: 1.5, at end: 1.0
+                dp = r.nextf(d0_safe * depth_mul_low, d0_safe * depth_mul_high);
+
+                // TODO 105: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+                const float normal_step = 0.5f * alpha; // at start: 0.5, at end: 0.0
+                np = cv::normalize(n0 + randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r) * normal_step);
                 dp = std::max(ref_depth_min, std::min(ref_depth_max, dp));
+
+                // np = cv::normalize(n0 + randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r) * 0.5); 
+                // dp = std::max(ref_depth_min, std::min(ref_depth_max, dp));
+
 
                 // 3) новой случайной гипотезы из фрустума поиска (новые идеи, вечный поиск во всем пространстве)
                 // TODO 106: создайте случайную гипотезу dr+nr, вам поможет:
                 //  - r.nextf(...)
                 //  - ref_depth_min, ref_depth_max
                 //  - randomNormalObservedFromCamera - поможет создать нормаль которая гарантированно смотрит на нас
+
+                dr = r.nextf(ref_depth_min, ref_depth_max);
+                nr = randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r);
+
+
             }
 
             float best_depth = d0;
@@ -200,6 +224,34 @@ void PMDepthMapsBuilder::tryToPropagateDonor(ptrdiff_t ni, ptrdiff_t nj, int che
     hypos_depth.push_back(d);
     hypos_normal.push_back(n);
     hypos_cost.push_back(cost);
+}
+
+static inline bool insideImageForPatchBilinear(const cv::Mat& img, double x, double y, int radius)
+{
+    // We will sample bilinearly at (x,y) and also at offsets within [-radius, +radius].
+    // For bilinear we need floor(x) and floor(x)+1 to be valid indices.
+    const double xmin = radius;
+    const double ymin = radius;
+    const double xmax = (img.cols - 2) - radius; // ensures x0+1 <= cols-1
+    const double ymax = (img.rows - 2) - radius; // ensures y0+1 <= rows-1
+    return (x >= xmin && x <= xmax && y >= ymin && y <= ymax);
+}
+
+static inline float sampleBilinearU8_1C(const cv::Mat& img, double x, double y)
+{
+    const int x0 = (int)std::floor(x);
+    const int y0 = (int)std::floor(y);
+    const double ax = x - x0;
+    const double ay = y - y0;
+
+    const uint8_t I00 = img.at<uint8_t>(y0, x0);
+    const uint8_t I10 = img.at<uint8_t>(y0, x0 + 1);
+    const uint8_t I01 = img.at<uint8_t>(y0 + 1, x0);
+    const uint8_t I11 = img.at<uint8_t>(y0 + 1, x0 + 1);
+
+    const double I0 = (1.0 - ax) * I00 + ax * I10;
+    const double I1 = (1.0 - ax) * I01 + ax * I11;
+    return (float)((1.0 - ay) * I0 + ay * I1);
 }
 
 void PMDepthMapsBuilder::propagation()
@@ -348,14 +400,22 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
             double x = neighb_proj[0];
             double y = neighb_proj[1];
 
-            // TODO 205: замените этот наивный вариант nearest neighbor сэмплирования текстуры на билинейную интерполяцию (учтите что центр пикселя - .5 после запятой)
+            // TODO 205: замените этот наивный вариант nearest neighbor сэмплирования текстуры на билинейную интерполяцию
+            //  (учтите что центр пикселя - .5 после запятой)
             ptrdiff_t u = x;
             ptrdiff_t v = y;
 
             // TODO 108: добавьте проверку "попали ли мы в камеру номер neighb_cam?" если не попали - возвращаем NO_COST
+            if (!insideImageForPatchBilinear(cameras_imgs_grey[neighb_cam], x, y, COST_PATCH_RADIUS)) {
+                return NO_COST;
+            }
 
-            float intensity = cameras_imgs_grey[neighb_cam].at<unsigned char>(v, u) / 255.0f;
-            patch1.push_back(intensity);
+            // TODO - check if it is better at all??
+            const float nI = sampleBilinearU8_1C(cameras_imgs_grey[neighb_cam], x, y);
+            patch1.push_back(nI);
+
+            // float intensity = cameras_imgs_grey[neighb_cam].at<unsigned char>(v, u) / 255.0f;
+            // patch1.push_back(intensity);
         }
     }
 
@@ -363,24 +423,41 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
     // или слайд #25 в лекции 5 про SGM и Cost-функции - https://my.compscicenter.ru/attachments/classes/slides_w2n8WNLY/photogrammetry_lecture_090321.pdf
     rassert(patch0.size() == patch1.size(), 12489185129326);
     size_t n = patch0.size();
+    rassert(n == patch1.size(), 23812989251111);
+    if (patch0.empty()) {
+        return NO_COST;
+    }
     float mean0 = 0.0f;
     float mean1 = 0.0f;
-    // ...
     for (size_t k = 0; k < n; ++k) {
         float a = patch0[k];
         float b = patch1[k];
         mean0 += a;
         mean1 += b;
-        // ...
     }
     mean0 /= n;
     mean1 /= n;
-    // ...
-    float zncc = 0.0f;
 
+    double num = 0.0;
+    double den0 = 0.0;
+    double den1 = 0.0;
+    for (size_t k = 0; k < patch0.size(); ++k) {
+        const double a = (double)patch0[k] - mean0;
+        const double b = (double)patch1[k] - mean1;
+        num += a * b;
+        den0 += a * a;
+        den1 += b * b;
+    }
+
+    const double denom = std::sqrt(den0 * den1);
+    if (denom < 1e-12) {
+        return NO_COST;
+    }
+
+    double zncc = num / denom;
     // ZNCC в диапазоне [-1; 1], 1: идеальное совпадение, -1: ничего общего
     rassert(zncc == zncc, 23141241210380); // проверяем что не nan
-    zncc = std::max(-1.0f, std::min(1.0f, zncc));
+    zncc = std::max(-1.0f, std::min(1.0f, (float)zncc));
     rassert(zncc >= -1.0 && zncc <= 1.0, 141251251541357);
 
     // переводим в cost от [0; 1] (NO_COST=1)
@@ -402,10 +479,32 @@ float PMDepthMapsBuilder::avgCost(std::vector<float>& costs)
 
     float cost_sum = best_cost;
     float cost_w = 1.0f;
+    float COSTS_K_DECAY = 0.8f;
+    float COSTS_ABS_SLACK = 0.08f;
 
     // TODO 110 реализуйте какое-то "усреднение cost-ов по всем соседям", с ограничением что участвуют только COSTS_BEST_K_LIMIT лучших
+    if (costs.size() > COSTS_BEST_K_LIMIT) {
+        costs.resize(COSTS_BEST_K_LIMIT);
+    }
+    for (size_t k = 1; k < costs.size(); ++k) {
+        float w = std::pow(COSTS_K_DECAY, k); // чем дальше от лучшего соседа - тем меньше его вес
+        cost_sum += costs[k] * w;
+        cost_w += w;
+    }
     // TODO 111 добавьте к этому усреднению еще одно ограничение: если cost больше чем best_cost*COSTS_K_RATIO - то такой cost подозрительно плохой и мы его не хотим учитывать (вероятно occlusion)
     // TODO 112 а что если в пикселе occlusion, но best_cost - большой и поэтому отсечение по best_cost*COSTS_K_RATIO не срабатывает? можно ли это отсечение как-то выправить для такого случая?
+    
+    const float ratio_thr = best_cost * COSTS_K_RATIO;
+    const float abs_slack = COSTS_ABS_SLACK; // if not defined, set to e.g. 0.08f in defines; see note below
+    const float thr = std::min(ratio_thr, best_cost + abs_slack);
+
+    for (float c : costs) {
+        if (c <= thr) {
+            cost_sum += c;
+            ++cost_w;
+        }
+    }
+
     // TODO 207 а что если добавить какой-нибудь бонус в случае если больше чем Х камер засчиталось? улучшается/ухудшается ли от этого что-то на herzjezu25? а при большем числе фотографий
 
     float avg_cost = cost_sum / cost_w;
