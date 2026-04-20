@@ -33,16 +33,21 @@
 
 TEST(test_depth_maps_pm, SingleDepthMap)
 {
-    // TODO этот код надо раскомментировать чтобы запустить тестирование:
-    // Dataset dataset = loadDataset(DATASET_DIR, DATASET_DOWNSCALE);
-    // phg::PMDepthMapsBuilder builder(dataset.ncameras, dataset.cameras_imgs, dataset.cameras_imgs_grey, dataset.cameras_labels, dataset.cameras_P, dataset.calibration);
-    //
-    // size_t ci = 2; // строим карту глубины для третьей камеры (индексация с нуля)
-    // size_t cameras_limit = 5; // учитывая первые пять фотографий датасета, т.е. две камеры слева и две камеры справа
-    //
-    // dataset.ncameras = cameras_limit;
-    // cv::Mat depth_map, normal_map, cost_map;
-    // builder.buildDepthMap(ci, depth_map, cost_map, normal_map, dataset.cameras_depth_min[ci], dataset.cameras_depth_max[ci]);
+    Dataset dataset = loadDataset(DATASET_DIR, DATASET_DOWNSCALE);
+
+    size_t cameras_limit = 5; // учитывая первые пять фотографий датасета, т.е. две камеры слева и две камеры справа
+    dataset = dataset.subset(0, cameras_limit);
+    phg::PMDepthMapsBuilder builder(dataset.ncameras, dataset.cameras_imgs, dataset.cameras_imgs_grey, dataset.cameras_labels, dataset.cameras_P, dataset.calibration);
+
+    size_t ci = 2; // строим карту глубины для третьей камеры (индексация с нуля)
+    cv::Mat depth_map, normal_map, cost_map;
+    builder.buildDepthMap(ci, depth_map, normal_map, cost_map, dataset.cameras_depth_min[ci], dataset.cameras_depth_max[ci]);
+
+    EXPECT_EQ(depth_map.type(), CV_32FC1);
+    EXPECT_EQ(normal_map.type(), CV_32FC3);
+    EXPECT_EQ(cost_map.type(), CV_32FC1);
+    EXPECT_EQ(depth_map.rows, dataset.calibration.height());
+    EXPECT_EQ(depth_map.cols, dataset.calibration.width());
 }
 
 TEST(test_depth_maps_pm, AllDepthMaps)
@@ -66,7 +71,7 @@ TEST(test_depth_maps_pm, AllDepthMaps)
     //
     //     phg::PMDepthMapsBuilder builder(dataset.ncameras, dataset.cameras_imgs, dataset.cameras_imgs_grey, dataset.cameras_labels, dataset.cameras_P, dataset.calibration);
     //     cv::Mat depth_map, normal_map, cost_map;
-    //     builder.buildDepthMap(ref_camera_shift, depth_map, cost_map, normal_map, dataset.cameras_depth_min[ref_camera_shift], dataset.cameras_depth_max[ref_camera_shift]);
+    //     builder.buildDepthMap(ref_camera_shift, depth_map, normal_map, cost_map, dataset.cameras_depth_min[ref_camera_shift], dataset.cameras_depth_max[ref_camera_shift]);
     //     phg::PMDepthMapsBuilder::buildGoodPoints(depth_map, normal_map, cost_map, dataset.cameras_imgs[ref_camera_shift], dataset.calibration, builder.getCameraPtoWorld(ref_camera_shift), all_points, all_colors, all_normals);
     //     ++ndepth_maps;
     //
