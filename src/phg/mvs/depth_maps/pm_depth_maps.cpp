@@ -470,7 +470,7 @@ float PMDepthMapsBuilder::avgCost(std::vector<float>& costs)
     // TODO 112 а что если в пикселе occlusion, но best_cost - большой и поэтому отсечение по best_cost*COSTS_K_RATIO не срабатывает? можно ли это отсечение как-то выправить для такого случая?
     // диапазон стоимостей - [0, 1]. К уже представленному отсечению можно добавить абсолютное значение в промежутке [0, 1], по которому можно отсекать.
     // TODO 207 а что если добавить какой-нибудь бонус в случае если больше чем Х камер засчиталось? улучшается/ухудшается ли от этого что-то на herzjezu25? а при большем числе фотографий
-    constexpr float MAX_COST_BORDER = 0.5;
+    constexpr float MAX_COST_BORDER = 0.95;
     float border = std::min(COSTS_K_RATIO * best_cost, MAX_COST_BORDER);
 
     for (size_t k = 1; k < COSTS_BEST_K_LIMIT && k < costs.size(); ++k) {
