@@ -34,6 +34,7 @@
 TEST(test_depth_maps_pm, SingleDepthMap)
 {
     // TODO этот код надо раскомментировать чтобы запустить тестирование:
+    // Windows CI please...
     Dataset dataset = loadDataset(DATASET_DIR, DATASET_DOWNSCALE);
     phg::PMDepthMapsBuilder builder(dataset.ncameras, dataset.cameras_imgs, dataset.cameras_imgs_grey, dataset.cameras_labels, dataset.cameras_P, dataset.calibration);
     
