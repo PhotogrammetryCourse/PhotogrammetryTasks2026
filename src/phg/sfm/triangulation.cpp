@@ -8,38 +8,67 @@
 // (см. Hartley & Zisserman p.312)
 cv::Vec4d phg::triangulatePoint(const cv::Matx34d *Ps, const cv::Vec3d *ms, int count)
 {
-    using mat = Eigen::MatrixXd;
-    using vec = Eigen::VectorXd;
+    // from task04
+    // using mat = Eigen::MatrixXd;
+    // using vec = Eigen::VectorXd;
 
-    mat A(2 * count, 4);
+    // mat A(2 * count, 4);
 
-    for (int i = 0; i < count; ++i) {
+    // for (int i = 0; i < count; ++i) {
 
-        const matrix34d &P = Ps[i];
-        const vector3d &m = ms[i];
+    //     const matrix34d &P = Ps[i];
+    //     const vector3d &m = ms[i];
 
-        double x = m[0];
-        double y = m[1];
-        double z = m[2];
+    //     double x = m[0];
+    //     double y = m[1];
+    //     double z = m[2];
 
-        auto p0 = P.row(0);
-        auto p1 = P.row(1);
-        auto p2 = P.row(2);
+    //     auto p0 = P.row(0);
+    //     auto p1 = P.row(1);
+    //     auto p2 = P.row(2);
 
-        auto row0 = x * p2 - z * p0;
-        auto row1 = y * p2 - z * p1;
+    //     auto row0 = x * p2 - z * p0;
+    //     auto row1 = y * p2 - z * p1;
 
-        A.row(i * 2 + 0) << row0(0), row0(1), row0(2), row0(3);
-        A.row(i * 2 + 1) << row1(0), row1(1), row1(2), row1(3);
-    }
+    //     A.row(i * 2 + 0) << row0(0), row0(1), row0(2), row0(3);
+    //     A.row(i * 2 + 1) << row1(0), row1(1), row1(2), row1(3);
+    // }
+
+    // Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
+    // Eigen::VectorXd null_space = svd.matrixV().col(3);
+
+    // vector4d result;
+    // for (int i = 0; i < 4; ++i) {
+    //     result(i) = null_space(i);
+    // }
+
+    // return result;
+
+    // составление однородной системы + SVD
+    // без подвохов
+    Eigen::MatrixXd A(4, 4);
+    A.row(0) << ms[0][0] * Ps[0](2, 0) - Ps[0](0, 0), 
+                ms[0][0] * Ps[0](2, 1) - Ps[0](0, 1), 
+                ms[0][0] * Ps[0](2, 2) - Ps[0](0, 2), 
+                ms[0][0] * Ps[0](2, 3) - Ps[0](0, 3);
+
+    A.row(1) << ms[0][1] * Ps[0](2, 0) - Ps[0](1, 0),
+                ms[0][1] * Ps[0](2, 1) - Ps[0](1, 1), 
+                ms[0][1] * Ps[0](2, 2) - Ps[0](1, 2), 
+                ms[0][1] * Ps[0](2, 3) - Ps[0](1, 3);
+
+    A.row(2) << ms[1][0] * Ps[1](2, 0) - Ps[1](0, 0), 
+                ms[1][0] * Ps[1](2, 1) - Ps[1](0, 1), 
+                ms[1][0] * Ps[1](2, 2) - Ps[1](0, 2), 
+                ms[1][0] * Ps[1](2, 3) - Ps[1](0, 3);
+
+    A.row(3) << ms[1][1] * Ps[1](2, 0) - Ps[1](1, 0), 
+                ms[1][1] * Ps[1](2, 1) - Ps[1](1, 1), 
+                ms[1][1] * Ps[1](2, 2) - Ps[1](1, 2), 
+                ms[1][1] * Ps[1](2, 3) - Ps[1](1, 3);
 
     Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
-    Eigen::VectorXd null_space = svd.matrixV().col(3);
+    auto null_space = svd.matrixV().col(3);
 
-    vector4d result;
-    for (int i = 0; i < 4; ++i) {
-        result(i) = null_space(i);
-    }
-
-    return result;
+    return {null_space[0], null_space[1], null_space[2], null_space[3]};
 }

@@ -64,17 +64,18 @@ namespace {
             double Z = Xs[i][2];
             double W = 1.0;
 
-            A.row(i * 2 + 0) << 0, 0, 0, 0, -w*X, -w*Y, -w*Z, -w*W, y*X, y*Y, y*Z, y*W;
-            A.row(i * 2 + 1) << w*X, w*Y, w*Z, w*W, 0, 0, 0, 0, -x*X, -x*Y, -x*Z, -x*W;
+            A.row(i * 2) << 0., 0., 0., 0., -w * X, -w * Y, -w * Z, -w * W, y * X, y * Y, y * Z, y * W;
+            A.row(i * 2 + 1) << w * X, w * Y, w * Z, w * W, 0., 0., 0., 0., -x * X, -x * Y, -x * Z, -x * W;
         }
+
+        matrix34d result;
 
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
         Eigen::VectorXd null_space = svd.matrixV().col(11);
-
-        matrix34d result;
-        for (int i = 0; i < 12; ++i) {
-            result(i / 4, i % 4) = null_space(i);
-        }
+        
+        result(0, 0) = null_space[0]; result(0, 1) = null_space[1]; result(0, 2) = null_space[2]; result(0, 3) = null_space[3];
+        result(1, 0) = null_space[4]; result(1, 1) = null_space[5]; result(1, 2) = null_space[6]; result(1, 3) = null_space[7];
+        result(2, 0) = null_space[8]; result(2, 1) = null_space[9]; result(2, 2) = null_space[10]; result(2, 3) = null_space[11];
 
         return canonicalizeP(result);
     }
@@ -90,11 +91,15 @@ namespace {
 
         // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
         // будет отличаться от случая с гомографией
-        const int n_trials = 10000;
+        const int n_points_fit = 6;
+        const double singlePointInlierProbability = 0.1893, successProbability = 0.99; // maybe singlePointInlierProbability should be set to lower value
+        // const int n_trials = (int) (log(1 - successProbability) / log(1 - pow(singlePointInlierProbability, n_points_fit)));
+        const int n_trials = 100000;
+        const int n_trials = 10000; // from task04
 
         const double threshold_px = 3;
 
-        const int n_samples = 6;
+        const int n_samples = n_points_fit;
         uint64_t seed = 1;
 
         int best_support = 0;
@@ -115,11 +120,11 @@ namespace {
 
             int support = 0;
             for (int i = 0; i < n_points; ++i) {
-                cv::Vec3d pt = calib.project(P * cv::Vec4d(X[i][0], X[i][1], X[i][2], 1.0));
-                if (pt[2] == 0) {
+                cv::Vec3d px_uniqform = calib.project(P * cv::Vec4d(X[i][0], X[i][1], X[i][2], 1.)); // спроецировать 3Д точку в пиксель с использованием P и calib;
+                if (px_uniqform[2] == 0) {
                     continue;
                 }
-                cv::Vec2d px = {pt[0] / pt[2], pt[1] / pt[2]};
+                cv::Vec2d px = {px_uniqform[0] / px_uniqform[2], px_uniqform[1] / px_uniqform[2]};
                 if (cv::norm(px - x[i]) < threshold_px) {
                     ++support;
                 }

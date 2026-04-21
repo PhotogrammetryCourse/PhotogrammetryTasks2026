@@ -17,19 +17,21 @@ namespace {
         copy(Ecv, E);
 
         Eigen::JacobiSVD<Eigen::MatrixXd> svd(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
+        auto singular_values_vector = svd.singularValues();
+        double sigma12 = (singular_values_vector[0] + singular_values_vector[1]) / 2.;
+        singular_values_vector[0] = sigma12;
+        singular_values_vector[1] = sigma12;
+        singular_values_vector[2] = double(0.);
+        E = svd.matrixU() * singular_values_vector.asDiagonal() * svd.matrixV().transpose();
 
-        Eigen::MatrixXd U = svd.matrixU();
-        Eigen::VectorXd s = svd.singularValues();
-        Eigen::MatrixXd V = svd.matrixV();
+        // course version
+        // Eigen::MatrixXd S = Eigen::MatrixXd(3, 3);
+        // S.setZero();
 
-        Eigen::MatrixXd S = Eigen::MatrixXd(3, 3);
-        S.setZero();
-
-        S(0, 0) = 1.0;
-        S(1, 1) = 1.0;
-        S(2, 2) = 0.0;
-
-        E = U * S * V.transpose();
+        // S(0, 0) = 1.0;
+        // S(1, 1) = 1.0;
+        // S(2, 2) = 0.0;
+        // E = U * S * V.transpose();
 
         copy(E, Ecv);
     }
@@ -38,6 +40,7 @@ namespace {
 
 cv::Matx33d phg::fmatrix2ematrix(const cv::Matx33d &F, const phg::Calibration &calib0, const phg::Calibration &calib1)
 {
+    // maybe odd
     // TODO check that correct conversion (transpose ok)
 
     // TODO add separate test for fmatrix (check 1) reprojection errors 2) f matrix singular value property)
@@ -76,6 +79,9 @@ namespace {
 
     double getDepth(const vector2d &m0, const vector2d &m1, const phg::Calibration &calib0, const phg::Calibration &calib1, const matrix34d &P0, const matrix34d &P1)
     {
+        // скомпенсировать калибровки камер
+        // vector3d p0 = calib0.K().t() * vector3d(m0[0], m0[1], 1.); // analog to unproject?
+        // vector3d p1 = calib1.K().t() * vector3d(m1[0], m1[1], 1.);
         vector3d p0 = calib0.unproject(m0);
         vector3d p1 = calib1.unproject(m1);
 
@@ -87,7 +93,9 @@ namespace {
             X /= X[3];
         }
 
-        return p0.dot(P0 * X) > 0 && p1.dot(P1 * X) > 0;
+        // return p0.dot(P0 * X) > 0 && p1.dot(P1 * X) > 0; // course version
+        // точка должна иметь положительную глубину для обеих камер
+        return ((P0 * X)[2] > 0) && ((P1 * X)[2] > 0);
     }
 }
 
@@ -106,7 +114,7 @@ void phg::decomposeEMatrix(cv::Matx34d &P0, cv::Matx34d &P1, const cv::Matx33d &
 
     using mat = Eigen::MatrixXd;
     using vec = Eigen::VectorXd;
-    
+
     mat E;
     copy(Ecv, E);
 
@@ -126,20 +134,15 @@ void phg::decomposeEMatrix(cv::Matx34d &P0, cv::Matx34d &P1, const cv::Matx33d &
         std::cout << "U:\n" << U << std::endl;
         std::cout << "s:\n" << s << std::endl;
         std::cout << "V:\n" << V << std::endl;
-    }
+    }    
 
     mat W(3, 3);
-    W << 0, -1, 0, 1, 0, 0, 0, 0, 1;
+    W << 0., -1., 0., 1., 0., 0., 0., 0., 1.;
 
     mat Z(3, 3);
-    Z << 0, 1, 0, -1, 0, 0, 0, 0, 0;
+    Z << 0., 1., 0., -1., 0., 0., 0., 0., 0.;
 
-    if (verbose) {
-        std::cout << "W:\n" << W << std::endl;
-        std::cout << "Z:\n" << Z << std::endl;
-    }
-
-    mat R0 = U * W * V.transpose();
+    mat R0 = U * W * V.transpose(); // the same thing as for U and V? => positive determinant : det ALWAYS > 0 
     mat R1 = U * W.transpose() * V.transpose();
 
     if (verbose) {
@@ -148,7 +151,7 @@ void phg::decomposeEMatrix(cv::Matx34d &P0, cv::Matx34d &P1, const cv::Matx33d &
     }
 
     vec t0 = U.col(2);
-    vec t1 = -t0;
+    vec t1 = -U.col(2);
 
     if (verbose) {
         std::cout << "t0:\n" << t0 << std::endl;
