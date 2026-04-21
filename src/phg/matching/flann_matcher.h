@@ -5,19 +5,22 @@
 
 namespace phg {
 
-    struct FlannMatcher : DescriptorMatcher {
+struct FlannMatcher : DescriptorMatcher {
 
-        FlannMatcher();
+    static constexpr std::size_t kNtreesKD = 4;
+    static constexpr std::size_t kNChecks = 32;
 
-        void train(const cv::Mat &train_desc) override;
+    FlannMatcher();
 
-        void knnMatch(const cv::Mat &query_desc, std::vector<std::vector<cv::DMatch>> &matches, int k) const override;
+    void train(const cv::Mat &train_desc) override;
 
-    private:
+    void knnMatch(const cv::Mat &query_desc, std::vector<std::vector<cv::DMatch>> &matches, int k) const override;
 
-        std::shared_ptr<cv::flann::IndexParams> index_params;
-        std::shared_ptr<cv::flann::SearchParams> search_params;
-        std::shared_ptr<cv::flann::Index> flann_index;
-    };
+private:
 
-}
+    std::shared_ptr<cv::flann::IndexParams> index_params;
+    std::shared_ptr<cv::flann::SearchParams> search_params;
+    std::shared_ptr<cv::flann::Index> flann_index;
+};
+
+} // namespace phg
