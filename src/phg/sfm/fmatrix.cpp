@@ -136,7 +136,7 @@ namespace {
             return TN1.t() * F * TN0;
         }
 
-        const int n_trials = 5000;
+        const int n_trials = 100000;
         const int n_samples = 8;
         uint64_t seed = 12345;
 
