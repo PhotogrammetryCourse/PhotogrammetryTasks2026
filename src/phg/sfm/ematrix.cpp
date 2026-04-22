@@ -7,6 +7,7 @@
 #include <Eigen/SVD>
 #include <Eigen/Dense>
 #include <iostream>
+#include <opencv2/calib3d.hpp>
 
 namespace {
 
@@ -109,83 +110,47 @@ namespace {
 // Это дополнительное ограничение позволяет разложить существенную матрицу с точностью до 4 решений, вместо произвольного проективного преобразования (см. Hartley & Zisserman p.258)
 // Обычно мы можем использовать одну общую калибровку, более менее верную для большого количества реальных камер и с ее помощью выполнить
 // первичное разложение существенной матрицы (а из него, взаимное расположение камер) для последующего уточнения методом нелинейной оптимизации
-void phg::decomposeEMatrix(cv::Matx34d &P0, cv::Matx34d &P1, const cv::Matx33d &Ecv, const std::vector<cv::Vec2d> &m0, const std::vector<cv::Vec2d> &m1, const Calibration &calib0, const Calibration &calib1)
+void phg::decomposeEMatrix(cv::Matx34d& P0, cv::Matx34d& P1, const cv::Matx33d& Ecv, const std::vector<cv::Vec2d>& m0, const std::vector<cv::Vec2d>& m1, const Calibration& calib0, const Calibration& calib1)
 {
     if (m0.size() != m1.size()) {
         throw std::runtime_error("decomposeEMatrix : m0.size() != m1.size()");
     }
 
-    using mat = Eigen::MatrixXd;
-    using vec = Eigen::VectorXd;
-
-    mat E;
-    copy(Ecv, E);
-
-    // (см. Hartley & Zisserman p.258)
-
-    Eigen::JacobiSVD<mat> svd(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-    mat U = svd.matrixU();
-    vec s = svd.singularValues();
-    mat V = svd.matrixV();
-
-    // U, V must be rotation matrices, not just orthogonal
-    if (U.determinant() < 0) U = -U;
-    if (V.determinant() < 0) V = -V;
-
-    std::cout << "U:\n" << U << std::endl;
-    std::cout << "s:\n" << s << std::endl;
-    std::cout << "V:\n" << V << std::endl;
-
-    mat W(3, 3);
-    W << 0, -1,  0,
-         1,  0,  0,
-         0,  0,  1;
-
-    mat R0 = U * W * V.transpose();
-    mat R1 = U * W.transpose() * V.transpose();
-
-    std::cout << "R0:\n" << R0 << std::endl;
-    std::cout << "R1:\n" << R1 << std::endl;
-
-    vec t0 = U.col(2);
-    vec t1 = -U.col(2);
-
-    std::cout << "t0:\n" << t0 << std::endl;
-
-    P0 = matrix34d::eye();
-
-    // 4 possible solutions
-    matrix34d P10 = composeP(R0, t0);
-    matrix34d P11 = composeP(R0, t1);
-    matrix34d P12 = composeP(R1, t0);
-    matrix34d P13 = composeP(R1, t1);
-    matrix34d P1s[4] = {P10, P11, P12, P13};
-
-    // need to select best of 4 solutions: 3d points should be in front of cameras (positive depths)
-    int best_count = 0;
-    int best_idx = -1;
-    for (int i = 0; i < 4; ++i) {
-        int count = 0;
-        for (int j = 0; j < (int) m0.size(); ++j) {
-            if (depthTest(m0[j], m1[j], calib0, calib1, P0, P1s[i])) {
-                ++count;
-            }
-        }
-        std::cout << "decomposeEMatrix: count: " << count << std::endl;
-        if (count > best_count) {
-            best_count = count;
-            best_idx = i;
-        }
+    // пиксельные координаты -> нормализованные (умножаем на inv(K))
+    std::vector<cv::Point2f> pts0_norm, pts1_norm;
+    pts0_norm.reserve(m0.size());
+    pts1_norm.reserve(m1.size());
+    for (size_t i = 0; i < m0.size(); ++i) {
+        cv::Vec3d norm0 = calib0.unproject(m0[i]); // (x, y, 1) в нормализованных координатах
+        cv::Vec3d norm1 = calib1.unproject(m1[i]);
+        pts0_norm.emplace_back(static_cast<float>(norm0[0] / norm0[2]), static_cast<float>(norm0[1] / norm0[2]));
+        pts1_norm.emplace_back(static_cast<float>(norm1[0] / norm1[2]), static_cast<float>(norm1[1] / norm1[2]));
     }
 
-    if (best_count == 0) {
-        throw std::runtime_error("decomposeEMatrix : can't decompose ematrix");
+    // Преобразуем cv::Matx33d в cv::Mat (необходимо для cv::recoverPose)
+    cv::Mat E(3, 3, CV_64F);
+    for (int i = 0; i < 3; ++i)
+        for (int j = 0; j < 3; ++j)
+            E.at<double>(i, j) = Ecv(i, j);
+
+    cv::Mat R, t;
+    int inliers = cv::recoverPose(E, pts0_norm, pts1_norm, R, t);
+    if (inliers == 0) {
+        throw std::runtime_error("decomposeEMatrix : recoverPose returned no inliers");
     }
 
-    P1 = P1s[best_idx];
+    // P0 = [I | 0]
+    P0 = cv::Matx34d::eye();
 
-    std::cout << "best idx: " << best_idx << std::endl;
+    // P1 = [R | t]
+    for (int i = 0; i < 3; ++i) {
+        for (int j = 0; j < 3; ++j) {
+            P1(i, j) = R.at<double>(i, j);
+        }
+        P1(i, 3) = t.at<double>(i, 0);
+    }
+
+    std::cout << "decomposeEMatrix: recoverPose returned " << inliers << " inliers\n";
     std::cout << "P0: \n" << P0 << std::endl;
     std::cout << "P1: \n" << P1 << std::endl;
 }
