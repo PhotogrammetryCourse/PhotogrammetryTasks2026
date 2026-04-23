@@ -22,7 +22,7 @@
 #include <ceres/ceres.h>
 
 // TODO включите Bundle Adjustment (но из любопытства посмотрите как ведет себя реконструкция без BA например для saharov32 без BA)
-#define ENABLE_BA                             0
+#define ENABLE_BA                             1
 
 // TODO когда заработает при малом количестве фотографий - увеличьте это ограничение до 100 чтобы попробовать обработать все фотографии (если же успешно будут отрабаывать только N фотографий - отправьте PR выставив здесь это N)
 #define NIMGS_LIMIT                           10 // сколько фотографий обрабатывать (можно выставить меньше чтобы ускорить экспериментирование, или в случае если весь датасет не выравнивается)
@@ -374,39 +374,58 @@ TEST (SFM, ReconstructNViews) {
 
 class ReprojectionError {
 public:
-    ReprojectionError(double x, double y) : observed_x(x), observed_y(y)
-    {}
+    ReprojectionError(double x, double y)
+        : observed_x(x)
+        , observed_y(y)
+    {
+    }
 
     template <typename T>
     bool operator()(const T* camera_extrinsics, // положение камеры:   [6] = {translation[3], rotation[3]} (разное для всех кадров, т.к. каждая фотография со своего ракурса)
-                    const T* camera_intrinsics, // внутренние калибровочные параметры камеры: [5] = {k1, k2, f, cx, cy} (одни и те же для всех кадров, т.к. снято на одну и ту же камеру)
-                    const T* point_global,      // 3D точка: [3]  = {x, y, z}
-                    T* residuals) const {       // невязка:  [2]  = {dx, dy}
-        // TODO реализуйте функцию проекции, все нужно делать в типе T чтобы ceres-solver мог под него подставить как Jet (очень рекомендую посмотреть Jet.h - как класная статья из википедии!), так и double
+        const T* camera_intrinsics, // внутренние калибровочные параметры камеры: [5] = {k1, k2, f, cx, cy} (одни и те же для всех кадров, т.к. снято на одну и ту же камеру)
+        const T* point_global, // 3D точка: [3]  = {x, y, z}
+        T* residuals) const
+    {
 
-        // translation[3] - сдвиг в локальную систему координат камеры
+        // Перевод точки в локальную систему камеры (центр камеры)
+        const T* trans = &camera_extrinsics[0];
+        T point_cam[3];
+        for (int i = 0; i < 3; ++i) {
+            point_cam[i] = point_global[i] - trans[i];
+        }
 
-        // rotation[3] - angle-axis rotation, поворачиваем точку point->p (чтобы перейти в локальную систему координат камеры)
-        // подробнее см. https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation
-        // (P.S. у камеры всмысле вращения три степени свободы)
+        // Поворот
+        const T* rot = &camera_extrinsics[3];
+        T point_rot[3];
+        ceres::AngleAxisRotatePoint(rot, point_cam, point_rot);
 
-        // Проецируем точку на фокальную плоскость матрицы (т.е. плоскость Z=фокальная длина)
+        // Нормализованная проекция (деление на Z)
+        T x_norm = point_rot[0] / point_rot[2];
+        T y_norm = point_rot[1] / point_rot[2];
 
 #if ENABLE_INSTRINSICS_K1_K2
-        // k1, k2 - коэффициенты радиального искажения (radial distortion)
+        // Радиальное искажение
+        T r2 = x_norm * x_norm + y_norm * y_norm;
+        T dist = T(1) + camera_intrinsics[0] * r2 + camera_intrinsics[1] * r2 * r2;
+        x_norm *= dist;
+        y_norm *= dist;
 #endif
 
-        // Домножаем на f, тем самым переводя в пиксели
+        // Переход в пиксельные координаты (фокус)
+        T x_px = x_norm * camera_intrinsics[2];
+        T y_px = y_norm * camera_intrinsics[2];
 
-        // Из координат когда точка (0, 0) - центр оптической оси
-        // Переходим в координаты когда точка (0, 0) - левый верхний угол картинки
-        // cx, cy - координаты центра оптической оси (обычно это центр картинки, но часто он чуть смещен)
+        // Сдвиг относительно центра оптической оси
+        x_px += camera_intrinsics[3]; // cx
+        y_px += camera_intrinsics[4]; // cy
 
-        // Теперь по спроецированным координатам не забудьте посчитать невязку репроекции
+        // Невязка
+        residuals[0] = x_px - observed_x;
+        residuals[1] = y_px - observed_y;
 
         return true;
-        // TODO сверьте эту функцию с вашей реализацией проекции в src/phg/core/calibration.cpp (они должны совпадать)
     }
+
 protected:
     double observed_x;
     double observed_y;
@@ -437,6 +456,12 @@ void runBA(std::vector<vector3d> &tie_points,
     // внутренние калибровочные параметры камеры: [5] = {k1, k2, f, cx, cy}
     // TODO: преобразуйте calib в блок параметров камеры (ее внутренних характеристик) для оптимизации в BA
     double camera_intrinsics[5];
+    camera_intrinsics[0] = calib.k1_;
+    camera_intrinsics[1] = calib.k2_;
+    camera_intrinsics[2] = calib.f_;
+    camera_intrinsics[3] = calib.cx_ + 0.5 * calib.width();
+    camera_intrinsics[4] = calib.cy_ + 0.5 * calib.height();
+
     std::cout << "Before BA ";
     printCamera(camera_intrinsics);
 
@@ -577,6 +602,11 @@ void runBA(std::vector<vector3d> &tie_points,
     printCamera(camera_intrinsics);
     // TODO преобразуйте параметры камеры в обратную сторону, чтобы последующая резекция учла актуальное представление о пространстве:
     // calib.* = camera_intrinsics[*];
+    calib.k1_ = camera_intrinsics[0];
+    calib.k2_ = camera_intrinsics[1];
+    calib.f_ = camera_intrinsics[2];
+    calib.cx_ = camera_intrinsics[3] - 0.5 * calib.width();
+    calib.cy_ = camera_intrinsics[4] - 0.5 * calib.height();
 
     ASSERT_NEAR(calib.f_ , DATASET_F, 0.2 * DATASET_F);
     ASSERT_NEAR(calib.cx_, 0.0, 0.3 * calib.width());
@@ -649,8 +679,35 @@ void runBA(std::vector<vector3d> &tie_points,
             }
 
             if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA) {
-                // TODO выполните проверку случая когда два луча почти параллельны, чтобы не было странных точек улетающих на бесконечность (например чтобы угол был хотя бы 2.5 градуса)
-                // should_be_disabled = true;
+                static const double k_cos_threshold = std::cos(2.5 * CV_PI / 180.0);
+
+                const vector3d current_dir = cv::normalize(track_point - camera_origin);
+
+                size_t total_views = static_cast<size_t>(ci);
+                size_t colinear_count = 0;
+                bool decided = false;
+                for (size_t idx = 0; idx < total_views; ++idx) {
+                    const int old_cam_id = track.img_kpt_pairs[idx].first;
+
+                    matrix3d R_old;
+                    vector3d old_cam_origin;
+                    phg::decomposeUndistortedPMatrix(R_old, old_cam_origin, cameras[old_cam_id]);
+
+                    const vector3d old_ray = cv::normalize(track_point - old_cam_origin);
+                    const double dot_product = std::fabs(current_dir.dot(old_ray));
+
+                    if (dot_product > k_cos_threshold) {
+                        ++colinear_count;
+                    } else {
+                        should_be_disabled = false;
+                        decided = true;
+                        break;
+                    }
+                }
+
+                if (!decided) {
+                    should_be_disabled = (colinear_count == total_views);
+                }
             }
 
             {
