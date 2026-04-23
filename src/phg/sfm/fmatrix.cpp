@@ -29,17 +29,37 @@ namespace {
 
         Eigen::MatrixXd A(a_rows, a_cols);
 
+        double avg_x1 = 0, avg_y1 = 0, avg_x2 = 0, avg_y2 = 0;
+        double std_x1 = 0, std_y1 = 0, std_x2 = 0, std_y2 = 0;
         for (int i_pair = 0; i_pair < count; ++i_pair) {
 
             double x0 = m0[i_pair][0];
             double y0 = m0[i_pair][1];
+            avg_x1 += x0;
+            avg_y1 += y0;
+            std_x1 += x0 * x0;
+            std_y1 += y0 * y0;
 
             double x1 = m1[i_pair][0];
             double y1 = m1[i_pair][1];
+            avg_x2 += x1;
+            avg_y2 += y1;
+            std_x2 += x1 * x1;
+            std_y2 += y1 * y1;
 
-//            std::cout << "(" << x0 << ", " << y0 << "), (" << x1 << ", " << y1 << ")" << std::endl;
+            // std::cout << "(" << x0 << ", " << y0 << "), (" << x1 << ", " << y1 << ")" << std::endl;
 
-            A.row(i_pair) << x1*x0, x1*y0, x1, y1*x0, y1*y0, y1, x0, y0, 1.0;
+            A(i_pair, 0) = x1 * x0;
+            A(i_pair, 1) = x1 * y0;
+            A(i_pair, 2) = x1;
+
+            A(i_pair, 3) = y1 * x0;
+            A(i_pair, 4) = y1 * y0;
+            A(i_pair, 5) = y1;
+
+            A(i_pair, 6) = x0;
+            A(i_pair, 7) = y0;
+            A(i_pair, 8) = 1.;
         }
 
         Eigen::JacobiSVD<Eigen::MatrixXd> svda(A, Eigen::ComputeFullU | Eigen::ComputeFullV);
@@ -50,19 +70,13 @@ namespace {
         F.row(1) << null_space[3], null_space[4], null_space[5];
         F.row(2) << null_space[6], null_space[7], null_space[8];
 
+        // Поправить F так, чтобы соблюдалось свойство фундаментальной матрицы (последнее сингулярное значение = 0)
         Eigen::JacobiSVD<Eigen::MatrixXd> svdf(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
 
-        Eigen::MatrixXd U = svdf.matrixU();
-        Eigen::VectorXd s = svdf.singularValues();
-        Eigen::MatrixXd V = svdf.matrixV();
 
-        Eigen::MatrixXd S = Eigen::MatrixXd(3, 3);
-        S.setZero();
-        S(0, 0) = s[0];
-        S(1, 1) = s[1];
-        S(2, 2) = 0.0;
-
-        F = U * S * V.transpose();
+        auto singular_values_vector = svdf.singularValues();
+        singular_values_vector[2] = double(0.);
+        F = svdf.matrixU() * singular_values_vector.asDiagonal() * svdf.matrixV().transpose();
 
         cv::Matx33d Fcv;
         copy(F, Fcv);
@@ -73,40 +87,21 @@ namespace {
     // get transform matrix so that after transform centroid of points will be zero and Root Mean Square distance from centroid will be sqrt(2)
     cv::Matx33d getNormalizeTransform(const std::vector<cv::Vec2d> &m, bool verbose=true)
     {
-        cv::Vec2d centroid(0.0, 0.0);
-
-        if (m.empty()) {
-            throw std::runtime_error("Can't normalize transform");
+        cv::Vec2d avg(0, 0);
+        for (size_t i = 0; i < m.size(); i++) {
+            avg += m[i];
         }
-
-        for (int i = 0; i < (int) m.size(); ++i) {
-            centroid += m[i];
-        }
-
-        centroid /= (double) m.size();
-
+        avg = cv::Vec2d(avg[0] / m.size(), avg[1] / m.size());
+        
         double rms = 0;
-        for (int i = 0; i < (int) m.size(); ++i) {
-            cv::Vec2d d = m[i] - centroid;
-            rms += d[0] * d[0] + d[1] * d[1];
+        for (size_t i = 0; i < m.size(); i++) {
+            rms += (m[i][0] - avg[0]) * (m[i][0] - avg[0]) + (m[i][1] - avg[1]) * (m[i][1] - avg[1]);
+
         }
-        rms = std::sqrt(rms / (2 * m.size()));
+        
+        double s = std::sqrt(2 * m.size() / (rms + 1e-6));
 
-        if (rms == 0) {
-            throw std::runtime_error("Can't normalize transform");
-        }
-
-        double s = std::sqrt(2) / rms;
-
-        if (verbose) {
-            std::cout << "NORMALIZE TRANSFORM: centroid = " << centroid << ", scale = " << s << std::endl;
-        }
-
-        cv::Matx33d T(s, 0.0, -s*centroid[0],
-                      0.0, s, -s*centroid[1],
-                      0.0, 0.0, 1.0);
-
-        return T;
+        return {s, 0., -avg[0] * s, 0., s, -avg[1] * s, 0., 0., 1.};
     }
 
     cv::Vec2d transformPoint(const cv::Vec2d &pt, const cv::Matx33d &T)
@@ -139,16 +134,19 @@ namespace {
         }
 
         {
-//             check log: centroid should become close to zero, scale close to 1
-            getNormalizeTransform(m0_t, verbose);
-            getNormalizeTransform(m1_t, verbose);
+//             Проверьте лог: при повторной нормализации должно найтись почти единичное преобразование
+            // std::cout << getNormalizeTransform(m0_t) << "\n";
+            // std::cout << getNormalizeTransform(m1_t) << "\n";
         }
-
         // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
         // будет отличаться от случая с гомографией
-        const int n_trials = 10000;
+        const int n_points_fit = 8;
+        const double singlePointInlierProbability = 0.287, successProbability = 0.99; // maybe singlePointInlierProbability should be set to lower value
+        // const int n_trials = (int) (log(1 - successProbability) / log(1 - pow(singlePointInlierProbability, n_points_fit)));
+        const int n_trials = 100000; // works
+        // const int n_trials = 10000; // from task04
 
-        const int n_samples = 8;
+        const int n_samples = n_points_fit;
         uint64_t seed = 1;
 
         int best_support = 0;
@@ -167,12 +165,12 @@ namespace {
 
             cv::Matx33d F = estimateFMatrixDLT(ms0, ms1, n_samples);
 
-            // denormalize
+            // denormalize TODO
             F = TN1.t() * F * TN0;
+            
 
             int support = 0;
             for (int i = 0; i < n_matches; ++i) {
-                //                    todo todo todo                                                         todo todo todo
                 if (phg::epipolarTest(m0[i], m1[i], F, threshold_px) && phg::epipolarTest(m1[i], m0[i], F.t(), threshold_px))
                 {
                     ++support;
