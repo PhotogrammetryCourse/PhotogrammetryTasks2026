@@ -1,5 +1,12 @@
 **/*_cl.h
 .idea
-build
+.DS_store
+build*
 cmake-build*
 data/src/test_sfm/saharov/*.JPG
+opencv-4.11.0
+.github/scripts/macos/4.11.0.zip
+2.2.0.zip
+ceres-solver-2.2.0
+eigen-3.4.0
+eigen-3.4.0.tar.gz
