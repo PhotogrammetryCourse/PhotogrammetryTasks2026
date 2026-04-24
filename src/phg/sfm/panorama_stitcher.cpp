@@ -21,9 +21,36 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
     // вектор гомографий, для каждой картинки описывает преобразование до корня
     std::vector<cv::Mat> Hs(n_images);
     {
+        size_t root_idx = 0;
+        std::vector<bool> visited(n_images, false);
         // здесь надо посчитать вектор Hs
         // при этом можно обойтись n_images - 1 вызовами функтора homography_builder
-        throw std::runtime_error("not implemented yet");
+        for (size_t img_num = 0; img_num < n_images; img_num++) {
+            if (parent[img_num] == -1) {
+                root_idx = img_num;
+            } 
+        }
+        
+        Hs[root_idx] = cv::Mat::eye(3, 3, CV_64FC1);
+        visited[root_idx] = true;
+
+        std::function<void(size_t)> calc_recurse = [&] (size_t cur_idx) {
+            if (visited[cur_idx]) {
+                return;
+            }
+            const size_t parent_idx = parent[cur_idx];
+            if (!visited[parent_idx]) {
+                calc_recurse(parent_idx);
+            }
+            Hs[cur_idx] = homography_builder(imgs[cur_idx], imgs[parent_idx]) * Hs[parent_idx];
+            visited[cur_idx] = true;
+        };
+
+        for (size_t img_num = 0; img_num < n_images; img_num++) {
+            if (img_num != root_idx && !visited[img_num]) {
+                calc_recurse(img_num);
+            }
+        }
     }
 
     bbox2<double, cv::Point2d> bbox;
