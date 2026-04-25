@@ -41,9 +41,14 @@ set(SOURCES
 
 set(LIBRARIES
         libutils
-        ${OpenCV_LIBS}
         OpenMP::OpenMP_CXX
 )
+
+foreach(_mod opencv_core opencv_imgproc opencv_imgcodecs opencv_highgui opencv_features2d opencv_flann opencv_calib3d)
+    if(TARGET ${_mod})
+        list(APPEND LIBRARIES ${_mod})
+    endif()
+endforeach()
 
 add_library(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME} ${LIBRARIES})
