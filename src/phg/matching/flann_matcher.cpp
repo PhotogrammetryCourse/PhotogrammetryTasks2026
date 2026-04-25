@@ -5,9 +5,8 @@
 
 phg::FlannMatcher::FlannMatcher()
 {
-    // параметры для приближенного поиска
-//    index_params = flannKdTreeIndexParams(TODO);
-//    search_params = flannKsTreeSearchParams(TODO);
+    index_params = flannKdTreeIndexParams(4);
+    search_params = flannKsTreeSearchParams(32);
 }
 
 void phg::FlannMatcher::train(const cv::Mat &train_desc)
@@ -17,5 +16,20 @@ void phg::FlannMatcher::train(const cv::Mat &train_desc)
 
 void phg::FlannMatcher::knnMatch(const cv::Mat &query_desc, std::vector<std::vector<cv::DMatch>> &matches, int k) const
 {
-    throw std::runtime_error("not implemented yet");
+    const int n_query = query_desc.rows;
+    cv::Mat indices(n_query, k, CV_32SC1);
+    cv::Mat dists(n_query, k, CV_32FC1);
+    flann_index->knnSearch(query_desc, indices, dists, k, *search_params);
+
+    matches.resize(n_query);
+    for (int i = 0; i < n_query; ++i) {
+        matches[i].clear();
+        for (int j = 0; j < k; ++j) {
+            int idx = indices.at<int>(i, j);
+            float dist = dists.at<float>(i, j);
+            if (idx >= 0) {
+                matches[i].emplace_back(i, idx, dist);
+            }
+        }
+    }
 }
