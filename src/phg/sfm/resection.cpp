@@ -86,7 +86,7 @@ namespace {
         }
 
         const int n_points = X.size();
-        const int n_trials = 500;
+        const int n_trials = 10000;
         const double threshold_px = 8;
         const int n_samples = 6;
         uint64_t seed = 1;
