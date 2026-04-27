@@ -2,6 +2,7 @@
 
 #include <Eigen/SVD>
 #include <iostream>
+#include <opencv2/calib3d.hpp>
 #include "sfm_utils.h"
 #include "defines.h"
 
@@ -135,28 +136,47 @@ namespace {
         }
 
         {
-            std::vector<cv::Vec3d> inlier_X;
-            std::vector<cv::Vec3d> inlier_x;
+            std::vector<cv::Point3d> obj_pts;
+            std::vector<cv::Point2d> img_pts;
             for (int i = 0; i < n_points; ++i) {
                 cv::Vec3d px_h = calib.project(best_P * cv::Vec4d(X[i][0], X[i][1], X[i][2], 1));
                 cv::Vec2d px = {px_h[0] / px_h[2], px_h[1] / px_h[2]};
                 if (cv::norm(px - x[i]) < threshold_px) {
-                    inlier_X.push_back(X[i]);
-                    inlier_x.push_back(calib.unproject(x[i]));
+                    obj_pts.push_back({X[i][0], X[i][1], X[i][2]});
+                    img_pts.push_back({x[i][0], x[i][1]});
                 }
             }
-            cv::Matx34d P_refit = estimateCameraMatrixDLT(inlier_X.data(), inlier_x.data(), inlier_X.size());
-            int refit_support = 0;
+
+            cv::Mat K_mat(calib.K());
+            cv::Mat R_init(3, 3, CV_64F);
+            for (int r = 0; r < 3; r++)
+                for (int c = 0; c < 3; c++)
+                    R_init.at<double>(r, c) = best_P(r, c);
+            cv::Mat rvec, tvec(3, 1, CV_64F);
+            cv::Rodrigues(R_init, rvec);
+            tvec.at<double>(0) = best_P(0, 3);
+            tvec.at<double>(1) = best_P(1, 3);
+            tvec.at<double>(2) = best_P(2, 3);
+
+            cv::solvePnP(obj_pts, img_pts, K_mat, cv::noArray(), rvec, tvec, true, cv::SOLVEPNP_ITERATIVE);
+
+            cv::Mat R_refined;
+            cv::Rodrigues(rvec, R_refined);
+            matrix34d P_lm;
+            for (int r = 0; r < 3; r++) {
+                for (int c = 0; c < 3; c++) P_lm(r, c) = R_refined.at<double>(r, c);
+                P_lm(r, 3) = tvec.at<double>(r);
+            }
+
+            int lm_support = 0;
             for (int i = 0; i < n_points; ++i) {
-                cv::Vec3d px_h = calib.project(P_refit * cv::Vec4d(X[i][0], X[i][1], X[i][2], 1));
+                cv::Vec3d px_h = calib.project(P_lm * cv::Vec4d(X[i][0], X[i][1], X[i][2], 1));
                 cv::Vec2d px = {px_h[0] / px_h[2], px_h[1] / px_h[2]};
-                if (cv::norm(px - x[i]) < threshold_px) {
-                    ++refit_support;
-                }
+                if (cv::norm(px - x[i]) < threshold_px) ++lm_support;
             }
-            if (refit_support >= best_support) {
-                best_P = P_refit;
-                std::cout << "estimateCameraMatrixRANSAC : refit support: " << refit_support << "/" << n_points << std::endl;
+            if (lm_support >= best_support * 0.9) {
+                best_P = P_lm;
+                std::cout << "estimateCameraMatrixRANSAC : LM support: " << lm_support << "/" << n_points << std::endl;
             }
         }
 
