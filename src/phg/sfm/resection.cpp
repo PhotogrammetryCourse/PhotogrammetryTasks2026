@@ -134,6 +134,32 @@ namespace {
             throw std::runtime_error("estimateCameraMatrixRANSAC : failed to estimate camera matrix");
         }
 
+        {
+            std::vector<cv::Vec3d> inlier_X;
+            std::vector<cv::Vec3d> inlier_x;
+            for (int i = 0; i < n_points; ++i) {
+                cv::Vec3d px_h = calib.project(best_P * cv::Vec4d(X[i][0], X[i][1], X[i][2], 1));
+                cv::Vec2d px = {px_h[0] / px_h[2], px_h[1] / px_h[2]};
+                if (cv::norm(px - x[i]) < threshold_px) {
+                    inlier_X.push_back(X[i]);
+                    inlier_x.push_back(calib.unproject(x[i]));
+                }
+            }
+            cv::Matx34d P_refit = estimateCameraMatrixDLT(inlier_X.data(), inlier_x.data(), inlier_X.size());
+            int refit_support = 0;
+            for (int i = 0; i < n_points; ++i) {
+                cv::Vec3d px_h = calib.project(P_refit * cv::Vec4d(X[i][0], X[i][1], X[i][2], 1));
+                cv::Vec2d px = {px_h[0] / px_h[2], px_h[1] / px_h[2]};
+                if (cv::norm(px - x[i]) < threshold_px) {
+                    ++refit_support;
+                }
+            }
+            if (refit_support >= best_support) {
+                best_P = P_refit;
+                std::cout << "estimateCameraMatrixRANSAC : refit support: " << refit_support << "/" << n_points << std::endl;
+            }
+        }
+
         return best_P;
     }
 
