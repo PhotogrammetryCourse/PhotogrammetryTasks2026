@@ -68,30 +68,31 @@ cv::Vec3d phg::Calibration::unproject(const cv::Vec2d &pixel) const
     x /= f_;
     y /= f_;
 
-    double r2 = x * x + y * y;
-    double r4 = r2 * r2;
+    // from task05 -- probably wrong
+    // double r2 = x * x + y * y;
+    // double r4 = r2 * r2;
 
-    x = x / (1.0 + k1_ * r2 + k2_ * r4);
-    y = y / (1.0 + k1_ * r2 + k2_ * r4);
+    // x = x / (1.0 + k1_ * r2 + k2_ * r4);
+    // y = y / (1.0 + k1_ * r2 + k2_ * r4);
 
-    return cv::Vec3d(x, y, 1.0);
+    // return cv::Vec3d(x, y, 1.0);
 
     // from task04
-    // // 12: добавьте учет радиальных искажений, когда реализуете - подумайте: почему строго говоря это - не симметричная формула формуле из project? (но лишь приближение)
-    // // потому что мы имеем дело с функцией 4 степени относительно x и y. 
-    // double x_u = x, y_u = y;
-    // // while (1) {
-    // for (size_t i = 0; i < 1000; i++) {
-    //     double r_squared = x_u * x_u + y_u * y_u;
-    //     double r_fourth = r_squared * r_squared;
-    //     double dr = 1 + k1_ * r_squared + k2_ * r_fourth;
-    //     x_u = x / dr;
-    //     y_u = y / dr;
+    // 12: добавьте учет радиальных искажений, когда реализуете - подумайте: почему строго говоря это - не симметричная формула формуле из project? (но лишь приближение)
+    // потому что мы имеем дело с функцией 4 степени относительно x и y. 
+    double x_u = x, y_u = y;
+    // while (1) {
+    for (size_t i = 0; i < 1000; i++) {
+        double r_squared = x_u * x_u + y_u * y_u;
+        double r_fourth = r_squared * r_squared;
+        double dr = 1 + k1_ * r_squared + k2_ * r_fourth;
+        x_u = x / dr;
+        y_u = y / dr;
         
-    //     if (std::abs(dr * x_u - x) + std::abs(dr * y_u - y) < 1e-10) {
-    //         break;
-    //     }
-    // }
+        if (std::abs(dr * x_u - x) + std::abs(dr * y_u - y) < 1e-10) {
+            break;
+        }
+    }
 
-    // return cv::Vec3d(x_u, y_u, 1.0);
+    return cv::Vec3d(x_u, y_u, 1.0);
 }
