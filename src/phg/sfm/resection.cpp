@@ -49,100 +49,96 @@ namespace {
     // (см. Hartley & Zisserman p.178)
     cv::Matx34d estimateCameraMatrixDLT(const cv::Vec3d *Xs, const cv::Vec3d *xs, int count)
     {
-        throw std::runtime_error("not implemented yet");
-//        using mat = Eigen::MatrixXd;
-//        using vec = Eigen::VectorXd;
-//
-//        mat A(TODO);
-//
-//        for (int i = 0; i < count; ++i) {
-//
-//            double x = xs[i][0];
-//            double y = xs[i][1];
-//            double w = xs[i][2];
-//
-//            double X = Xs[i][0];
-//            double Y = Xs[i][1];
-//            double Z = Xs[i][2];
-//            double W = 1.0;
-//
-//            TODO
-//        }
-//
-//        matrix34d result;
-//          TODO
-//
-//        return canonicalizeP(result);
-    }
+        using mat = Eigen::MatrixXd;
 
+        mat A(2 * count, 12);
+        A.setZero();
+
+        for (int i = 0; i < count; ++i) {
+            double x = xs[i][0], y = xs[i][1], w = xs[i][2];
+            double X = Xs[i][0], Y = Xs[i][1], Z = Xs[i][2];
+            double W = 1.0;
+
+            // eq1: y*(P3*X) - w*(P2*X) = 0
+            A(2 * i,     4)  = -w * X; A(2 * i,     5)  = -w * Y; A(2 * i,     6)  = -w * Z; A(2 * i,     7)  = -w * W;
+            A(2 * i,     8)  =  y * X; A(2 * i,     9)  =  y * Y; A(2 * i,     10) =  y * Z; A(2 * i,     11) =  y * W;
+            // eq2: w*(P1*X) - x*(P3*X) = 0
+            A(2 * i + 1, 0)  =  w * X; A(2 * i + 1, 1)  =  w * Y; A(2 * i + 1, 2)  =  w * Z; A(2 * i + 1, 3)  =  w * W;
+            A(2 * i + 1, 8)  = -x * X; A(2 * i + 1, 9)  = -x * Y; A(2 * i + 1, 10) = -x * Z; A(2 * i + 1, 11) = -x * W;
+        }
+
+        Eigen::JacobiSVD<mat> svd(A, Eigen::ComputeFullV);
+        Eigen::VectorXd p = svd.matrixV().col(11);
+
+        matrix34d result;
+        for (int i = 0; i < 3; ++i)
+            for (int j = 0; j < 4; ++j)
+                result(i, j) = p[i * 4 + j];
+
+        return canonicalizeP(result);
+    }
 
     // По трехмерным точкам и их проекциям на изображении определяем положение камеры
     cv::Matx34d estimateCameraMatrixRANSAC(const phg::Calibration &calib, const std::vector<cv::Vec3d> &X, const std::vector<cv::Vec2d> &x)
     {
-        throw std::runtime_error("not implemented yet");
-//        if (X.size() != x.size()) {
-//            throw std::runtime_error("estimateCameraMatrixRANSAC: X.size() != x.size()");
-//        }
-//
-//        const int n_points = X.size();
-//
-//        // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
-//        // будет отличаться от случая с гомографией
-//        const int n_trials = TODO;
-//
-//        const double threshold_px = 3;
-//
-//        const int n_samples = TODO;
-//        uint64_t seed = 1;
-//
-//        int best_support = 0;
-//        cv::Matx34d best_P;
-//
-//        std::vector<int> sample;
-//        for (int i_trial = 0; i_trial < n_trials; ++i_trial) {
-//            phg::randomSample(sample, n_points, n_samples, &seed);
-//
-//            cv::Vec3d ms0[n_samples];
-//            cv::Vec3d ms1[n_samples];
-//            for (int i = 0; i < n_samples; ++i) {
-//                ms0[i] = TODO;
-//                ms1[i] = TODO;
-//            }
-//
-//            cv::Matx34d P = estimateCameraMatrixDLT(ms0, ms1, n_samples);
-//
-//            int support = 0;
-//            for (int i = 0; i < n_points; ++i) {
-//                cv::Vec2d px = TODO спроецировать 3Д точку в пиксель с использованием P и calib;
-//                if (cv::norm(px - x[i]) < threshold_px) {
-//                    ++support;
-//                }
-//            }
-//
-//            if (support > best_support) {
-//                best_support = support;
-//                best_P = P;
-//
-//                std::cout << "estimateCameraMatrixRANSAC : support: " << best_support << "/" << n_points << std::endl;
-//
-//                if (best_support == n_points) {
-//                    break;
-//                }
-//            }
-//        }
-//
-//        std::cout << "estimateCameraMatrixRANSAC : best support: " << best_support << "/" << n_points << std::endl;
-//
-//        if (best_support == 0) {
-//            throw std::runtime_error("estimateCameraMatrixRANSAC : failed to estimate camera matrix");
-//        }
-//
-//        return best_P;
-    }
+        if (X.size() != x.size()) {
+            throw std::runtime_error("estimateCameraMatrixRANSAC: X.size() != x.size()");
+        }
 
+        const int n_points = X.size();
+        const int n_trials = 500;
+        const double threshold_px = 8;
+        const int n_samples = 6;
+        uint64_t seed = 1;
+
+        int best_support = 0;
+        cv::Matx34d best_P;
+
+        std::vector<int> sample;
+        for (int i_trial = 0; i_trial < n_trials; ++i_trial) {
+            phg::randomSample(sample, n_points, n_samples, &seed);
+
+            cv::Vec3d ms0[n_samples]; // 3D points
+            cv::Vec3d ms1[n_samples]; // unprojected rays
+            for (int i = 0; i < n_samples; ++i) {
+                ms0[i] = X[sample[i]];
+                ms1[i] = calib.unproject(x[sample[i]]);
+            }
+
+            cv::Matx34d P = estimateCameraMatrixDLT(ms0, ms1, n_samples);
+
+            int support = 0;
+            for (int i = 0; i < n_points; ++i) {
+                cv::Vec3d px_h = calib.project(P * cv::Vec4d(X[i][0], X[i][1], X[i][2], 1));
+                cv::Vec2d px = {px_h[0] / px_h[2], px_h[1] / px_h[2]};
+                if (cv::norm(px - x[i]) < threshold_px) {
+                    ++support;
+                }
+            }
+
+            if (support > best_support) {
+                best_support = support;
+                best_P = P;
+
+                std::cout << "estimateCameraMatrixRANSAC : support: " << best_support << "/" << n_points << std::endl;
+
+                if (best_support == n_points) {
+                    break;
+                }
+            }
+        }
+
+        std::cout << "estimateCameraMatrixRANSAC : best support: " << best_support << "/" << n_points << std::endl;
+
+        if (best_support == 0) {
+            throw std::runtime_error("estimateCameraMatrixRANSAC : failed to estimate camera matrix");
+        }
+
+        return best_P;
+    }
 
 }
 
-cv::Matx34d phg::findCameraMatrix(const Calibration &calib, const std::vector <cv::Vec3d> &X, const std::vector <cv::Vec2d> &x) {
+cv::Matx34d phg::findCameraMatrix(const Calibration &calib, const std::vector<cv::Vec3d> &X, const std::vector<cv::Vec2d> &x) {
     return estimateCameraMatrixRANSAC(calib, X, x);
 }
