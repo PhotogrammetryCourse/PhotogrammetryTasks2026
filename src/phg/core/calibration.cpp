@@ -36,18 +36,16 @@ cv::Vec3d phg::Calibration::project(const cv::Vec3d &point) const
     double x = point[0] / point[2];
     double y = point[1] / point[2];
 
-<<<<<<< HEAD
     double r2 = x * x + y * y;
     double r4 = r2 * r2;
-=======
-    // 11: добавьте учет радиальных искажений (k1_, k2_) (после деления на Z, но до умножения на f)
-    double r_squared = x * x + y * y;
-    double r_fourth = r_squared * r_squared;
-    double radial_coef = 1. + k1_ * r_squared + k2_ * r_fourth;
+    // from task04
+    // // 11: добавьте учет радиальных искажений (k1_, k2_) (после деления на Z, но до умножения на f)
+    // double r_squared = x * x + y * y;
+    // double r_fourth = r_squared * r_squared;
+    // double radial_coef = 1. + k1_ * r_squared + k2_ * r_fourth;
 
-    x *= radial_coef;
-    y *= radial_coef;
->>>>>>> task04
+    // x *= radial_coef;
+    // y *= radial_coef;
 
     x = x * (1.0 + k1_ * r2 + k2_ * r4);
     y = y * (1.0 + k1_ * r2 + k2_ * r4);
