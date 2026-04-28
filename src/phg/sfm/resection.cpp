@@ -168,16 +168,7 @@ namespace {
                 P_lm(r, 3) = tvec.at<double>(r);
             }
 
-            int lm_support = 0;
-            for (int i = 0; i < n_points; ++i) {
-                cv::Vec3d px_h = calib.project(P_lm * cv::Vec4d(X[i][0], X[i][1], X[i][2], 1));
-                cv::Vec2d px = {px_h[0] / px_h[2], px_h[1] / px_h[2]};
-                if (cv::norm(px - x[i]) < threshold_px) ++lm_support;
-            }
-            if (lm_support >= best_support * 0.9) {
-                best_P = P_lm;
-                std::cout << "estimateCameraMatrixRANSAC : LM support: " << lm_support << "/" << n_points << std::endl;
-            }
+            best_P = P_lm;
         }
 
         return best_P;
