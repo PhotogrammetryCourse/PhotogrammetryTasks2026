@@ -425,7 +425,7 @@ float PMDepthMapsBuilder::avgCost(std::vector<float>& costs)
     float cost_w = 1.0f;
 
     // TODODONE 110 реализуйте какое-то "усреднение cost-ов по всем соседям", с ограничением что участвуют только COSTS_BEST_K_LIMIT лучших
-    for (size_t i = 1; i < COSTS_BEST_K_LIMIT; i++) {
+    for (size_t i = 1; i < COSTS_BEST_K_LIMIT && i < costs.size(); i++) {
         // TODODONE 111 добавьте к этому усреднению еще одно ограничение: если cost больше чем best_cost*COSTS_K_RATIO - то такой cost подозрительно плохой и мы его не хотим учитывать (вероятно occlusion)
         if (costs[i] > best_cost * COSTS_K_RATIO) {
             break;
