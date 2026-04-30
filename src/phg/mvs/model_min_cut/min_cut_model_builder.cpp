@@ -58,10 +58,11 @@ void MinCutModelBuilder::appendToTriangulation(
             // проверяем насколько ближайшая точка далеко
             vector3d np = from_cgal_point(nearest_vertex->point());
             // TODO 2001 appendToTriangulation(): реализуйте нормальную проверку объединять ли точку с уже добавленной ранее (с учетом r и MERGE_THRESHOLD_RADIUS_KOEF)
-            to_merge = false;
+            double merge_threshold = r * MERGE_THRESHOLD_RADIUS_KOEF;
+            to_merge = phg::norm(p - np) <= merge_threshold;
         }
 
-        vertex_info_t p_info(camera_id, color);
+        vertex_info_t p_info(camera_id, color, r);
         if (to_merge) {
             nearest_vertex->info().merge(p_info);
         } else {
@@ -96,6 +97,27 @@ void debugSavePointCloud(const std::string& label, const std::vector<vector3d>& 
     std::string path = "data/debug/test_mesh_min_cut/debug_points/" + to_string(point_cloud_index++) + "_debug_points_" + label + ".ply";
     phg::exportPointCloud(points, path);
     std::cout << points.size() << " points exported to " << path << std::endl;
+}
+
+bool isOnBoundingBox(const vector3d& p, const vector3d& bb_min, const vector3d& bb_max)
+{
+    double bb_diag = phg::norm(bb_max - bb_min);
+    double eps = std::max(1e-9, bb_diag * 1e-9);
+    for (int d = 0; d < 3; ++d) {
+        if (fabs(p[d] - bb_min[d]) <= eps || fabs(p[d] - bb_max[d]) <= eps) {
+            return true;
+        }
+    }
+    return false;
+}
+
+vector3d cellCenter(const cell_handle_t& cell)
+{
+    vector3d center(0.0, 0.0, 0.0);
+    for (int i = 0; i < 4; ++i) {
+        center += from_cgal_point(cell->vertex(i)->point());
+    }
+    return center / 4.0;
 }
 }
 
@@ -313,6 +335,8 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
     for (auto vi = proxy->triangulation.all_vertices_begin(); vi != proxy->triangulation.all_vertices_end(); ++vi) {
         if (vi->info().camera_ids.size() == 0) {
             // TODO 2004 подумайте и напишите тут какие вершины бывают без камер вообще? почему мы их пропускаем? что и почему случится если убрать это пропускание?
+            // Это фиктивные вершины bounding box: они не наблюдались ни одной камерой и нужны только чтобы замкнуть триангуляцию.
+            // Если трассировать из них лучи, у них не будет корректной камеры-наблюдателя, а min-cut начнет учитывать искусственную геометрию.
             continue;
         }
 
@@ -336,12 +360,10 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                 // иначе говоря мы смотрим на шарик из треугольников вокруг нашей вершины
                 // и теперь среди этих треугольников мы ищем тот что пересекается лучем идущим глубже за точку на поверхности
                 // этот треугольник - это грань искомой ячейки триангуляции внутри поверхности
-                std::vector<cgal_facet_t> cur_facets = facets_around_point0;
-                const cgal_facet_t intersected_facet = chooseIntersectedFacet(proxy->triangulation, point0, point0 + ray_from_camera, cur_facets, false);
-                rassert(intersected_facet != cgal_facet_t(), 2378213120305);
-
-                // это ячейка триангуляции лежащая под поверхностью (т.е. сразу за вершиной)
-                const cell_handle_t cell_after_point = intersected_facet.first;
+                const double point_radius = std::max(vi->info().radius, 1e-6);
+                const vector3d point_inside_surface = point0 + ray_from_camera * point_radius;
+                const cell_handle_t cell_after_point = proxy->triangulation.locate(to_cgal_point(point_inside_surface));
+                rassert(!proxy->triangulation.is_infinite(cell_after_point), 2378213120305);
                 // добавляем пропускной способности из этой ячейки (из этого тетрагедрончика) к стоку
                 cell_after_point->info().t_capacity += LAMBDA_IN;
             }
@@ -388,7 +410,9 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                 prev_distance = distance_from_surface;
 
                 // увеличиваем пропускную способность на треугольнике-ребре (в направлении от камеры к точке)
-                next_cell->info().facets_capacities[next_cell_facet_subindex] += LAMBDA_OUT;
+                double point_radius = std::max(vi->info().radius, 1e-6);
+                double visibility_weight = 1.0 - exp(-(distance_from_surface * distance_from_surface) / (2.0 * point_radius * point_radius));
+                next_cell->info().facets_capacities[next_cell_facet_subindex] += (float)(LAMBDA_OUT * visibility_weight);
 
                 if (cur_facets.size() == 0) {
                     // если на будущее у нас нет кандидатов-треугольников, значит мы закончили наш путь и следующая ячейка содержит нашу камеру
@@ -396,6 +420,7 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                     // добавляем пропускной способности из истока к ячейке с камерой (к тетрагедрончику содержащему точку центра камеры)
                     next_cell->info().s_capacity += LAMBDA_IN;
                     // TODO 2005 изменится ли что-то если сильно увеличить пропускные способности ребер от истока? (т.е. сделать пропускную способность из истока равной бесконечности?)
+                    // Большая s-capacity жестче фиксирует пространство у камер как outside. Это полезно как якорь, но слишком сильный вес может продавить разрез через слабые наблюдения вместо баланса с t-capacity.
                 }
             }
             avg_triangles_intersected_per_ray += steps;
@@ -477,6 +502,17 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
 
             // TODO 2002 добавьте проверку - не опирается ли треугольник на одну из фиктивных вершин (лежащих на гранях вспомогательного bounding box), можете для этого использовать bb_min и bb_max, или добавьте явный флаг в каждую вершину
             // иначе говоря сделайте так чтобы такие треугольники не добавлялись в результирующую модель эти большие красные треугольники
+            bool has_bounding_box_vertex = false;
+            for (int v_index = 1; v_index <= 3; ++v_index) {
+                auto vi = ci->vertex((i + v_index) % 4);
+                if (isOnBoundingBox(from_cgal_point(vi->point()), bb_min, bb_max)) {
+                    has_bounding_box_vertex = true;
+                    break;
+                }
+            }
+            if (has_bounding_box_vertex) {
+                continue;
+            }
 
             for (int v_index = 1; v_index <= 3; ++v_index) {
                 auto vi = ci->vertex((i + v_index) % 4);
@@ -490,6 +526,14 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
             // TODO 2003 некоторые треугольники выглядят темными в результирующей модели, проблема уходит если выключить в MeshLab освещение (кнопка желтой лампочка - Light on/off) которое учитывает нормаль, которая строится с учетом
             // порядка вершин треугольника (по часовой стрелке или против) иначе говоря оказывается что порядок обхода вершин в треугольнике не всегда корректен подумайте чем это вызывано и поправьте (лучше всего это делать посматривая на
             // картинку 'Figure 44.1' в документации https://doc.cgal.org/latest/Triangulation_3/index.html )
+            vector3d p0 = from_cgal_point(ci->vertex((i + 1) % 4)->point());
+            vector3d p1 = from_cgal_point(ci->vertex((i + 2) % 4)->point());
+            vector3d p2 = from_cgal_point(ci->vertex((i + 3) % 4)->point());
+            vector3d face_normal = (p1 - p0).cross(p2 - p0);
+            vector3d inside_to_outside = cellCenter(cj) - cellCenter(ci);
+            if (face_normal.dot(inside_to_outside) < 0.0) {
+                std::swap(face[1], face[2]);
+            }
 
             mesh_faces.push_back(face);
         }

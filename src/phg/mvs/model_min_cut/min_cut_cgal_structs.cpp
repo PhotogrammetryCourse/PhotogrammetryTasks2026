@@ -6,8 +6,9 @@ vector3d from_cgal_point(cgal_point_t p) { return vector3d(p.x(), p.y(), p.z());
 
 cgal_point_t to_cgal_point(vector3d p) { return cgal_point_t(p[0], p[1], p[2]); }
 
-vertex_info_t::vertex_info_t(unsigned int camera_id, const cv::Vec3b& color)
+vertex_info_t::vertex_info_t(unsigned int camera_id, const cv::Vec3b& color, double radius)
     : color(color)
+    , radius(radius)
 {
     camera_ids.push_back(camera_id);
 }
@@ -29,6 +30,7 @@ void vertex_info_t::merge(const vertex_info_t& that)
     }
 
     std::sort(camera_ids.begin(), camera_ids.end());
+    radius = std::max(radius, that.radius);
     for (int i = 1; i < camera_ids.size(); ++i) {
         rassert(camera_ids[i - 1] < camera_ids[i], 23781274121024);
     }

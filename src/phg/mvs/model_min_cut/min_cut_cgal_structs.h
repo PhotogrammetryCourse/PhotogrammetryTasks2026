@@ -10,14 +10,16 @@
 struct vertex_info_t {
     std::vector<unsigned int> camera_ids;
     cv::Vec3b color;
+    double radius;
     size_t vertex_on_surface_id;
 
     vertex_info_t()
         : color(0, 0, 255) // red color, BGR convention (OpenCV compatible)
+        , radius(0.0)
     {
     }
 
-    vertex_info_t(unsigned int camera_id, const cv::Vec3b& color);
+    vertex_info_t(unsigned int camera_id, const cv::Vec3b& color, double radius);
 
     void merge(const vertex_info_t& that);
 };
