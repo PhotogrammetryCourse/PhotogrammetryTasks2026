@@ -281,97 +281,101 @@ void PMDepthMapsBuilder::propagation()
                 std::vector<vector3f> hypos_normal;
                 std::vector<float> hypos_cost;
 
-                /* 4 прямых соседа A, 8 соседей B через диагональ, 4 соседа C вдалеке (условный рисунок для PROPAGATION_STEP=5):
-                 * (удобно подсвечивать через Ctrl+F)
-                 *         center
-                 *           |
-                 *           v
-                 * o o o o o C o o o o o
-                 * o o o o o o o o o o o
-                 * o o o o o o o v o o o
-                 * o o o o B o B o v o o
-                 * o o o B o A o B o o o
-                 * C o o o A . A o o o C  <- center
-                 * o o o B o A o B o o o
-                 * o o o o B o B o v o o
-                 * o o o o o o o v o o o
-                 * o o o o o o o o o o o
-                 * o o o o o C o o o o o
-                 */
-                // tryToPropagateDonor(i - 1, j + 0, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i + 0, j - 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i + 1, j + 0, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i + 0, j + 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-
-                // tryToPropagateDonor(i - 2, j - 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i - 1, j - 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i + 1, j - 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i + 2, j - 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i + 2, j + 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i + 1, j + 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i - 1, j + 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i - 2, j + 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-
-                // // в таких случаях очень приятно использовать множественный курсор (чтобы скопировав четыре строки выше, затем просто колесиком мышки сделать четыре каретки для того чтобы дважды вставить *PROPAGATION_STEP):
-                // tryToPropagateDonor(i - 1 * PROPAGATION_STEP, j + 0 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i + 0 * PROPAGATION_STEP, j - 1 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i + 1 * PROPAGATION_STEP, j + 0 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                // tryToPropagateDonor(i + 0 * PROPAGATION_STEP, j + 1 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-
-                // TODODONE 201 переделайте чтобы было как в ACMH:
-                // TODODONE 202 - паттерн донорства
-                tryToPropagateDonor3dots(
-                    i + 1, j + 0,
-                    i + 2, j + 1,
-                    i + 2, j - 1,
-                    chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost
-                );
-                tryToPropagateDonor3dots(
-                    i - 1, j + 0,
-                    i - 2, j + 1,
-                    i - 2, j - 1,
-                    chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost
-                );
-                tryToPropagateDonor3dots(
-                    i + 0, j + 1,
-                    i + 1, j + 2,
-                    i - 1, j + 2,
-                    chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost
-                );
-                tryToPropagateDonor3dots(
-                    i + 0, j - 1,
-                    i + 1, j - 2,
-                    i - 1, j - 2,
-                    chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost
-                );
+                if (USE_ACMH_POPAGATION_SCHEME) {
+                    // TODODONE 201 переделайте чтобы было как в ACMH:
+                    // TODODONE 202 - паттерн донорства
+                    tryToPropagateDonor3dots(
+                        i + 1, j + 0,
+                        i + 2, j + 1,
+                        i + 2, j - 1,
+                        chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost
+                    );
+                    tryToPropagateDonor3dots(
+                        i - 1, j + 0,
+                        i - 2, j + 1,
+                        i - 2, j - 1,
+                        chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost
+                    );
+                    tryToPropagateDonor3dots(
+                        i + 0, j + 1,
+                        i + 1, j + 2,
+                        i - 1, j + 2,
+                        chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost
+                    );
+                    tryToPropagateDonor3dots(
+                        i + 0, j - 1,
+                        i + 1, j - 2,
+                        i - 1, j - 2,
+                        chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost
+                    );
 
 
 
-                tryToPropagateDonor3dots(
-                    i - 1 * PROPAGATION_STEP, j + 0 * PROPAGATION_STEP,
-                    i - 1 * (PROPAGATION_STEP - 1), j + 0 * (PROPAGATION_STEP - 1),
-                    i - 1 * (PROPAGATION_STEP - 2), j + 0 * (PROPAGATION_STEP - 2),
-                    chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor3dots(
-                    i + 0 * PROPAGATION_STEP, j - 1 * PROPAGATION_STEP,
-                    i + 0 * (PROPAGATION_STEP - 1), j - 1 * (PROPAGATION_STEP - 1),
-                    i + 0 * (PROPAGATION_STEP - 2), j - 1 * (PROPAGATION_STEP - 2),
-                    chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor3dots(
-                    i + 1 * PROPAGATION_STEP, j + 0 * PROPAGATION_STEP,
-                    i + 1 * (PROPAGATION_STEP - 1), j + 0 * (PROPAGATION_STEP - 1),
-                    i + 1 * (PROPAGATION_STEP - 2), j + 0 * (PROPAGATION_STEP - 2),
-                    chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
-                tryToPropagateDonor3dots(
-                    i + 0 * PROPAGATION_STEP, j + 1 * PROPAGATION_STEP,
-                    i + 0 * (PROPAGATION_STEP - 1), j + 1 * (PROPAGATION_STEP - 1),
-                    i + 0 * (PROPAGATION_STEP - 2), j + 1 * (PROPAGATION_STEP - 2),
-                    chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor3dots(
+                        i - 1 * PROPAGATION_STEP, j + 0 * PROPAGATION_STEP,
+                        i - 1 * (PROPAGATION_STEP - 1), j + 0 * (PROPAGATION_STEP - 1),
+                        i - 1 * (PROPAGATION_STEP - 2), j + 0 * (PROPAGATION_STEP - 2),
+                        chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost
+                    );
+                    tryToPropagateDonor3dots(
+                        i + 0 * PROPAGATION_STEP, j - 1 * PROPAGATION_STEP,
+                        i + 0 * (PROPAGATION_STEP - 1), j - 1 * (PROPAGATION_STEP - 1),
+                        i + 0 * (PROPAGATION_STEP - 2), j - 1 * (PROPAGATION_STEP - 2),
+                        chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost
+                    );
+                    tryToPropagateDonor3dots(
+                        i + 1 * PROPAGATION_STEP, j + 0 * PROPAGATION_STEP,
+                        i + 1 * (PROPAGATION_STEP - 1), j + 0 * (PROPAGATION_STEP - 1),
+                        i + 1 * (PROPAGATION_STEP - 2), j + 0 * (PROPAGATION_STEP - 2),
+                        chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost
+                    );
+                    tryToPropagateDonor3dots(
+                        i + 0 * PROPAGATION_STEP, j + 1 * PROPAGATION_STEP,
+                        i + 0 * (PROPAGATION_STEP - 1), j + 1 * (PROPAGATION_STEP - 1),
+                        i + 0 * (PROPAGATION_STEP - 2), j + 1 * (PROPAGATION_STEP - 2),
+                        chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost
+                    );
+                } else {
+                    /* 4 прямых соседа A, 8 соседей B через диагональ, 4 соседа C вдалеке (условный рисунок для PROPAGATION_STEP=5):
+                    * (удобно подсвечивать через Ctrl+F)
+                    *         center
+                    *           |
+                    *           v
+                    * o o o o o C o o o o o
+                    * o o o o o o o o o o o
+                    * o o o o o o o v o o o
+                    * o o o o B o B o v o o
+                    * o o o B o A o B o o o
+                    * C o o o A . A o o o C  <- center
+                    * o o o B o A o B o o o
+                    * o o o o B o B o v o o
+                    * o o o o o o o v o o o
+                    * o o o o o o o o o o o
+                    * o o o o o C o o o o o
+                    */
+                    tryToPropagateDonor(i - 1, j + 0, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i + 0, j - 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i + 1, j + 0, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i + 0, j + 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+
+                    tryToPropagateDonor(i - 2, j - 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i - 1, j - 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i + 1, j - 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i + 2, j - 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i + 2, j + 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i + 1, j + 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i - 1, j + 2, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i - 2, j + 1, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+
+                    // в таких случаях очень приятно использовать множественный курсор (чтобы скопировав четыре строки выше, затем просто колесиком мышки сделать четыре каретки для того чтобы дважды вставить *PROPAGATION_STEP):
+                    tryToPropagateDonor(i - 1 * PROPAGATION_STEP, j + 0 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i + 0 * PROPAGATION_STEP, j - 1 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i + 1 * PROPAGATION_STEP, j + 0 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                    tryToPropagateDonor(i + 0 * PROPAGATION_STEP, j + 1 * PROPAGATION_STEP, chessboard_pattern_step, hypos_depth, hypos_normal, hypos_cost);
+                }
 
 
 
-                // TODODONE 203 - логика про "берем 8 лучших по их личной оценке - по их личному cost" и только их примеряем уже на себя для рассчета cost в нашей точке
-                // вроде же и так делаем именно такой подход
                 // TODO 301 - сделайте вместо наивного переноса depth+normal в наш пиксель - логику про "пересекли луч из нашего пикселя с плоскостью которую задает донор-сосед" и оценку cost в нашей точке тогда можно провести для более
                 // релевантной точки-пересечения
 
@@ -465,17 +469,41 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
             double x = neighb_proj[0];
             double y = neighb_proj[1];
 
-            // TODO 205: замените этот наивный вариант nearest neighbor сэмплирования текстуры на билинейную интерполяцию (учтите что центр пикселя - .5 после запятой)
-            ptrdiff_t u = x;
-            ptrdiff_t v = y;
-
             // TODODONE 108: добавьте проверку "попали ли мы в камеру номер neighb_cam?" если не попали - возвращаем NO_COST
-            if (u < 0 || u > calibration.width() || v < 0 || v > calibration.height()) {
+            if (x < 0 || x > calibration.width() || y < 0 || y > calibration.height()) { // не height - 1 и width - 1, тк пиксели в данной нотации имеют ширину
                 return NO_COST;
             }
 
-            float intensity = cameras_imgs_grey[neighb_cam].at<unsigned char>(v, u) / 255.0f;
-            patch1.push_back(intensity);
+            // TODODONE 205: замените этот наивный вариант nearest neighbor сэмплирования текстуры на билинейную интерполяцию (учтите что центр пикселя - .5 после запятой)
+            // тк центры в (p.x + 0.5, p.y + 0.5)
+            if (USE_BILINEAR_INTERPOLATION) {
+                x -= 0.5; // смещаем для того чтобы проще округлять к центрам пикселей 
+                y -= 0.5;
+                
+                ptrdiff_t u0 = std::floor(x) < 0 ? std::floor(x) + 1 : std::floor(x);
+                ptrdiff_t v0 = std::floor(y) < 0 ? std::floor(y) + 1 : std::floor(y);
+                ptrdiff_t ud = u0 < (width - 1) ? 1 : 0;
+                ptrdiff_t vd = v0 < (height - 1) ? 1 : 0;
+                float du_lambda0 = 1.f - (x - u0);
+                float dv_lambda0 = 1.f - (y - v0);
+                float du_lambda1 = 1. - du_lambda0;
+                float dv_lambda1 = 1. - dv_lambda0;
+
+                float intensity = dv_lambda0 * (
+                    du_lambda0 * cameras_imgs_grey[neighb_cam].at<unsigned char>(v0, u0) + 
+                    du_lambda1 * cameras_imgs_grey[neighb_cam].at<unsigned char>(v0, u0 + ud)
+                ) + dv_lambda1 * (
+                    du_lambda0 * cameras_imgs_grey[neighb_cam].at<unsigned char>(v0 + vd, u0) +
+                    du_lambda1 * cameras_imgs_grey[neighb_cam].at<unsigned char>(v0 + vd, u0 + ud)
+                );
+                intensity /= 255.;
+                patch1.push_back(intensity);
+            } else {
+                ptrdiff_t u = x;
+                ptrdiff_t v = y;
+                float intensity = cameras_imgs_grey[neighb_cam].at<unsigned char>(v, u) / 255.0f;
+                patch1.push_back(intensity);
+            }
         }
     }
 

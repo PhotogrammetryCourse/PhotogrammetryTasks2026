@@ -4,6 +4,8 @@
 #define NO_DEPTH                    0.0f
 #define NO_COST                     1.0f
 #define GOOD_COST                   0.2f
+#define USE_BILINEAR_INTERPOLATION  1
+#define USE_ACMH_POPAGATION_SCHEME  1
 
 #define NITERATIONS                 5
 
