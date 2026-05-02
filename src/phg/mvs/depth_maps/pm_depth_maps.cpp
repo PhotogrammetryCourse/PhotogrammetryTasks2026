@@ -537,8 +537,20 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
 
 
     float zncc = 0;
-    if (std::abs(nom) > 0. && std::abs(denom1) > 0. && std::abs(denom2) > 0.) {
-        zncc = nom / std::sqrt(denom1 * denom2);
+    if (USE_ADVANCED_UNCERTANTY) {
+        float denom = std::sqrt(denom1 * denom2);
+        if (denom < 1e-9) { // в scipy.stats.pearsonr в случае если одна из выборок близка к среднему выдают ворнинги
+            if (std::abs(nom) < 1e-6) {
+                return 0.f;
+            } else {
+                return NO_COST;
+            }
+        }
+        zncc = nom / denom;
+    } else {
+        if (std::abs(nom) > 0. && std::abs(denom1) > 0. && std::abs(denom2) > 0.) {
+            zncc = nom / std::sqrt(denom1 * denom2);
+        }
     }
 
     // ZNCC в диапазоне [-1; 1], 1: идеальное совпадение, -1: ничего общего
@@ -565,6 +577,13 @@ float PMDepthMapsBuilder::avgCost(std::vector<float>& costs)
 
     float cost_sum = best_cost;
     float cost_w = 1.0f;
+    if (USE_BIG_COST_FILTERING) {
+        // TODODONE 112 а что если в пикселе occlusion, но best_cost - большой и поэтому отсечение по best_cost*COSTS_K_RATIO не срабатывает? можно ли это отсечение как-то выправить для такого случая?
+        // не дает улучшений
+        if (best_cost > GOOD_COST) {
+            return NO_COST;
+        } 
+    }    
 
     // TODODONE 110 реализуйте какое-то "усреднение cost-ов по всем соседям", с ограничением что участвуют только COSTS_BEST_K_LIMIT лучших
     for (size_t i = 1; i < COSTS_BEST_K_LIMIT && i < costs.size(); i++) {
@@ -572,10 +591,19 @@ float PMDepthMapsBuilder::avgCost(std::vector<float>& costs)
         if (costs[i] > best_cost * COSTS_K_RATIO) {
             break;
         }
+        if (USE_BIG_COST_FILTERING) {
+            // TODODONE 112 а что если в пикселе occlusion, но best_cost - большой и поэтому отсечение по best_cost*COSTS_K_RATIO не срабатывает? можно ли это отсечение как-то выправить для такого случая?
+            // не дает улучшений
+            if (costs[i] > GOOD_COST) {
+                break;
+            }
+        }
+        if (costs[i] < 0) {
+            printf("SHIT %lf\n", costs[i]);
+        }
         cost_sum += costs[i];
         cost_w += 1;
     }
-    // TODO 112 а что если в пикселе occlusion, но best_cost - большой и поэтому отсечение по best_cost*COSTS_K_RATIO не срабатывает? можно ли это отсечение как-то выправить для такого случая?
     // TODO 207 а что если добавить какой-нибудь бонус в случае если больше чем Х камер засчиталось? улучшается/ухудшается ли от этого что-то на herzjezu25? а при большем числе фотографий
 
     float avg_cost = cost_sum / cost_w;
