@@ -11,6 +11,9 @@ struct vertex_info_t {
     std::vector<unsigned int> camera_ids;
     cv::Vec3b color;
     size_t vertex_on_surface_id;
+    size_t accumulated_count = 0;
+    vector3d accumulated_points;
+    vector3d accumulated_color;
 
     vertex_info_t()
         : color(0, 0, 255) // red color, BGR convention (OpenCV compatible)
@@ -19,11 +22,12 @@ struct vertex_info_t {
 
     vertex_info_t(unsigned int camera_id, const cv::Vec3b& color);
 
-    void merge(const vertex_info_t& that);
+    void merge(const vertex_info_t& that, const vector3d& that_point);
 };
 
 struct cell_info_t {
     size_t cell_id;
+    size_t visibility_count;
 
     float s_capacity;
     float t_capacity;

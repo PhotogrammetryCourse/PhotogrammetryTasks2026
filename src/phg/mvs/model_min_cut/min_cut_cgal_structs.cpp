@@ -12,7 +12,7 @@ vertex_info_t::vertex_info_t(unsigned int camera_id, const cv::Vec3b& color)
     camera_ids.push_back(camera_id);
 }
 
-void vertex_info_t::merge(const vertex_info_t& that)
+void vertex_info_t::merge(const vertex_info_t& that, const vector3d& that_point)
 {
     for (int i = 1; i < camera_ids.size(); ++i) {
         rassert(camera_ids[i - 1] < camera_ids[i], 23781274121024);
@@ -32,4 +32,11 @@ void vertex_info_t::merge(const vertex_info_t& that)
     for (int i = 1; i < camera_ids.size(); ++i) {
         rassert(camera_ids[i - 1] < camera_ids[i], 23781274121024);
     }
+
+    accumulated_points += that_point;
+    accumulated_color += cv::Vec3d(that.color[0], that.color[1], that.color[2]);
+    accumulated_count++;
+
+    cv::Vec3d avg_c = accumulated_color / static_cast<double>(accumulated_count);
+    this->color = cv::Vec3b(static_cast<uchar>(avg_c[0]), static_cast<uchar>(avg_c[1]), static_cast<uchar>(avg_c[2]));
 }
