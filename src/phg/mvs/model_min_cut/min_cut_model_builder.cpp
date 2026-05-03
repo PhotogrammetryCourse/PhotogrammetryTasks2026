@@ -58,7 +58,8 @@ void MinCutModelBuilder::appendToTriangulation(
             // проверяем насколько ближайшая точка далеко
             vector3d np = from_cgal_point(nearest_vertex->point());
             // TODO 2001 appendToTriangulation(): реализуйте нормальную проверку объединять ли точку с уже добавленной ранее (с учетом r и MERGE_THRESHOLD_RADIUS_KOEF)
-            to_merge = false;
+            to_merge = cv::norm(np - p) < MERGE_THRESHOLD_RADIUS_KOEF * r;
+            // to_merge = false;
         }
 
         vertex_info_t p_info(camera_id, color);
@@ -145,9 +146,11 @@ void MinCutModelBuilder::insertBoundingBoxVertices(vector3d& bb_min, vector3d& b
             p[d] = corners[(i / powOf3) % 3][d];
             powOf3 *= 3;
         }
-        vertex_info_t bounding_box_corner_empty_info;
+        vertex_info_t bounding_box_corner_info;
+        bounding_box_corner_info.sentinel = true;
+
         debug_bounding_box_points.push_back(p);
-        points_to_insert.push_back(std::make_pair(to_cgal_point(p), bounding_box_corner_empty_info));
+        points_to_insert.push_back(std::make_pair(to_cgal_point(p), bounding_box_corner_info));
     }
     proxy->triangulation.insert(points_to_insert.begin(), points_to_insert.end());
 
@@ -478,6 +481,16 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
             // TODO 2002 добавьте проверку - не опирается ли треугольник на одну из фиктивных вершин (лежащих на гранях вспомогательного bounding box), можете для этого использовать bb_min и bb_max, или добавьте явный флаг в каждую вершину
             // иначе говоря сделайте так чтобы такие треугольники не добавлялись в результирующую модель эти большие красные треугольники
 
+            bool isSentinel = false;
+            for (int v_index = 1; v_index <= 3; ++v_index) {
+                auto vi = ci->vertex((i + v_index) % 4);
+                isSentinel |= vi->info().sentinel;
+            }
+
+            if (isSentinel) {
+                continue;
+            }
+
             for (int v_index = 1; v_index <= 3; ++v_index) {
                 auto vi = ci->vertex((i + v_index) % 4);
                 size_t& surface_vertex_id = vi->info().vertex_on_surface_id;
@@ -490,6 +503,16 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
             // TODO 2003 некоторые треугольники выглядят темными в результирующей модели, проблема уходит если выключить в MeshLab освещение (кнопка желтой лампочка - Light on/off) которое учитывает нормаль, которая строится с учетом
             // порядка вершин треугольника (по часовой стрелке или против) иначе говоря оказывается что порядок обхода вершин в треугольнике не всегда корректен подумайте чем это вызывано и поправьте (лучше всего это делать посматривая на
             // картинку 'Figure 44.1' в документации https://doc.cgal.org/latest/Triangulation_3/index.html )
+            vector3d p0 = from_cgal_point(ci->vertex((i + 1) % 4)->point());
+            vector3d p1 = from_cgal_point(ci->vertex((i + 2) % 4)->point());
+            vector3d p2 = from_cgal_point(ci->vertex((i + 3) % 4)->point());
+
+            vector3d normal = cv::normalize(((p1 - p0).cross(p2 - p1)));
+
+            vector3d p3 = from_cgal_point(ci->vertex(i)->point());
+            if ((p3 - p0).dot(normal) > 0) {
+                std::swap(face[0], face[1]);
+            }
 
             mesh_faces.push_back(face);
         }
