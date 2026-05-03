@@ -14,6 +14,25 @@ struct MinCutModelBuilder::TriangulationProxy {
     triangulation_t triangulation;
 };
 
+namespace {
+void rebuildTriangulationAtAveragePoints(triangulation_t& triangulation)
+{
+    std::vector<std::pair<cgal_point_t, vertex_info_t>> averaged_points;
+    averaged_points.reserve(triangulation.number_of_vertices());
+    for (auto vi = triangulation.finite_vertices_begin(); vi != triangulation.finite_vertices_end(); ++vi) {
+        vertex_info_t info = vi->info();
+        if (info.is_bounding_box || info.samples_count == 0)
+            continue;
+
+        averaged_points.push_back(std::make_pair(to_cgal_point(info.averagePoint(from_cgal_point(vi->point()))), info));
+    }
+
+    triangulation.clear();
+    if (averaged_points.size() > 0)
+        triangulation.insert(averaged_points.begin(), averaged_points.end());
+}
+}
+
 MinCutModelBuilder::MinCutModelBuilder()
 {
     // благодаря этому трюку тяжелые CGAL инклюды не попадают во внешний хедер
@@ -56,12 +75,15 @@ void MinCutModelBuilder::appendToTriangulation(
             to_merge = false;
         } else {
             // проверяем насколько ближайшая точка далеко
-            vector3d np = from_cgal_point(nearest_vertex->point());
-            // TODO 2001 appendToTriangulation(): реализуйте нормальную проверку объединять ли точку с уже добавленной ранее (с учетом r и MERGE_THRESHOLD_RADIUS_KOEF)
-            to_merge = false;
+            const bool nearest_vertex_already_has_camera = std::find(nearest_vertex->info().camera_ids.begin(), nearest_vertex->info().camera_ids.end(), camera_id) != nearest_vertex->info().camera_ids.end();
+            vector3d np = nearest_vertex->info().averagePoint(from_cgal_point(nearest_vertex->point()));
+            const double nr = nearest_vertex->info().averageRadius();
+            const double merge_radius = (nr > 0.0) ? std::min(r, nr) : r;
+            const double merge_threshold = MERGE_THRESHOLD_RADIUS_KOEF * merge_radius;
+            to_merge = !nearest_vertex_already_has_camera && merge_threshold > 0.0 && phg::norm(p - np) <= merge_threshold;
         }
 
-        vertex_info_t p_info(camera_id, color);
+        vertex_info_t p_info(camera_id, p, r, color);
         if (to_merge) {
             nearest_vertex->info().merge(p_info);
         } else {
@@ -72,6 +94,7 @@ void MinCutModelBuilder::appendToTriangulation(
 
     timer insertion_t;
     proxy->triangulation.insert(points_to_insert.begin(), points_to_insert.end());
+    rebuildTriangulationAtAveragePoints(proxy->triangulation);
     append_triangulation_insert_total_t += insertion_t.elapsed();
 
     rassert(cameras_centers.count(camera_id) == 0, 23781247112017);
@@ -146,6 +169,7 @@ void MinCutModelBuilder::insertBoundingBoxVertices(vector3d& bb_min, vector3d& b
             powOf3 *= 3;
         }
         vertex_info_t bounding_box_corner_empty_info;
+        bounding_box_corner_empty_info.is_bounding_box = true;
         debug_bounding_box_points.push_back(p);
         points_to_insert.push_back(std::make_pair(to_cgal_point(p), bounding_box_corner_empty_info));
     }
@@ -166,7 +190,11 @@ std::vector<cgal_facet_t> fetchVertexBoundingFacets(const triangulation_t& trian
     std::vector<cgal_facet_t> vertex_facets;
 
     std::vector<cell_handle_t> incident_cells;
+#if MIN_CUT_ENABLE_PARALLEL_RAY_TRACING
+    triangulation.incident_cells_threadsafe(vi, back_inserter(incident_cells));
+#else
     triangulation.incident_cells(vi, back_inserter(incident_cells));
+#endif
 
     for (int i = 0; i < incident_cells.size(); ++i) {
         cell_handle_t cell_handle = incident_cells[i]; // одна из смежных с вершиной ячеек (т.е. тетрагедрончик)
@@ -177,7 +205,38 @@ std::vector<cgal_facet_t> fetchVertexBoundingFacets(const triangulation_t& trian
     return vertex_facets;
 }
 
-cgal_facet_t chooseIntersectedFacet(const triangulation_t& triangulation, const vector3d& rayFrom, const vector3d& rayTo, std::vector<cgal_facet_t>& facets, bool checkFinish = true)
+int fastRayTriangleIntersection(const vector3d& ray_from, const vector3d& ray_dir, const vector3d& p0, const vector3d& p1, const vector3d& p2)
+{
+    const double eps = 1e-8;
+    const vector3d edge1 = p1 - p0;
+    const vector3d edge2 = p2 - p0;
+    const vector3d pvec = ray_dir.cross(edge2);
+    const double det = edge1.dot(pvec);
+    if (std::fabs(det) < eps)
+        return -1;
+
+    const double inv_det = 1.0 / det;
+    const vector3d tvec = ray_from - p0;
+    const double u = tvec.dot(pvec) * inv_det;
+    if (u < -eps || u > 1.0 + eps)
+        return 0;
+
+    const vector3d qvec = tvec.cross(edge1);
+    const double v = ray_dir.dot(qvec) * inv_det;
+    if (v < -eps || u + v > 1.0 + eps)
+        return 0;
+
+    const double t = edge2.dot(qvec) * inv_det;
+    if (t <= eps)
+        return t > -eps ? -1 : 0;
+
+    if (u < eps || v < eps || u + v > 1.0 - eps)
+        return -1;
+
+    return 1;
+}
+
+cgal_facet_t chooseIntersectedFacet(const triangulation_t& triangulation, const vector3d& rayFrom, const vector3d& rayTo, std::vector<cgal_facet_t>& facets, bool checkFinish = true, cell_handle_t cell_with_ray_finish = cell_handle_t())
 {
     // выбираем среди предложенных фэйсов (треугольников, т.е. граней ячеек) тот что пересечен нашим лучем идущим из rayFrom в rayTo
     // а так же обновляем множество фейсов (треугольников) до актуального состояния по ту сторону пересеченного фейса (по ту сторону треугольника через который мы перешагнули)
@@ -185,14 +244,34 @@ cgal_facet_t chooseIntersectedFacet(const triangulation_t& triangulation, const 
     rassert(facets.size() > 0, 538947914120162);
 
     cgal_facet_t intersected_facet;
+    const vector3d ray_dir = cv::normalize(rayTo - rayFrom);
 
     for (int i = 0; i < facets.size(); ++i) {
         cgal_facet_t facet = facets[i];
         rassert(!triangulation.is_infinite(facet), 238192412173);
 
+        bool intersects = false;
+#if MIN_CUT_USE_FAST_FLOAT_INTERSECTION
+        vector3d p0 = from_cgal_point(facet.first->vertex((facet.second + 1) % 4)->point());
+        vector3d p1 = from_cgal_point(facet.first->vertex((facet.second + 2) % 4)->point());
+        vector3d p2 = from_cgal_point(facet.first->vertex((facet.second + 3) % 4)->point());
+        int fast_intersection = fastRayTriangleIntersection(rayFrom, ray_dir, p0, p1, p2);
+        if (fast_intersection > 0)
+            intersects = true;
+        else if (fast_intersection < 0) {
+#if MIN_CUT_FAST_INTERSECTION_EXACT_FALLBACK
+            cgal_kernel_t::Ray_3 ray(to_cgal_point(rayFrom), to_cgal_point(rayTo));
+            intersects = CGAL::do_intersect(triangulation.triangle(facet), ray);
+#else
+            intersects = false;
+#endif
+        }
+#else
         cgal_kernel_t::Ray_3 ray(to_cgal_point(rayFrom), to_cgal_point(rayTo));
+        intersects = CGAL::do_intersect(triangulation.triangle(facet), ray);
+#endif
 
-        if (CGAL::do_intersect(triangulation.triangle(facet), ray)) {
+        if (intersects) {
             intersected_facet = facet;
             break;
         }
@@ -213,7 +292,7 @@ cgal_facet_t chooseIntersectedFacet(const triangulation_t& triangulation, const 
     rassert(!triangulation.is_infinite(prev_cell), 23891294812199);
     if (checkFinish) {
         rassert(!triangulation.is_infinite(next_cell), 23891294812200); // таким образом мы например косвенно проверяем что наш критерий остановки по ячейке содержащей камеру - срабатывает, и мы не уходим на бесконечность
-        const cell_handle_t cell_with_ray_finish = triangulation.locate(to_cgal_point(rayTo));
+        rassert(cell_with_ray_finish != cell_handle_t(), 238712837812309);
         if (next_cell == cell_with_ray_finish) {
             // раз мы дошли до ячейки содержащей конец нашего пути - дальше идти не требуется, т.е. оставляем список будущих треугольников-кандидатов пустым
             return intersected_facet;
@@ -286,11 +365,45 @@ struct plane_t {
         return ray_distance;
     }
 };
+
+cell_handle_t findCellBehindSurfaceAtDepth(const triangulation_t& triangulation, const vector3d& point0, const vector3d& ray_from_camera, const std::vector<cgal_facet_t>& facets_around_point0, double depth)
+{
+    std::vector<cgal_facet_t> cur_facets = facets_around_point0;
+    cgal_facet_t intersected_facet = chooseIntersectedFacet(triangulation, point0, point0 + ray_from_camera, cur_facets, false);
+    rassert(intersected_facet != cgal_facet_t(), 238712837812301);
+
+    cell_handle_t cur_cell = intersected_facet.first;
+    while (intersected_facet != cgal_facet_t()) {
+        plane_t facet_plane(intersected_facet);
+        const double distance_from_surface = facet_plane.distanceToIntersection(point0, ray_from_camera);
+        if (distance_from_surface < 0.0 || distance_from_surface >= depth) {
+            rassert(!triangulation.is_infinite(cur_cell), 238712837812302);
+            return cur_cell;
+        }
+
+        const cell_handle_t next_cell = intersected_facet.first->neighbor(intersected_facet.second);
+        rassert(!triangulation.is_infinite(next_cell), 238712837812303);
+        cur_cell = next_cell;
+
+        if (cur_facets.size() == 0) {
+            rassert(!triangulation.is_infinite(cur_cell), 238712837812304);
+            return cur_cell;
+        }
+
+        intersected_facet = chooseIntersectedFacet(triangulation, point0, point0 + ray_from_camera, cur_facets, false);
+    }
+
+    rassert(!triangulation.is_infinite(cur_cell), 238712837812305);
+    return cur_cell;
+}
 }
 
 void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vector<vector3d>& mesh_vertices, std::vector<cv::Vec3b>& mesh_vertices_color)
 {
     timer total_t;
+
+    rebuildTriangulationAtAveragePoints(proxy->triangulation);
+    rassert(proxy->triangulation.number_of_vertices() > 0, 238712837812306);
 
     // обрамляем наше облако точек в bounding box, чтобы при трассировке лучей не пришлось разбираться с бесконечно удаленной точкой
     // (которая очень красива конечно, но с ней пришлось бы отдельно пересекать луч и бесконечный треугольник)
@@ -307,43 +420,63 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
         }
     }
 
+    std::unordered_map<unsigned int, cell_handle_t> camera_cells;
+    for (auto it = cameras_centers.begin(); it != cameras_centers.end(); ++it) {
+        const cell_handle_t camera_cell = proxy->triangulation.locate(to_cgal_point(it->second));
+        rassert(!proxy->triangulation.is_infinite(camera_cell), 238712837812307);
+        camera_cells[it->first] = camera_cell;
+    }
+
     timer rays_traversing_t;
     double avg_triangles_intersected_per_ray = 0;
     size_t nrays = 0;
+
+    std::vector<vertex_handle_t> vertices;
     for (auto vi = proxy->triangulation.all_vertices_begin(); vi != proxy->triangulation.all_vertices_end(); ++vi) {
+        vertices.push_back(vi);
+    }
+
+#if MIN_CUT_ENABLE_PARALLEL_RAY_TRACING
+#pragma omp parallel for schedule(dynamic, 1) reduction(+ : avg_triangles_intersected_per_ray, nrays)
+#endif
+    for (ptrdiff_t vertex_index = 0; vertex_index < (ptrdiff_t)vertices.size(); ++vertex_index) {
+        vertex_handle_t vi = vertices[vertex_index];
         if (vi->info().camera_ids.size() == 0) {
-            // TODO 2004 подумайте и напишите тут какие вершины бывают без камер вообще? почему мы их пропускаем? что и почему случится если убрать это пропускание?
+            // подумайте и напишите тут какие вершины бывают без камер вообще? почему мы их пропускаем? что и почему случится если убрать это пропускание?
+            //
+            // Из вершин, которые бывают без камер, я могу припомнить лишь фиктивные вершины bbox-а и бесконечную точку CGAL-а. И то, и другое - это служебные вершины, которые не соответствуют реальным точкам поверхности, у которых нет соответствующей точки карты глубины, и которые, очевидно, действительно не были видны никакой камерой, поэтому и смысла их обрабатывать тут нет.
+            // Если убрать это пропускание, то технически мы могли бы внутри функции fetchVertexBoundingFacets упать по rassert(!triangulation.is_infinite(facet), 2371239103129010153), ибо для bbox-вершин действительно могут встретиться бесконечные смежные грани. Если же мы не упадём по этому assert-у, то в принципе ничего страшного далее не произойдёт, ибо мы просто ни разу не зайдём в цикл for (unsigned int ci = 0; ci < vi->info().camera_ids.size(); ++ci). Но если бы мы действительно обрабатывали подобные вершины и пытались трассировать из них лучи, то получили бы что-то непредсказуемое, ибо не понятно, как для подобной вершины отвечать на вопросы вида "из какой камеры она видна?", "является ли она поверхностью объекта?", "что значит пространство между камерой и этой вершиной?" и т.д. и т.п.
             continue;
         }
 
         const vector3d point0 = from_cgal_point(vi->point());
+        const double point_radius = std::max(vi->info().averageRadius(), 1e-12);
         const std::vector<cgal_facet_t> facets_around_point0 = fetchVertexBoundingFacets(proxy->triangulation, vi);
 
         for (unsigned int ci = 0; ci < vi->info().camera_ids.size(); ++ci) {
             // для каждой вершины триангуляции point0 и каждой камеры к которой эта точка имеет отношение (т.е. содержится где-то в карте глубины)
 
             unsigned int camera_key = vi->info().camera_ids[ci];
-            rassert(cameras_centers.count(camera_key) > 0, 238123812938191822);
-            const vector3d camera_center = cameras_centers[camera_key];
+            const auto camera_it = cameras_centers.find(camera_key);
+            rassert(camera_it != cameras_centers.end(), 238123812938191822);
+            const auto camera_cell_it = camera_cells.find(camera_key);
+            rassert(camera_cell_it != camera_cells.end(), 238712837812308);
+            const vector3d camera_center = camera_it->second;
             const vector3d ray_from_camera = cv::normalize(point0 - camera_center);
             const vector3d ray_to_camera = cv::normalize(camera_center - point0);
             const double distance_to_camera = phg::norm(camera_center - point0);
+            const double sigma = std::max(MIN_CUT_VISIBILITY_SIGMA_RADIUS_KOEF * point_radius, 1e-12);
+            const cell_handle_t camera_cell = camera_cell_it->second;
 
             {
-                // хотим найти ячейку триангуляции лежащую внутри поверхности (т.е. сразу за этим лучем видимости camera_center->point0):
-                // давайте посмотрим на вершину, затем на все смежные с ней ячейки (тетрагедрончики), а затем возьмем все треугольники-границы этих ячеек (facets_around_point0),
-                // не опирающиеся на нашу текущую точку,
-                // иначе говоря мы смотрим на шарик из треугольников вокруг нашей вершины
-                // и теперь среди этих треугольников мы ищем тот что пересекается лучем идущим глубже за точку на поверхности
-                // этот треугольник - это грань искомой ячейки триангуляции внутри поверхности
-                std::vector<cgal_facet_t> cur_facets = facets_around_point0;
-                const cgal_facet_t intersected_facet = chooseIntersectedFacet(proxy->triangulation, point0, point0 + ray_from_camera, cur_facets, false);
-                rassert(intersected_facet != cgal_facet_t(), 2378213120305);
-
-                // это ячейка триангуляции лежащая под поверхностью (т.е. сразу за вершиной)
-                const cell_handle_t cell_after_point = intersected_facet.first;
-                // добавляем пропускной способности из этой ячейки (из этого тетрагедрончика) к стоку
-                cell_after_point->info().t_capacity += LAMBDA_IN;
+                const double sink_depth = MIN_CUT_SINK_DEPTH_SIGMA_KOEF * sigma;
+                const cell_handle_t cell_after_point = findCellBehindSurfaceAtDepth(proxy->triangulation, point0, ray_from_camera, facets_around_point0, sink_depth);
+                rassert(!proxy->triangulation.is_infinite(cell_after_point), 2378213120306);
+                float& t_capacity = cell_after_point->info().t_capacity;
+#if MIN_CUT_ENABLE_PARALLEL_RAY_TRACING
+#pragma omp atomic
+#endif
+                t_capacity += LAMBDA_IN;
             }
 
             // шагаем от точки до камеры выставляя веса на треугольниках (они же ребра в графе) которые пересекаются по мере трассировки луча
@@ -352,7 +485,7 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
             double prev_distance = 0.0;
             size_t steps = 0;
             while (cur_facets.size() > 0) {
-                const cgal_facet_t intersected_facet = chooseIntersectedFacet(proxy->triangulation, point0, camera_center, cur_facets);
+                const cgal_facet_t intersected_facet = chooseIntersectedFacet(proxy->triangulation, point0, camera_center, cur_facets, true, camera_cell);
                 rassert(intersected_facet != cgal_facet_t() || steps == 0,
                     2381924128490303); // всегда должно находится пересечение (иначе это означает что мы потерялись по пути, вместо того чтобы однажды добраться до ячейки содержащей камеру)
                 if (intersected_facet == cgal_facet_t() && steps == 0) {
@@ -387,15 +520,33 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                 }
                 prev_distance = distance_from_surface;
 
-                // увеличиваем пропускную способность на треугольнике-ребре (в направлении от камеры к точке)
-                next_cell->info().facets_capacities[next_cell_facet_subindex] += LAMBDA_OUT;
+                double visibility_capacity = std::max(0.0, std::min(LAMBDA_OUT * (1.0 - std::exp(-(distance_from_surface * distance_from_surface) / (2.0 * sigma * sigma))), LAMBDA_OUT));
+                float& facet_capacity = next_cell->info().facets_capacities[next_cell_facet_subindex];
+#if MIN_CUT_ENABLE_PARALLEL_RAY_TRACING
+#pragma omp atomic
+#endif
+                facet_capacity += visibility_capacity;
 
                 if (cur_facets.size() == 0) {
                     // если на будущее у нас нет кандидатов-треугольников, значит мы закончили наш путь и следующая ячейка содержит нашу камеру
-                    rassert(next_cell == proxy->triangulation.locate(to_cgal_point(camera_center)), 238791248120328); // проверяем это
+                    rassert(next_cell == camera_cell, 238791248120328); // проверяем это
                     // добавляем пропускной способности из истока к ячейке с камерой (к тетрагедрончику содержащему точку центра камеры)
-                    next_cell->info().s_capacity += LAMBDA_IN;
-                    // TODO 2005 изменится ли что-то если сильно увеличить пропускные способности ребер от истока? (т.е. сделать пропускную способность из истока равной бесконечности?)
+                    float& s_capacity = next_cell->info().s_capacity;
+#if MIN_CUT_ENABLE_PARALLEL_RAY_TRACING
+#pragma omp atomic
+#endif
+                    s_capacity += LAMBDA_IN;
+                    // изменится ли что-то если сильно увеличить пропускные способности ребер от истока? (т.е. сделать пропускную способность из истока равной бесконечности?)
+                    //
+                    // В идеальном мире у нас:
+                    // - камеры должны быть снаружи объекта;
+                    // - ячейки сразу за точками карты глубины должны быть внутренностью;
+                    // - между камерой и точкой должно быть пусто;
+                    // - поверхность не должна проходить через хорошо наблюдаемый "воздух".
+                    // Но это в идеальном мире и на хороших данных.
+                    // На шумных же данных эти требования могут конфликтовать друг с другом и хочется найти компромисс между ними, пожертвовав каким-то слабым требованием.
+                    // Ребра от истока задают уверенность, что соответствующие ячейки находятся снаружи объекта. Конкретно тут мы добавляем такое ребро для ячейки, содержащей камеру. Так вот, сделав пропускную способность из истока равной бесконечности, алгоритм не сможет пожертвовать условием "камера снаружи", потому что он не захочет резать ребро с бесконечной пропускной способностью, ибо это слишком дорого.
+                    // Это сделает всю нашу реконструкцию более жёсткой, что может быть и хорошо, ибо камеры действительно должны быть снаружи. Поэтому на хороших данных у нас почти ничего не изменится. Но вот на плохих данных алгоритм потеряет возможность компромисса, из-за чего могут появиться различные артефакты по типу дырок, сдвигов/удаления поверхностей и прочего.
                 }
             }
             avg_triangles_intersected_per_ray += steps;
@@ -475,8 +626,19 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
 
             cv::Vec3i face;
 
-            // TODO 2002 добавьте проверку - не опирается ли треугольник на одну из фиктивных вершин (лежащих на гранях вспомогательного bounding box), можете для этого использовать bb_min и bb_max, или добавьте явный флаг в каждую вершину
+            // добавьте проверку - не опирается ли треугольник на одну из фиктивных вершин (лежащих на гранях вспомогательного bounding box), можете для этого использовать bb_min и bb_max, или добавьте явный флаг в каждую вершину
             // иначе говоря сделайте так чтобы такие треугольники не добавлялись в результирующую модель эти большие красные треугольники
+
+            bool face_touches_bounding_box = false;
+            for (int v_index = 1; v_index <= 3; ++v_index) {
+                auto vi = ci->vertex((i + v_index) % 4);
+                if (vi->info().is_bounding_box || vi->info().camera_ids.empty()) {
+                    face_touches_bounding_box = true;
+                    break;
+                }
+            }
+            if (face_touches_bounding_box)
+                continue;
 
             for (int v_index = 1; v_index <= 3; ++v_index) {
                 auto vi = ci->vertex((i + v_index) % 4);
@@ -487,9 +649,11 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                 face[v_index - 1] = surface_vertex_id;
             }
 
-            // TODO 2003 некоторые треугольники выглядят темными в результирующей модели, проблема уходит если выключить в MeshLab освещение (кнопка желтой лампочка - Light on/off) которое учитывает нормаль, которая строится с учетом
+            // некоторые треугольники выглядят темными в результирующей модели, проблема уходит если выключить в MeshLab освещение (кнопка желтой лампочка - Light on/off) которое учитывает нормаль, которая строится с учетом
             // порядка вершин треугольника (по часовой стрелке или против) иначе говоря оказывается что порядок обхода вершин в треугольнике не всегда корректен подумайте чем это вызывано и поправьте (лучше всего это делать посматривая на
             // картинку 'Figure 44.1' в документации https://doc.cgal.org/latest/Triangulation_3/index.html )
+            if (i % 2 == 1)
+                std::swap(face[1], face[2]);
 
             mesh_faces.push_back(face);
         }
@@ -499,14 +663,15 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
     mesh_vertices_color.resize(mesh_nvertices);
     for (auto vi = proxy->triangulation.all_vertices_begin(); vi != proxy->triangulation.all_vertices_end(); ++vi) {
         size_t surface_vertex_id = vi->info().vertex_on_surface_id;
+        const vector3d mesh_point = vi->info().averagePoint(from_cgal_point(vi->point()));
         if (surface_vertex_id == VERTEX_NOT_ON_SURFACE_RESULT) {
-            debug_non_surface_points.push_back(from_cgal_point(vi->point()));
+            debug_non_surface_points.push_back(mesh_point);
             continue;
         } else {
-            debug_surface_points.push_back(from_cgal_point(vi->point()));
+            debug_surface_points.push_back(mesh_point);
         }
 
-        mesh_vertices[surface_vertex_id] = from_cgal_point(vi->point());
+        mesh_vertices[surface_vertex_id] = mesh_point;
         for (int i = 0; i < 3; ++i) {
             rassert(mesh_vertices[surface_vertex_id][i] >= bb_min[i], 23782310488);
             rassert(mesh_vertices[surface_vertex_id][i] <= bb_max[i], 23782310489);
@@ -531,18 +696,4 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
     debugSavePointCloud("non_surface", debug_non_surface_points);
 }
 
-// TODO 3001 сделайте пропускные способности на ребрах не единичными а затухающими тем сильнее чем ближе к поверхности
-// TODO 3002 сделайте соединение со стоком в ячейке не сразу за вершиной, а на небольшом углублении (пропорционально размеру точки)
-
 // TODO 3500 Weak support: реализуйте идею из jancosek2011 - Multi-View Reconstruction Preserving Weakly-Supported Surfaces - https://compsciclub.ru/attachments/classes/file_XyLpDjLx/jancosek2011.pdf
-
-// TODO 4001 подвиньте вершины в среднюю координату среди всех точек которые в ней зачлись
-// TODO 4002 поэкспериментируйте со значением MERGE_THRESHOLD_RADIUS_KOEF, есть ли интересности? какое значение вы бы предложили использовать в условной финальной версии?
-// TODO 4003 добавьте усреднение цветов среди всех склеившихся вершин, приложите скриншот с/без усреднения
-
-// TODO 5001 как в целом можно ускорить реализацию? есть ли идеи? попробуйте это сделать (и запишите какого ускорения получилось добиться, а так же изменился ли результат)
-// подсказки-идеи:
-// TODO 5002 а не рапараллелить ли? если будете распараллеливать - убедитесь что вы заменили triangulation.incident_cells() на triangulation.incident_cells_threadsafe()...
-// TODO 5003 не слишком ли часто вызывается triangulation.locate()? может оно тормозит? (поиск ячейки содержащей заданную точку)
-// TODO 5004 CGAL::do_intersect проверяет луч и треугольник на пересечение абсолютно точно, и это надежно, но медленно. А что если мы грубо будем проверять пересечения (самописным простым кодом на float-ах)? А когда пересечение не факт что
-// произошло - ну что же, пусть этому лучу не повезло, будем надеяться это не сильно изменит результат? Попробуйте и сравните скорость и результат.
