@@ -386,6 +386,34 @@ void PMDepthMapsBuilder::propagation()
                     best_cost = NO_COST;
                 }
 
+                if (ESTIMATE_BEST_SELF_COST_N) {
+                    // TODODONE 203 - логика про "берем 8 лучших по их личной оценке - по их личному cost" и только их примеряем уже на себя для рассчета cost в нашей точке
+                    // rassert(hypos_cost.size() >= ESTIMATE_BEST_SELF_COST_N, 126731264127481);
+                    if (hypos_cost.size() > ESTIMATE_BEST_SELF_COST_N) {
+                        printf("%lu\n", hypos_cost.size());
+                    }
+                    std::vector<std::pair<float, size_t>> costs_indexed;
+                    for (size_t i = 0; i < hypos_cost.size(); i++) {
+                        costs_indexed.push_back(std::make_pair(hypos_cost[i], i));
+                    }
+                    std::sort(costs_indexed.begin(), costs_indexed.end());
+                    std::vector<float> hypos_depth_tmp;
+                    std::vector<vector3f> hypos_normal_tmp;
+                    std::vector<float> hypos_cost_tmp;
+
+                    for (size_t i = 0; i < std::min(ESTIMATE_BEST_SELF_COST_N, costs_indexed.size()); i++) {
+                        size_t cur_best_idx = costs_indexed[i].second;
+
+                        hypos_depth_tmp.push_back(hypos_depth[cur_best_idx]);
+                        hypos_cost_tmp.push_back(hypos_cost[cur_best_idx]);
+                        hypos_normal_tmp.push_back(hypos_normal[cur_best_idx]);
+
+                        hypos_depth = hypos_depth_tmp;
+                        hypos_cost = hypos_cost_tmp;
+                        hypos_normal = hypos_normal_tmp;
+                    }
+                }
+
                 for (size_t hi = 0; hi < hypos_depth.size(); ++hi) {
                     // эту гипотезу мы сейчас рассматриваем как очередного кандидата
                     float d = hypos_depth[hi];

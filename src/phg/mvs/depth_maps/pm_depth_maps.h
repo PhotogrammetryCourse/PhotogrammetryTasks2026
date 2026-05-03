@@ -70,6 +70,10 @@ protected:
     float estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const vector3d& global_normal, size_t neighb_cam);
     float avgCost(std::vector<float>& costs);
     void tryToPropagateDonor(ptrdiff_t ni, ptrdiff_t nj, int chessboard_pattern_step, std::vector<float>& hypos_depth, std::vector<vector3f>& hypos_normal, std::vector<float>& hypos_cost);
+    void tryToPropagateDonor3dots(ptrdiff_t ni0, ptrdiff_t nj0,
+                                                      ptrdiff_t ni1, ptrdiff_t nj1, 
+                                                      ptrdiff_t ni2, ptrdiff_t nj2, 
+                                                      int chessboard_pattern_step, std::vector<float>& hypos_depth, std::vector<vector3f>& hypos_normal, std::vector<float>& hypos_cost);
 
     void printCurrentStats();
     void debugCurrentPoints(const std::string& label);

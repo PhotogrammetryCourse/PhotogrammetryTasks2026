@@ -6,6 +6,7 @@
 #define GOOD_COST                   0.2f
 #define USE_BILINEAR_INTERPOLATION  1
 #define USE_ACMH_POPAGATION_SCHEME  1
+#define ESTIMATE_BEST_SELF_COST_N   0ul
 #define USE_ADVANCED_UNCERTANTY     1
 #define USE_BIG_COST_FILTERING      1
 
