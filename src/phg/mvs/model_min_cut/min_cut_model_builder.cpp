@@ -10,6 +10,10 @@
 #include "min_cut_defines.h"
 #include "min_cut_max_flow_solver.h"
 
+#if MIN_CUT_ENABLE_PARALLEL_RAY_TRACING && defined(_OPENMP)
+#include <omp.h>
+#endif
+
 struct MinCutModelBuilder::TriangulationProxy {
     triangulation_t triangulation;
 };
@@ -396,6 +400,17 @@ cell_handle_t findCellBehindSurfaceAtDepth(const triangulation_t& triangulation,
     rassert(!triangulation.is_infinite(cur_cell), 238712837812305);
     return cur_cell;
 }
+
+struct terminal_capacity_update_t {
+    size_t cell_id;
+    float capacity;
+};
+
+struct facet_capacity_update_t {
+    size_t cell_id;
+    int facet_id;
+    float capacity;
+};
 }
 
 void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vector<vector3d>& mesh_vertices, std::vector<cv::Vec3b>& mesh_vertices_color)
@@ -419,6 +434,9 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
             ci->info().facets_capacities[i] = 0.0;
         }
     }
+    std::vector<cell_handle_t> cells_by_id(ncells);
+    for (auto ci = proxy->triangulation.all_cells_begin(); ci != proxy->triangulation.all_cells_end(); ++ci)
+        cells_by_id[ci->info().cell_id] = ci;
 
     std::unordered_map<unsigned int, cell_handle_t> camera_cells;
     for (auto it = cameras_centers.begin(); it != cameras_centers.end(); ++it) {
@@ -436,10 +454,28 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
         vertices.push_back(vi);
     }
 
+#if MIN_CUT_ENABLE_PARALLEL_RAY_TRACING && defined(_OPENMP)
+    const int capacity_buffers_count = omp_get_max_threads();
+#else
+    const int capacity_buffers_count = 1;
+#endif
+    std::vector<std::vector<terminal_capacity_update_t>> source_capacity_updates(capacity_buffers_count);
+    std::vector<std::vector<terminal_capacity_update_t>> sink_capacity_updates(capacity_buffers_count);
+    std::vector<std::vector<facet_capacity_update_t>> facet_capacity_updates(capacity_buffers_count);
+
 #if MIN_CUT_ENABLE_PARALLEL_RAY_TRACING
 #pragma omp parallel for schedule(dynamic, 1) reduction(+ : avg_triangles_intersected_per_ray, nrays)
 #endif
     for (ptrdiff_t vertex_index = 0; vertex_index < (ptrdiff_t)vertices.size(); ++vertex_index) {
+#if MIN_CUT_ENABLE_PARALLEL_RAY_TRACING && defined(_OPENMP)
+        const int capacity_buffer_index = omp_get_thread_num();
+#else
+        const int capacity_buffer_index = 0;
+#endif
+        std::vector<terminal_capacity_update_t>& cur_source_capacity_updates = source_capacity_updates[capacity_buffer_index];
+        std::vector<terminal_capacity_update_t>& cur_sink_capacity_updates = sink_capacity_updates[capacity_buffer_index];
+        std::vector<facet_capacity_update_t>& cur_facet_capacity_updates = facet_capacity_updates[capacity_buffer_index];
+
         vertex_handle_t vi = vertices[vertex_index];
         if (vi->info().camera_ids.size() == 0) {
             // подумайте и напишите тут какие вершины бывают без камер вообще? почему мы их пропускаем? что и почему случится если убрать это пропускание?
@@ -472,11 +508,7 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                 const double sink_depth = MIN_CUT_SINK_DEPTH_SIGMA_KOEF * sigma;
                 const cell_handle_t cell_after_point = findCellBehindSurfaceAtDepth(proxy->triangulation, point0, ray_from_camera, facets_around_point0, sink_depth);
                 rassert(!proxy->triangulation.is_infinite(cell_after_point), 2378213120306);
-                float& t_capacity = cell_after_point->info().t_capacity;
-#if MIN_CUT_ENABLE_PARALLEL_RAY_TRACING
-#pragma omp atomic
-#endif
-                t_capacity += LAMBDA_IN;
+                cur_sink_capacity_updates.push_back({ cell_after_point->info().cell_id, (float)LAMBDA_IN });
             }
 
             // шагаем от точки до камеры выставляя веса на треугольниках (они же ребра в графе) которые пересекаются по мере трассировки луча
@@ -520,22 +552,16 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                 }
                 prev_distance = distance_from_surface;
 
-                double visibility_capacity = std::max(0.0, std::min(LAMBDA_OUT * (1.0 - std::exp(-(distance_from_surface * distance_from_surface) / (2.0 * sigma * sigma))), LAMBDA_OUT));
-                float& facet_capacity = next_cell->info().facets_capacities[next_cell_facet_subindex];
-#if MIN_CUT_ENABLE_PARALLEL_RAY_TRACING
-#pragma omp atomic
-#endif
-                facet_capacity += visibility_capacity;
+                const double visibility_capacity_raw = std::min(LAMBDA_OUT * (1.0 - std::exp(-(distance_from_surface * distance_from_surface) / (2.0 * sigma * sigma))), LAMBDA_OUT);
+                const float visibility_capacity = (std::isfinite(visibility_capacity_raw) && visibility_capacity_raw > 0.0) ? (float)visibility_capacity_raw : 0.0f;
+                if (visibility_capacity > 0.0f)
+                    cur_facet_capacity_updates.push_back({ next_cell->info().cell_id, next_cell_facet_subindex, visibility_capacity });
 
                 if (cur_facets.size() == 0) {
                     // если на будущее у нас нет кандидатов-треугольников, значит мы закончили наш путь и следующая ячейка содержит нашу камеру
                     rassert(next_cell == camera_cell, 238791248120328); // проверяем это
                     // добавляем пропускной способности из истока к ячейке с камерой (к тетрагедрончику содержащему точку центра камеры)
-                    float& s_capacity = next_cell->info().s_capacity;
-#if MIN_CUT_ENABLE_PARALLEL_RAY_TRACING
-#pragma omp atomic
-#endif
-                    s_capacity += LAMBDA_IN;
+                    cur_source_capacity_updates.push_back({ next_cell->info().cell_id, (float)LAMBDA_IN });
                     // изменится ли что-то если сильно увеличить пропускные способности ребер от истока? (т.е. сделать пропускную способность из истока равной бесконечности?)
                     //
                     // В идеальном мире у нас:
@@ -551,6 +577,31 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
             }
             avg_triangles_intersected_per_ray += steps;
             ++nrays;
+        }
+    }
+    for (size_t i = 0; i < sink_capacity_updates.size(); ++i) {
+        for (size_t j = 0; j < sink_capacity_updates[i].size(); ++j) {
+            const terminal_capacity_update_t update = sink_capacity_updates[i][j];
+            rassert(update.cell_id < cells_by_id.size(), 238712837812310);
+            rassert(update.capacity >= 0.0f, 238712837812311);
+            cells_by_id[update.cell_id]->info().t_capacity += update.capacity;
+        }
+    }
+    for (size_t i = 0; i < source_capacity_updates.size(); ++i) {
+        for (size_t j = 0; j < source_capacity_updates[i].size(); ++j) {
+            const terminal_capacity_update_t update = source_capacity_updates[i][j];
+            rassert(update.cell_id < cells_by_id.size(), 238712837812312);
+            rassert(update.capacity >= 0.0f, 238712837812313);
+            cells_by_id[update.cell_id]->info().s_capacity += update.capacity;
+        }
+    }
+    for (size_t i = 0; i < facet_capacity_updates.size(); ++i) {
+        for (size_t j = 0; j < facet_capacity_updates[i].size(); ++j) {
+            const facet_capacity_update_t update = facet_capacity_updates[i][j];
+            rassert(update.cell_id < cells_by_id.size(), 238712837812314);
+            rassert(update.facet_id >= 0 && update.facet_id < 4, 238712837812315);
+            rassert(update.capacity >= 0.0f, 238712837812316);
+            cells_by_id[update.cell_id]->info().facets_capacities[update.facet_id] += update.capacity;
         }
     }
     double rays_traversed_time = rays_traversing_t.elapsed();

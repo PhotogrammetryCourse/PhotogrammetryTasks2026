@@ -40,6 +40,14 @@ struct cell_info_t {
     float s_capacity;
     float t_capacity;
     float facets_capacities[4];
+
+    cell_info_t()
+        : cell_id(0)
+        , s_capacity(0.0f)
+        , t_capacity(0.0f)
+        , facets_capacities { 0.0f, 0.0f, 0.0f, 0.0f }
+    {
+    }
 };
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel cgal_kernel_t;
