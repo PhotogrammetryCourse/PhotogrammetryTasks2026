@@ -10,6 +10,7 @@ vertex_info_t::vertex_info_t(unsigned int camera_id, const cv::Vec3b& color)
     : color(color)
 {
     camera_ids.push_back(camera_id);
+    radius = 0.0;
 }
 
 void vertex_info_t::merge(const vertex_info_t& that)
@@ -32,4 +33,5 @@ void vertex_info_t::merge(const vertex_info_t& that)
     for (int i = 1; i < camera_ids.size(); ++i) {
         rassert(camera_ids[i - 1] < camera_ids[i], 23781274121024);
     }
+    radius = std::max(radius, that.radius);
 }

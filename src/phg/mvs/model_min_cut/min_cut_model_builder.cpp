@@ -56,12 +56,15 @@ void MinCutModelBuilder::appendToTriangulation(
             to_merge = false;
         } else {
             // проверяем насколько ближайшая точка далеко
-            vector3d np = from_cgal_point(nearest_vertex->point());
+            // vector3d np = from_cgal_point(nearest_vertex->point());
             // TODO 2001 appendToTriangulation(): реализуйте нормальную проверку объединять ли точку с уже добавленной ранее (с учетом r и MERGE_THRESHOLD_RADIUS_KOEF)
-            to_merge = false;
+            vector3d np = from_cgal_point(nearest_vertex->point());
+            double dist = phg::norm(p - np);
+            to_merge = (dist < r * MERGE_THRESHOLD_RADIUS_KOEF);
         }
 
         vertex_info_t p_info(camera_id, color);
+        p_info.radius = r;
         if (to_merge) {
             nearest_vertex->info().merge(p_info);
         } else {
@@ -341,9 +344,20 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                 rassert(intersected_facet != cgal_facet_t(), 2378213120305);
 
                 // это ячейка триангуляции лежащая под поверхностью (т.е. сразу за вершиной)
-                const cell_handle_t cell_after_point = intersected_facet.first;
+                //const cell_handle_t cell_after_point = intersected_facet.first;
                 // добавляем пропускной способности из этой ячейки (из этого тетрагедрончика) к стоку
-                cell_after_point->info().t_capacity += LAMBDA_IN;
+                //cell_after_point->info().t_capacity += LAMBDA_IN;
+
+                double r = vi->info().radius;
+                vector3d deeper_point = point0 + ray_from_camera * r;
+                cell_handle_t deeper_cell = proxy->triangulation.locate(to_cgal_point(deeper_point));
+                if (!proxy->triangulation.is_infinite(deeper_cell)) {
+                    deeper_cell->info().t_capacity += LAMBDA_IN;
+                } 
+                else {
+                    const cell_handle_t cell_after_point = intersected_facet.first;
+                    cell_after_point->info().t_capacity += LAMBDA_IN;
+                }
             }
 
             // шагаем от точки до камеры выставляя веса на треугольниках (они же ребра в графе) которые пересекаются по мере трассировки луча
@@ -388,7 +402,9 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                 prev_distance = distance_from_surface;
 
                 // увеличиваем пропускную способность на треугольнике-ребре (в направлении от камеры к точке)
-                next_cell->info().facets_capacities[next_cell_facet_subindex] += LAMBDA_OUT;
+                double norm_dist = distance_from_surface / distance_to_camera;
+                float weight = (float)(LAMBDA_OUT * norm_dist);
+                next_cell->info().facets_capacities[next_cell_facet_subindex] += weight;
 
                 if (cur_facets.size() == 0) {
                     // если на будущее у нас нет кандидатов-треугольников, значит мы закончили наш путь и следующая ячейка содержит нашу камеру
@@ -402,6 +418,28 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
             ++nrays;
         }
     }
+
+    for (auto vi = proxy->triangulation.all_vertices_begin(); vi != proxy->triangulation.all_vertices_end(); ++vi) {
+        size_t ncams = vi->info().camera_ids.size();
+        if (ncams == 0) continue;
+
+        float weak_weight = (float)LAMBDA_IN / (float)ncams;
+
+        unsigned int camera_key = vi->info().camera_ids[0];
+        const vector3d camera_center = cameras_centers[camera_key];
+        const vector3d point0 = from_cgal_point(vi->point());
+        const vector3d ray_from_camera = cv::normalize(point0 - camera_center);
+
+        std::vector<cgal_facet_t> cur_facets = fetchVertexBoundingFacets(proxy->triangulation, vi);
+        const cgal_facet_t intersected_facet = chooseIntersectedFacet(
+            proxy->triangulation, point0, point0 + ray_from_camera, cur_facets, false);
+
+        if (intersected_facet == cgal_facet_t()) continue;
+
+        const cell_handle_t cell_after_point = intersected_facet.first;
+        cell_after_point->info().t_capacity += weak_weight;
+    }
+
     double rays_traversed_time = rays_traversing_t.elapsed();
     if (nrays > 0)
         avg_triangles_intersected_per_ray /= nrays;
@@ -477,6 +515,19 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
 
             // TODO 2002 добавьте проверку - не опирается ли треугольник на одну из фиктивных вершин (лежащих на гранях вспомогательного bounding box), можете для этого использовать bb_min и bb_max, или добавьте явный флаг в каждую вершину
             // иначе говоря сделайте так чтобы такие треугольники не добавлялись в результирующую модель эти большие красные треугольники
+            bool has_bb_vertex = false;
+            for (int v_index = 1; v_index <= 3; ++v_index) {
+                auto vi = ci->vertex((i + v_index) % 4);
+                vector3d vp = from_cgal_point(vi->point());
+                for (int d = 0; d < 3; ++d) {
+                    if (vp[d] <= bb_min[d] || vp[d] >= bb_max[d]) {
+                        has_bb_vertex = true;
+                        break;
+                    }
+                }
+                if (has_bb_vertex) break;
+            }
+            if (has_bb_vertex) continue;
 
             for (int v_index = 1; v_index <= 3; ++v_index) {
                 auto vi = ci->vertex((i + v_index) % 4);
@@ -486,6 +537,7 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                 }
                 face[v_index - 1] = surface_vertex_id;
             }
+            std::swap(face[0], face[1]);
 
             // TODO 2003 некоторые треугольники выглядят темными в результирующей модели, проблема уходит если выключить в MeshLab освещение (кнопка желтой лампочка - Light on/off) которое учитывает нормаль, которая строится с учетом
             // порядка вершин треугольника (по часовой стрелке или против) иначе говоря оказывается что порядок обхода вершин в треугольнике не всегда корректен подумайте чем это вызывано и поправьте (лучше всего это делать посматривая на
