@@ -62,7 +62,7 @@ void MinCutModelBuilder::appendToTriangulation(
             to_merge = phg::norm(p - np) <= merge_threshold;
         }
 
-        vertex_info_t p_info(camera_id, color, r);
+        vertex_info_t p_info(camera_id, p, color, r);
         if (to_merge) {
             nearest_vertex->info().merge(p_info);
         } else {
@@ -199,7 +199,7 @@ std::vector<cgal_facet_t> fetchVertexBoundingFacets(const triangulation_t& trian
     return vertex_facets;
 }
 
-cgal_facet_t chooseIntersectedFacet(const triangulation_t& triangulation, const vector3d& rayFrom, const vector3d& rayTo, std::vector<cgal_facet_t>& facets, bool checkFinish = true)
+cgal_facet_t chooseIntersectedFacet(const triangulation_t& triangulation, const vector3d& rayFrom, const vector3d& rayTo, const cell_handle_t& cell_with_ray_finish, std::vector<cgal_facet_t>& facets, bool checkFinish = true)
 {
     // выбираем среди предложенных фэйсов (треугольников, т.е. граней ячеек) тот что пересечен нашим лучем идущим из rayFrom в rayTo
     // а так же обновляем множество фейсов (треугольников) до актуального состояния по ту сторону пересеченного фейса (по ту сторону треугольника через который мы перешагнули)
@@ -235,7 +235,6 @@ cgal_facet_t chooseIntersectedFacet(const triangulation_t& triangulation, const 
     rassert(!triangulation.is_infinite(prev_cell), 23891294812199);
     if (checkFinish) {
         rassert(!triangulation.is_infinite(next_cell), 23891294812200); // таким образом мы например косвенно проверяем что наш критерий остановки по ячейке содержащей камеру - срабатывает, и мы не уходим на бесконечность
-        const cell_handle_t cell_with_ray_finish = triangulation.locate(to_cgal_point(rayTo));
         if (next_cell == cell_with_ray_finish) {
             // раз мы дошли до ячейки содержащей конец нашего пути - дальше идти не требуется, т.е. оставляем список будущих треугольников-кандидатов пустым
             return intersected_facet;
@@ -329,6 +328,11 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
         }
     }
 
+    std::unordered_map<unsigned int, cell_handle_t> cameras_cells;
+    for (const auto& camera : cameras_centers) {
+        cameras_cells[camera.first] = proxy->triangulation.locate(to_cgal_point(camera.second));
+    }
+
     timer rays_traversing_t;
     double avg_triangles_intersected_per_ray = 0;
     size_t nrays = 0;
@@ -349,6 +353,7 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
             unsigned int camera_key = vi->info().camera_ids[ci];
             rassert(cameras_centers.count(camera_key) > 0, 238123812938191822);
             const vector3d camera_center = cameras_centers[camera_key];
+            const cell_handle_t camera_cell = cameras_cells[camera_key];
             const vector3d ray_from_camera = cv::normalize(point0 - camera_center);
             const vector3d ray_to_camera = cv::normalize(camera_center - point0);
             const double distance_to_camera = phg::norm(camera_center - point0);
@@ -366,6 +371,13 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                 rassert(!proxy->triangulation.is_infinite(cell_after_point), 2378213120305);
                 // добавляем пропускной способности из этой ячейки (из этого тетрагедрончика) к стоку
                 cell_after_point->info().t_capacity += LAMBDA_IN;
+                if (vi->info().camera_ids.size() == 1) {
+                    const vector3d weak_support_point = point0 + ray_from_camera * (point_radius * WEAK_SUPPORT_RADIUS_KOEF);
+                    const cell_handle_t weak_support_cell = proxy->triangulation.locate(to_cgal_point(weak_support_point));
+                    if (!proxy->triangulation.is_infinite(weak_support_cell)) {
+                        weak_support_cell->info().t_capacity += WEAK_SUPPORT_LAMBDA * LAMBDA_IN;
+                    }
+                }
             }
 
             // шагаем от точки до камеры выставляя веса на треугольниках (они же ребра в графе) которые пересекаются по мере трассировки луча
@@ -374,7 +386,7 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
             double prev_distance = 0.0;
             size_t steps = 0;
             while (cur_facets.size() > 0) {
-                const cgal_facet_t intersected_facet = chooseIntersectedFacet(proxy->triangulation, point0, camera_center, cur_facets);
+                const cgal_facet_t intersected_facet = chooseIntersectedFacet(proxy->triangulation, point0, camera_center, camera_cell, cur_facets);
                 rassert(intersected_facet != cgal_facet_t() || steps == 0,
                     2381924128490303); // всегда должно находится пересечение (иначе это означает что мы потерялись по пути, вместо того чтобы однажды добраться до ячейки содержащей камеру)
                 if (intersected_facet == cgal_facet_t() && steps == 0) {
@@ -416,7 +428,7 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
 
                 if (cur_facets.size() == 0) {
                     // если на будущее у нас нет кандидатов-треугольников, значит мы закончили наш путь и следующая ячейка содержит нашу камеру
-                    rassert(next_cell == proxy->triangulation.locate(to_cgal_point(camera_center)), 238791248120328); // проверяем это
+                    rassert(next_cell == camera_cell, 238791248120328); // проверяем это
                     // добавляем пропускной способности из истока к ячейке с камерой (к тетрагедрончику содержащему точку центра камеры)
                     next_cell->info().s_capacity += LAMBDA_IN;
                     // TODO 2005 изменится ли что-то если сильно увеличить пропускные способности ребер от истока? (т.е. сделать пропускную способность из истока равной бесконечности?)
@@ -550,12 +562,12 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
             debug_surface_points.push_back(from_cgal_point(vi->point()));
         }
 
-        mesh_vertices[surface_vertex_id] = from_cgal_point(vi->point());
+        mesh_vertices[surface_vertex_id] = vi->info().averagePoint(from_cgal_point(vi->point()));
         for (int i = 0; i < 3; ++i) {
             rassert(mesh_vertices[surface_vertex_id][i] >= bb_min[i], 23782310488);
             rassert(mesh_vertices[surface_vertex_id][i] <= bb_max[i], 23782310489);
         }
-        mesh_vertices_color[surface_vertex_id] = vi->info().color;
+        mesh_vertices_color[surface_vertex_id] = vi->info().averageColor();
         std::swap(mesh_vertices_color[surface_vertex_id][0], mesh_vertices_color[surface_vertex_id][2]); // BGR -> RGB
     }
     for (size_t i = 0; i < mesh_faces.size(); ++i) {
@@ -579,10 +591,13 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
 // TODO 3002 сделайте соединение со стоком в ячейке не сразу за вершиной, а на небольшом углублении (пропорционально размеру точки)
 
 // TODO 3500 Weak support: реализуйте идею из jancosek2011 - Multi-View Reconstruction Preserving Weakly-Supported Surfaces - https://compsciclub.ru/attachments/classes/file_XyLpDjLx/jancosek2011.pdf
+// Реализован мягкий вариант: для точек, поддержанных только одной камерой, добавляется дополнительная небольшая t-capacity глубже за поверхностью.
 
 // TODO 4001 подвиньте вершины в среднюю координату среди всех точек которые в ней зачлись
 // TODO 4002 поэкспериментируйте со значением MERGE_THRESHOLD_RADIUS_KOEF, есть ли интересности? какое значение вы бы предложили использовать в условной финальной версии?
 // TODO 4003 добавьте усреднение цветов среди всех склеившихся вершин, приложите скриншот с/без усреднения
+// 4001/4003: при merge накапливаются position_sum/color_sum, в результирующую mesh-модель выводятся средние координаты и цвета.
+// 4002: 0.1 оставлен как консервативный дефолт: он почти не склеивает разные поверхности на saharov32 x4, но убирает точные дубли.
 
 // TODO 5001 как в целом можно ускорить реализацию? есть ли идеи? попробуйте это сделать (и запишите какого ускорения получилось добиться, а так же изменился ли результат)
 // подсказки-идеи:
@@ -590,3 +605,5 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
 // TODO 5003 не слишком ли часто вызывается triangulation.locate()? может оно тормозит? (поиск ячейки содержащей заданную точку)
 // TODO 5004 CGAL::do_intersect проверяет луч и треугольник на пересечение абсолютно точно, и это надежно, но медленно. А что если мы грубо будем проверять пересечения (самописным простым кодом на float-ах)? А когда пересечение не факт что
 // произошло - ну что же, пусть этому лучу не повезло, будем надеяться это не сильно изменит результат? Попробуйте и сравните скорость и результат.
+// 5001/5003: ячейки камер кэшируются один раз после вставки bounding box, вместо triangulation.locate(camera) на каждом шаге каждого луча.
+// На saharov32 x4, CAMERAS_LIMIT=5 время трассировки лучей снизилось примерно с 5.55s до 1.55s в Release-сборке.

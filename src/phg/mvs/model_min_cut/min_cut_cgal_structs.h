@@ -11,17 +11,25 @@ struct vertex_info_t {
     std::vector<unsigned int> camera_ids;
     cv::Vec3b color;
     double radius;
+    vector3d position_sum;
+    cv::Vec3d color_sum;
+    size_t observations_count;
     size_t vertex_on_surface_id;
 
     vertex_info_t()
         : color(0, 0, 255) // red color, BGR convention (OpenCV compatible)
         , radius(0.0)
+        , position_sum(0.0, 0.0, 0.0)
+        , color_sum(0.0, 0.0, 255.0)
+        , observations_count(0)
     {
     }
 
-    vertex_info_t(unsigned int camera_id, const cv::Vec3b& color, double radius);
+    vertex_info_t(unsigned int camera_id, const vector3d& point, const cv::Vec3b& color, double radius);
 
     void merge(const vertex_info_t& that);
+    vector3d averagePoint(const vector3d& fallback_point) const;
+    cv::Vec3b averageColor() const;
 };
 
 struct cell_info_t {
