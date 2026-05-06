@@ -154,10 +154,11 @@ namespace {
         const int n_points = X.size();
         const int n_trials = 10000;
         const double threshold_px = 8;
+        const double scoring_threshold_px = 4;
         const int n_samples = 6;
         uint64_t seed = 1;
 
-        const double T2 = threshold_px * threshold_px;
+        const double T2 = scoring_threshold_px * scoring_threshold_px;
         double best_cost = std::numeric_limits<double>::max();
         int best_support = 0;
         cv::Matx34d best_P;
@@ -184,10 +185,10 @@ namespace {
                 double e2 = d.dot(d);
                 if (e2 < T2) {
                     cost += e2;
-                    ++support;
                 } else {
                     cost += T2;
                 }
+                if (e2 < threshold_px * threshold_px) ++support;
             }
 
             if (cost < best_cost) {
