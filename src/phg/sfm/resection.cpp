@@ -135,40 +135,45 @@ namespace {
             throw std::runtime_error("estimateCameraMatrixRANSAC : failed to estimate camera matrix");
         }
 
-        {
+        cv::Mat K_mat(calib.K());
+        cv::Mat R_init(3, 3, CV_64F);
+        for (int r = 0; r < 3; r++)
+            for (int c = 0; c < 3; c++)
+                R_init.at<double>(r, c) = best_P(r, c);
+        cv::Mat rvec, tvec(3, 1, CV_64F);
+        cv::Rodrigues(R_init, rvec);
+        tvec.at<double>(0) = best_P(0, 3);
+        tvec.at<double>(1) = best_P(1, 3);
+        tvec.at<double>(2) = best_P(2, 3);
+
+        for (double inlier_thr : {threshold_px, threshold_px * 0.5, threshold_px * 0.25}) {
             std::vector<cv::Point3d> obj_pts;
             std::vector<cv::Point2d> img_pts;
+
+            cv::Mat R_cur;
+            cv::Rodrigues(rvec, R_cur);
+            matrix34d P_cur;
+            for (int r = 0; r < 3; r++) {
+                for (int c = 0; c < 3; c++) P_cur(r, c) = R_cur.at<double>(r, c);
+                P_cur(r, 3) = tvec.at<double>(r);
+            }
             for (int i = 0; i < n_points; ++i) {
-                cv::Vec3d px_h = calib.project(best_P * cv::Vec4d(X[i][0], X[i][1], X[i][2], 1));
+                cv::Vec3d px_h = calib.project(P_cur * cv::Vec4d(X[i][0], X[i][1], X[i][2], 1));
                 cv::Vec2d px = {px_h[0] / px_h[2], px_h[1] / px_h[2]};
-                if (cv::norm(px - x[i]) < threshold_px) {
+                if (cv::norm(px - x[i]) < inlier_thr) {
                     obj_pts.push_back({X[i][0], X[i][1], X[i][2]});
                     img_pts.push_back({x[i][0], x[i][1]});
                 }
             }
-
-            cv::Mat K_mat(calib.K());
-            cv::Mat R_init(3, 3, CV_64F);
-            for (int r = 0; r < 3; r++)
-                for (int c = 0; c < 3; c++)
-                    R_init.at<double>(r, c) = best_P(r, c);
-            cv::Mat rvec, tvec(3, 1, CV_64F);
-            cv::Rodrigues(R_init, rvec);
-            tvec.at<double>(0) = best_P(0, 3);
-            tvec.at<double>(1) = best_P(1, 3);
-            tvec.at<double>(2) = best_P(2, 3);
-
+            if (obj_pts.size() < 6) break;
             cv::solvePnP(obj_pts, img_pts, K_mat, cv::noArray(), rvec, tvec, true, cv::SOLVEPNP_ITERATIVE);
+        }
 
-            cv::Mat R_refined;
-            cv::Rodrigues(rvec, R_refined);
-            matrix34d P_lm;
-            for (int r = 0; r < 3; r++) {
-                for (int c = 0; c < 3; c++) P_lm(r, c) = R_refined.at<double>(r, c);
-                P_lm(r, 3) = tvec.at<double>(r);
-            }
-
-            best_P = P_lm;
+        cv::Mat R_refined;
+        cv::Rodrigues(rvec, R_refined);
+        for (int r = 0; r < 3; r++) {
+            for (int c = 0; c < 3; c++) best_P(r, c) = R_refined.at<double>(r, c);
+            best_P(r, 3) = tvec.at<double>(r);
         }
 
         return best_P;
