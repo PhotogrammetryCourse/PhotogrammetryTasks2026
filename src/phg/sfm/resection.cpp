@@ -164,8 +164,8 @@ namespace {
         for (int i_trial = 0; i_trial < n_trials; ++i_trial) {
             phg::randomSample(sample, n_points, n_samples, &seed);
 
-            cv::Vec3d ms0[n_samples]; // 3D points
-            cv::Vec3d ms1[n_samples]; // unprojected rays
+            cv::Vec3d ms0[n_samples];
+            cv::Vec3d ms1[n_samples];
             for (int i = 0; i < n_samples; ++i) {
                 ms0[i] = X[sample[i]];
                 ms1[i] = calib.unproject(x[sample[i]]);
@@ -198,6 +198,35 @@ namespace {
 
         if (best_support == 0) {
             throw std::runtime_error("estimateCameraMatrixRANSAC : failed to estimate camera matrix");
+        }
+
+        std::vector<cv::Point3d> obj_pts;
+        std::vector<cv::Point2d> img_pts;
+        for (int i = 0; i < n_points; ++i) {
+            obj_pts.push_back({X[i][0], X[i][1], X[i][2]});
+            img_pts.push_back({x[i][0], x[i][1]});
+        }
+
+        cv::Mat K_mat(calib.K());
+        cv::Mat R_init(3, 3, CV_64F);
+        for (int r = 0; r < 3; r++)
+            for (int c = 0; c < 3; c++)
+                R_init.at<double>(r, c) = best_P(r, c);
+        cv::Mat rvec, tvec(3, 1, CV_64F);
+        cv::Rodrigues(R_init, rvec);
+        tvec.at<double>(0) = best_P(0, 3);
+        tvec.at<double>(1) = best_P(1, 3);
+        tvec.at<double>(2) = best_P(2, 3);
+
+        cv::solvePnPRansac(obj_pts, img_pts, K_mat, cv::noArray(),
+                           rvec, tvec, true, 1000, threshold_px, 0.99,
+                           cv::noArray(), cv::SOLVEPNP_ITERATIVE);
+
+        cv::Mat R_refined;
+        cv::Rodrigues(rvec, R_refined);
+        for (int r = 0; r < 3; r++) {
+            for (int c = 0; c < 3; c++) best_P(r, c) = R_refined.at<double>(r, c);
+            best_P(r, 3) = tvec.at<double>(r);
         }
 
         return best_P;
