@@ -114,7 +114,7 @@ namespace {
         }
 
         const int n_samples = 8;
-        const int n_trials = (n_matches > 10000) ? 10000 : 1000;
+        const int n_trials = 100000;
         uint64_t seed = 1;
 
         int best_support = 0;
