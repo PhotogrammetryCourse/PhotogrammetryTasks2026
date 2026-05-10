@@ -400,7 +400,7 @@ public:
         // k1, k2 - коэффициенты радиального искажения (radial distortion)
         T k1 = camera_intrinsics[0];
         T k2 = camera_intrinsics[1];
-        T r_2 = ceres::hypot(pts[0], pts[1]);
+        T r_2 = pts[0] * pts[0] + pts[1] * pts[1];
         T rad = 1.0 + k1 * r_2 + k2 * r_2 * r_2;
 
         pts[0] *= rad;
@@ -685,7 +685,7 @@ void runBA(std::vector<vector3d> &tie_points,
 
                     vector3d v1 = (track_point - camera_origin);
                     vector3d v2 = (track_point - prev_origin);
-                    if (v1.dot(v2) / std::sqrt(v1.dot(v1) * v2.dot(v2)) > 0.999) {
+                    if (v1.dot(v2) / std::sqrt(v1.dot(v1) * v2.dot(v2)) > 0.9999) {
                         should_be_disabled = true;
                         break;
                     }

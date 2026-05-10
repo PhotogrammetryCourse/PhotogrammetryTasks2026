@@ -35,7 +35,7 @@ cv::Vec3d phg::Calibration::project(const cv::Vec3d &point) const
     double x = point[0] / point[2];
     double y = point[1] / point[2];
 
-    double r_2 = std::hypot(x, y);
+    double r_2 = x * x + y * y;
     double rad = 1 + k1_ * r_2 + k2_ * r_2 * r_2;
     x *= rad;
     y *= rad;
