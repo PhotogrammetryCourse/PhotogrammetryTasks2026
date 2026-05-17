@@ -7,10 +7,13 @@
 #include <CGAL/Triangulation_cell_base_with_info_3.h>
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 
+#include <optional>
+
 struct vertex_info_t {
     std::vector<unsigned int> camera_ids;
     cv::Vec3b color;
     size_t vertex_on_surface_id;
+    std::optional<double> radius;
     bool sentinel;
 
     vertex_info_t()

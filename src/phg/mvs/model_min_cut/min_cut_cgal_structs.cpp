@@ -33,4 +33,11 @@ void vertex_info_t::merge(const vertex_info_t& that)
     for (int i = 1; i < camera_ids.size(); ++i) {
         rassert(camera_ids[i - 1] < camera_ids[i], 23781274121024);
     }
+
+    // Take the minimum defined radius
+    if (!radius.has_value()) {
+        radius = that.radius;
+    } else if (that.radius.has_value()) {
+        radius = std::min(*radius, *that.radius);
+    }
 }

@@ -63,6 +63,7 @@ void MinCutModelBuilder::appendToTriangulation(
         }
 
         vertex_info_t p_info(camera_id, color);
+        p_info.radius = r;
         if (to_merge) {
             nearest_vertex->info().merge(p_info);
         } else {
@@ -322,6 +323,11 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
         const vector3d point0 = from_cgal_point(vi->point());
         const std::vector<cgal_facet_t> facets_around_point0 = fetchVertexBoundingFacets(proxy->triangulation, vi);
 
+        double sigma = 0.0;
+        if (vi->info().radius) {
+            sigma = SIGMA_FACTOR * *vi->info().radius;
+        }
+
         for (unsigned int ci = 0; ci < vi->info().camera_ids.size(); ++ci) {
             // для каждой вершины триангуляции point0 и каждой камеры к которой эта точка имеет отношение (т.е. содержится где-то в карте глубины)
 
@@ -344,9 +350,11 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                 rassert(intersected_facet != cgal_facet_t(), 2378213120305);
 
                 // это ячейка триангуляции лежащая под поверхностью (т.е. сразу за вершиной)
-                const cell_handle_t cell_after_point = intersected_facet.first;
+                // const cell_handle_t cell_after_point = intersected_facet.first;
                 // добавляем пропускной способности из этой ячейки (из этого тетрагедрончика) к стоку
-                cell_after_point->info().t_capacity += LAMBDA_IN;
+                // cell_after_point->info().t_capacity += LAMBDA_IN;
+                const cell_handle_t sink_cell = proxy->triangulation.locate(to_cgal_point(point0 + sigma * ray_from_camera));
+                sink_cell->info().t_capacity += LAMBDA_IN;
             }
 
             // шагаем от точки до камеры выставляя веса на треугольниках (они же ребра в графе) которые пересекаются по мере трассировки луча
@@ -391,7 +399,11 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
                 prev_distance = distance_from_surface;
 
                 // увеличиваем пропускную способность на треугольнике-ребре (в направлении от камеры к точке)
-                next_cell->info().facets_capacities[next_cell_facet_subindex] += LAMBDA_OUT;
+                double face_capacity = LAMBDA_OUT;
+                if (sigma != 0.0) {
+                    face_capacity *= (1.0 - std::exp(-prev_distance * prev_distance / (2.0 * sigma * sigma)));
+                }
+                next_cell->info().facets_capacities[next_cell_facet_subindex] += face_capacity;
 
                 if (cur_facets.size() == 0) {
                     // если на будущее у нас нет кандидатов-треугольников, значит мы закончили наш путь и следующая ячейка содержит нашу камеру
