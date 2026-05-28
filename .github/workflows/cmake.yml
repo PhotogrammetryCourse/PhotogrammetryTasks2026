@@ -16,28 +16,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build and install OpenCV (Linux)
+      - name: Install linux dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt update
           sudo apt install -y g++ cmake unzip wget
           bash .github/scripts/linux/install_opencv.sh
-
-      - name: Install OpenCL CPU driver
-        if: runner.os == 'Linux'
-        run: |
           bash .github/scripts/linux/install_opencl_cpu_driver.sh
+          bash .github/scripts/linux/install_eigen3.sh          
 
-      - name: Build and install OpenCV + OpenMP (macOS)
+      - name: Install macos dependencies
         if: runner.os == 'macOS'
         run: |
           bash .github/scripts/macos/install_openmp.sh
           bash .github/scripts/macos/install_opencv.sh
+          bash .github/scripts/macos/install_eigen3.sh 
 
-      - name: Build and install OpenCV (Windows)
+      - name: Install windows dependencies
         if: runner.os == 'Windows'
         shell: pwsh
-        run: .github/scripts/windows/install_opencv.ps1
+        run: |
+          .github/scripts/windows/install_opencv.ps1
+          .github/scripts/windows/install_eigen3.ps1
 
       - name: Configure CMake (Linux)
         if: runner.os == 'Linux'
@@ -65,9 +65,9 @@ jobs:
       - name: Build (any OS)
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-      - name: Run test_matching (Linux/macOS)
+      - name: Run test_sfm (Linux/macOS)
         if: runner.os != 'Windows'
-        run: ./build/test_matching
+        run: ./build/test_sfm
 
       - name: Copy OpenCV/gtest DLLs (Windows)
         if: runner.os == 'Windows'
@@ -86,7 +86,7 @@ jobs:
             Group-Object Name |
             ForEach-Object { Copy-Item $_.Group[0].FullName $exeDir -Force }
 
-      - name: Run test_matching (Windows)
+      - name: Run test_sfm (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: .\build\${{ env.BUILD_TYPE }}\test_matching.exe
+        run: .\build\${{ env.BUILD_TYPE }}\test_sfm.exe

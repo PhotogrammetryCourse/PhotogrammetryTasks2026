@@ -3,11 +3,13 @@
 #include <gtest/gtest.h>
 
 #include <opencv2/core.hpp>
+#include <opencv2/features2d.hpp>
+#include <opencv2/highgui.hpp>
 
 #include <libutils/rasserts.h>
 
-cv::Mat concatenateImagesLeftRight(const cv::Mat& img0, const cv::Mat& img1)
-{
+
+cv::Mat concatenateImagesLeftRight(const cv::Mat &img0, const cv::Mat &img1) {
     // это способ гарантировать себе что предположение которое явно в этой функции есть (совпадение типов картинок)
     // однажды не нарушится (по мере изменения кода) и не приведет к непредсказуемым последствиям
     // в отличие от assert() у таких rassert есть три преимущества:
@@ -29,6 +31,26 @@ cv::Mat concatenateImagesLeftRight(const cv::Mat& img0, const cv::Mat& img1)
     return res;
 }
 
-std::string getTestName() { return ::testing::UnitTest::GetInstance()->current_test_info()->name(); }
 
-std::string getTestSuiteName() { return ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name(); }
+std::string getTestName() {
+    return ::testing::UnitTest::GetInstance()->current_test_info()->name();
+}
+
+
+std::string getTestSuiteName() {
+    return ::testing::UnitTest::GetInstance()->current_test_info()->test_suite_name();
+}
+
+void drawMatches(const cv::Mat &img1,
+                 const cv::Mat &img2,
+                 const std::vector<cv::KeyPoint> &keypoints1,
+                 const std::vector<cv::KeyPoint> &keypoints2,
+                 const std::vector<cv::DMatch> &matches,
+                 const std::string &path)
+{
+    cv::Mat img_matches;
+    drawMatches( img1, keypoints1, img2, keypoints2, matches, img_matches, cv::Scalar::all(-1),
+                 cv::Scalar::all(-1), std::vector<char>(), cv::DrawMatchesFlags::NOT_DRAW_SINGLE_POINTS );
+
+    cv::imwrite(path, img_matches);
+}

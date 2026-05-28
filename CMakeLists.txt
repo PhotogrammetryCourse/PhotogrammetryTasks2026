@@ -29,12 +29,26 @@ find_package(OpenCV 4.11.0 REQUIRED)
 # выполните в powershell .github/scripts/windows/install_opencv.ps1
 # альтернативно вы можете следовать инструкции - https://gist.github.com/PolarNick239/18036d942ae4b9aad9f1da756ce6c845#file-buildocv-sh-L10-L33
 #
-#     MacOS: (но рекомендуется использовать Linux, MacOS не тестировался, только на github CI, а инструкция является галлюцинацией LLM)
-# sudo bash .github/scripts/macos/install_openmp.sh
-# bash .github/scripts/macos/install_opencv.sh
-# cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo -DOpenCV_DIR=/opt/opencv-4.11.0/lib/cmake/opencv4 -DOpenMP_ROOT="$(brew --prefix libomp)"
+
+find_package(Eigen3 REQUIRED)
+#      Linux:
+# sudo apt install libeigen3-dev
+#      Windows (чтобы удобно копировать в Git Bash консоль: выделите, нажмите Ctrl+C, в консоли нажмите Shift+Insert):
+# 1) Скачать https://gitlab.com/libeigen/eigen/-/archive/3.3.9/eigen-3.3.9.zip
+# 2) Распаковать и открыть Git Bash в папке распаковки (правый клик в проводнике -> Git Bash here)
+# 3) myDirPath=$(pwd)
+# 4) mkdir build_dir
+# 5) cd build_dir
+# 6) cmake -G "Visual Studio 16 2019" -DCMAKE_INSTALL_PREFIX="$myDirPath/install_dir" ..
+# 7) cmake --build .  --target install
+# 8) запомните папку куда была проведена установка Eigen3 - она имеет вид .../eigen-3.3.9/install_dir
+# 9) Добавьте в File->Settings->CMake options: -DEigen3_DIR=<ПОПРАВЬТЕ ЭТОТ ПУТЬ>/eigen-3.3.9/install_dir/share/eigen3/cmake
 
 set(SOURCES
+        src/phg/core/calibration.cpp
+        src/phg/core/calibration.h
+        src/phg/core/camera.cpp
+        src/phg/core/camera.h
         src/phg/sift/sift.cpp
         src/phg/sift/sift.h
         src/phg/matching/descriptor_matcher.cpp
@@ -49,10 +63,23 @@ set(SOURCES
         src/phg/matching/flann_matcher.cpp
         src/phg/matching/flann_matcher.h
         src/phg/matching/flann_factory.h
+        src/phg/sfm/defines.h
+        src/phg/sfm/ematrix.cpp
+        src/phg/sfm/ematrix.h
+        src/phg/sfm/fmatrix.cpp
+        src/phg/sfm/fmatrix.h
         src/phg/sfm/homography.cpp
         src/phg/sfm/homography.h
-        src/phg/sfm/panorama_stitcher.h
         src/phg/sfm/panorama_stitcher.cpp
+        src/phg/sfm/panorama_stitcher.h
+        src/phg/sfm/resection.cpp
+        src/phg/sfm/resection.h
+        src/phg/sfm/sfm_utils.cpp
+        src/phg/sfm/sfm_utils.h
+        src/phg/sfm/triangulation.cpp
+        src/phg/sfm/triangulation.h
+        src/phg/utils/point_cloud_export.cpp
+        src/phg/utils/point_cloud_export.h
         )
 
 # convertIntoHeader CMake-функция объявлена в libs/gpu/CMakeLists.txt:71
@@ -65,6 +92,7 @@ set(LIBRARIES
         libutils
         ${OpenCV_LIBS}
         OpenMP::OpenMP_CXX
+        Eigen3::Eigen
         )
 
 add_library(${PROJECT_NAME} ${SOURCES})
@@ -83,6 +111,8 @@ set(TEST_LIBRARIES
 
 add_executable(test_sift tests/test_sift.cpp ${TEST_SOURCES})
 add_executable(test_matching tests/test_matching.cpp ${TEST_SOURCES})
+add_executable(test_sfm tests/test_sfm.cpp ${TEST_SOURCES})
 
 target_link_libraries(test_sift ${PROJECT_NAME} ${LIBRARIES} ${TEST_LIBRARIES})
 target_link_libraries(test_matching ${PROJECT_NAME} ${LIBRARIES} ${TEST_LIBRARIES})
+target_link_libraries(test_sfm ${PROJECT_NAME} ${LIBRARIES} ${TEST_LIBRARIES})
