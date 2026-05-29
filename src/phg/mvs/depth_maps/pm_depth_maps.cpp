@@ -46,14 +46,16 @@ vector3d project(const vector3d& global_point, const phg::Calibration& calibrati
     return pixel_with_depth;
 }
 
-// TODO 101 реализуйте unproject (вам поможет тест на идемпотентность project -> unproject в test_depth_maps_pm)
 vector3d unproject(const vector3d& pixel, const phg::Calibration& calibration, const matrix34d& PtoWorld)
 {
-    double depth = pixel[2]; // на самом деле это не глубина, это координата по оси +Z (вдоль которой смотрит камера в ее локальной системе координат)
+    double depth = pixel[2];
 
-    vector3d local_point; // TODO 102 пустите луч pixel из calibration а затем возьмите ан нем точку у которой по оси +Z координата=depth
+    // ray direction in camera space: unproject gives (rx, ry, 1.0)
+    cv::Vec3d ray = calibration.unproject(cv::Vec2d(pixel[0], pixel[1]));
+    // scale so Z = depth
+    vector3d local_point(ray[0] * depth, ray[1] * depth, depth);
 
-    vector3d global_point; // TODO 103 переведите точку из локальной системы в глобальную
+    vector3d global_point = PtoWorld * homogenize(local_point);
 
     return global_point;
 }
@@ -112,16 +114,16 @@ void PMDepthMapsBuilder::refinement()
                 n0 = normal_map.at<vector3f>(j, i);
 
                 // 2) случайной пертурбации текущей гипотезы (мутация и уточнение того что уже смогли найти)
-                dp = r.nextf(d0 * 0.5f, d0 * 1.5); // TODO 104: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
-                np = cv::normalize(n0 + randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r) * 0.5); // TODO 105: сделайте так чтобы отклонение было тем меньше, чем номер итерации ближе к NITERATIONS, улучшило ли это результат?
+                float perturb_scale = 1.0f - (float)iter / (NITERATIONS + 1);
+                float depth_range = (d0 > 0) ? d0 * perturb_scale : (ref_depth_max - ref_depth_min) * perturb_scale;
+                dp = r.nextf(d0 - depth_range * 0.5f, d0 + depth_range * 0.5f);
+                np = cv::normalize(n0 + randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r) * (0.5f * perturb_scale));
 
                 dp = std::max(ref_depth_min, std::min(ref_depth_max, dp));
 
                 // 3) новой случайной гипотезы из фрустума поиска (новые идеи, вечный поиск во всем пространстве)
-                // TODO 106: создайте случайную гипотезу dr+nr, вам поможет:
-                //  - r.nextf(...)
-                //  - ref_depth_min, ref_depth_max
-                //  - randomNormalObservedFromCamera - поможет создать нормаль которая гарантированно смотрит на нас
+                dr = r.nextf(ref_depth_min, ref_depth_max);
+                nr = randomNormalObservedFromCamera(cameras_RtoWorld[ref_cam], r);
             }
 
             float best_depth = d0;
@@ -352,31 +354,35 @@ float PMDepthMapsBuilder::estimateCost(ptrdiff_t i, ptrdiff_t j, double d, const
             ptrdiff_t u = x;
             ptrdiff_t v = y;
 
-            // TODO 108: добавьте проверку "попали ли мы в камеру номер neighb_cam?" если не попали - возвращаем NO_COST
+            if (u < 0 || u >= (ptrdiff_t)width || v < 0 || v >= (ptrdiff_t)height)
+                return NO_COST;
 
             float intensity = cameras_imgs_grey[neighb_cam].at<unsigned char>(v, u) / 255.0f;
             patch1.push_back(intensity);
         }
     }
 
-    // TODO 109: реализуйте ZNCC https://en.wikipedia.org/wiki/Cross-correlation#Zero-normalized_cross-correlation_(ZNCC)
-    // или слайд #25 в лекции 5 про SGM и Cost-функции - https://my.compscicenter.ru/attachments/classes/slides_w2n8WNLY/photogrammetry_lecture_090321.pdf
     rassert(patch0.size() == patch1.size(), 12489185129326);
     size_t n = patch0.size();
     float mean0 = 0.0f;
     float mean1 = 0.0f;
-    // ...
     for (size_t k = 0; k < n; ++k) {
-        float a = patch0[k];
-        float b = patch1[k];
-        mean0 += a;
-        mean1 += b;
-        // ...
+        mean0 += patch0[k];
+        mean1 += patch1[k];
     }
     mean0 /= n;
     mean1 /= n;
-    // ...
-    float zncc = 0.0f;
+
+    float var0 = 0.0f, var1 = 0.0f, cross = 0.0f;
+    for (size_t k = 0; k < n; ++k) {
+        float a = patch0[k] - mean0;
+        float b = patch1[k] - mean1;
+        var0  += a * a;
+        var1  += b * b;
+        cross += a * b;
+    }
+    float denom = std::sqrt(var0 * var1);
+    float zncc = (denom > 1e-6f) ? cross / denom : 0.0f;
 
     // ZNCC в диапазоне [-1; 1], 1: идеальное совпадение, -1: ничего общего
     rassert(zncc == zncc, 23141241210380); // проверяем что не nan
@@ -400,16 +406,23 @@ float PMDepthMapsBuilder::avgCost(std::vector<float>& costs)
 
     float best_cost = costs[0];
 
-    float cost_sum = best_cost;
-    float cost_w = 1.0f;
+    float cost_sum = 0.0f;
+    float cost_w   = 0.0f;
 
-    // TODO 110 реализуйте какое-то "усреднение cost-ов по всем соседям", с ограничением что участвуют только COSTS_BEST_K_LIMIT лучших
-    // TODO 111 добавьте к этому усреднению еще одно ограничение: если cost больше чем best_cost*COSTS_K_RATIO - то такой cost подозрительно плохой и мы его не хотим учитывать (вероятно occlusion)
-    // TODO 112 а что если в пикселе occlusion, но best_cost - большой и поэтому отсечение по best_cost*COSTS_K_RATIO не срабатывает? можно ли это отсечение как-то выправить для такого случая?
-    // TODO 207 а что если добавить какой-нибудь бонус в случае если больше чем Х камер засчиталось? улучшается/ухудшается ли от этого что-то на herzjezu25? а при большем числе фотографий
+    // TODO 112: if best_cost is large, don't let ratio threshold suppress everything
+    float ratio_threshold = std::max(best_cost * COSTS_K_RATIO, GOOD_COST * COSTS_K_RATIO);
 
-    float avg_cost = cost_sum / cost_w;
-    return avg_cost;
+    for (size_t k = 0; k < costs.size() && (int)k < COSTS_BEST_K_LIMIT; ++k) {
+        if (costs[k] > ratio_threshold)  // TODO 111
+            break;
+        cost_sum += costs[k];
+        cost_w   += 1.0f;
+    }
+
+    if (cost_w == 0.0f)
+        return best_cost;
+
+    return cost_sum / cost_w;
 }
 
 void PMDepthMapsBuilder::printCurrentStats()
