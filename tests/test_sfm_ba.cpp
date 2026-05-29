@@ -22,7 +22,7 @@
 #include <ceres/ceres.h>
 
 // TODO включите Bundle Adjustment (но из любопытства посмотрите как ведет себя реконструкция без BA например для saharov32 без BA)
-#define ENABLE_BA                             0
+#define ENABLE_BA                             1
 
 // TODO когда заработает при малом количестве фотографий - увеличьте это ограничение до 100 чтобы попробовать обработать все фотографии (если же успешно будут отрабаывать только N фотографий - отправьте PR выставив здесь это N)
 #define NIMGS_LIMIT                           10 // сколько фотографий обрабатывать (можно выставить меньше чтобы ускорить экспериментирование, или в случае если весь датасет не выравнивается)
@@ -382,30 +382,40 @@ public:
                     const T* camera_intrinsics, // внутренние калибровочные параметры камеры: [5] = {k1, k2, f, cx, cy} (одни и те же для всех кадров, т.к. снято на одну и ту же камеру)
                     const T* point_global,      // 3D точка: [3]  = {x, y, z}
                     T* residuals) const {       // невязка:  [2]  = {dx, dy}
-        // TODO реализуйте функцию проекции, все нужно делать в типе T чтобы ceres-solver мог под него подставить как Jet (очень рекомендую посмотреть Jet.h - как класная статья из википедии!), так и double
+        const T* translation         = camera_extrinsics + 0;
+        const T* rotation_angle_axis = camera_extrinsics + 3;
 
-        // translation[3] - сдвиг в локальную систему координат камеры
+        T p[3];
+        p[0] = point_global[0] - translation[0];
+        p[1] = point_global[1] - translation[1];
+        p[2] = point_global[2] - translation[2];
 
-        // rotation[3] - angle-axis rotation, поворачиваем точку point->p (чтобы перейти в локальную систему координат камеры)
-        // подробнее см. https://en.wikipedia.org/wiki/Axis%E2%80%93angle_representation
-        // (P.S. у камеры всмысле вращения три степени свободы)
+        T p_cam[3];
+        ceres::AngleAxisRotatePoint(rotation_angle_axis, p, p_cam);
 
-        // Проецируем точку на фокальную плоскость матрицы (т.е. плоскость Z=фокальная длина)
+        T x = p_cam[0] / p_cam[2];
+        T y = p_cam[1] / p_cam[2];
+
+        T k1 = camera_intrinsics[0];
+        T k2 = camera_intrinsics[1];
+        T f  = camera_intrinsics[2];
+        T cx = camera_intrinsics[3];
+        T cy = camera_intrinsics[4];
 
 #if ENABLE_INSTRINSICS_K1_K2
-        // k1, k2 - коэффициенты радиального искажения (radial distortion)
+        T r2 = x*x + y*y;
+        T distortion = T(1.0) + k1*r2 + k2*r2*r2;
+        x *= distortion;
+        y *= distortion;
 #endif
 
-        // Домножаем на f, тем самым переводя в пиксели
+        T u = f * x + cx;
+        T v = f * y + cy;
 
-        // Из координат когда точка (0, 0) - центр оптической оси
-        // Переходим в координаты когда точка (0, 0) - левый верхний угол картинки
-        // cx, cy - координаты центра оптической оси (обычно это центр картинки, но часто он чуть смещен)
-
-        // Теперь по спроецированным координатам не забудьте посчитать невязку репроекции
+        residuals[0] = u - T(observed_x);
+        residuals[1] = v - T(observed_y);
 
         return true;
-        // TODO сверьте эту функцию с вашей реализацией проекции в src/phg/core/calibration.cpp (они должны совпадать)
     }
 protected:
     double observed_x;
@@ -434,9 +444,14 @@ void runBA(std::vector<vector3d> &tie_points,
     ASSERT_NEAR(calib.cx_, 0.0, 0.3 * calib.width());
     ASSERT_NEAR(calib.cy_, 0.0, 0.3 * calib.height());
 
-    // внутренние калибровочные параметры камеры: [5] = {k1, k2, f, cx, cy}
-    // TODO: преобразуйте calib в блок параметров камеры (ее внутренних характеристик) для оптимизации в BA
-    double camera_intrinsics[5];
+    // [k1, k2, f, cx, cy]; cx/cy include width/2 and height/2 offsets to match project()
+    double camera_intrinsics[5] = {
+        calib.k1_,
+        calib.k2_,
+        calib.f_,
+        calib.cx_ + calib.width()  * 0.5,
+        calib.cy_ + calib.height() * 0.5
+    };
     std::cout << "Before BA ";
     printCamera(camera_intrinsics);
 
@@ -575,8 +590,11 @@ void runBA(std::vector<vector3d> &tie_points,
 
     std::cout << "After BA ";
     printCamera(camera_intrinsics);
-    // TODO преобразуйте параметры камеры в обратную сторону, чтобы последующая резекция учла актуальное представление о пространстве:
-    // calib.* = camera_intrinsics[*];
+    calib.k1_ = camera_intrinsics[0];
+    calib.k2_ = camera_intrinsics[1];
+    calib.f_  = camera_intrinsics[2];
+    calib.cx_ = camera_intrinsics[3] - calib.width()  * 0.5;
+    calib.cy_ = camera_intrinsics[4] - calib.height() * 0.5;
 
     ASSERT_NEAR(calib.f_ , DATASET_F, 0.2 * DATASET_F);
     ASSERT_NEAR(calib.cx_, 0.0, 0.3 * calib.width());
@@ -649,8 +667,25 @@ void runBA(std::vector<vector3d> &tie_points,
             }
 
             if (ENABLE_OUTLIERS_FILTRATION_COLINEAR && ENABLE_BA) {
-                // TODO выполните проверку случая когда два луча почти параллельны, чтобы не было странных точек улетающих на бесконечность (например чтобы угол был хотя бы 2.5 градуса)
-                // should_be_disabled = true;
+                // disable points where all viewing rays are nearly colinear (angle < 2.5 deg)
+                bool all_colinear = true;
+                vector3d ray0 = track_point - camera_origin;
+                ray0 /= cv::norm(ray0);
+                for (size_t cj = 0; cj < track.img_kpt_pairs.size(); ++cj) {
+                    if (cj == ci) continue;
+                    int cam2 = track.img_kpt_pairs[cj].first;
+                    matrix3d R2; vector3d O2;
+                    phg::decomposeUndistortedPMatrix(R2, O2, cameras[cam2]);
+                    vector3d ray1 = track_point - O2;
+                    ray1 /= cv::norm(ray1);
+                    double cos_angle = std::abs(ray0.dot(ray1));
+                    if (cos_angle < std::cos(2.5 * 3.14159265358979323846 / 180.0)) {
+                        all_colinear = false;
+                        break;
+                    }
+                }
+                if (all_colinear && track.img_kpt_pairs.size() >= 2)
+                    should_be_disabled = true;
             }
 
             {
