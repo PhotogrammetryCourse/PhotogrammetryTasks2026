@@ -2,6 +2,7 @@
 #include "homography.h"
 
 #include <libutils/bbox2.h>
+#include <functional>
 #include <iostream>
 
 /*
@@ -23,7 +24,48 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
     {
         // здесь надо посчитать вектор Hs
         // при этом можно обойтись n_images - 1 вызовами функтора homography_builder
-        throw std::runtime_error("not implemented yet");
+        std::vector<cv::Mat> edge_H(n_images);
+        std::vector<char> edge_ready(n_images, false);
+        std::vector<char> H_ready(n_images, false);
+
+        int root_id = -1;
+        for (int i = 0; i < n_images; ++i) {
+            if (parent[i] == -1) {
+                if (root_id != -1) {
+                    throw std::runtime_error("stitchPanorama : multiple roots found");
+                }
+                root_id = i;
+                Hs[i] = cv::Mat::eye(3, 3, CV_64FC1);
+                H_ready[i] = true;
+            } else {
+                if (parent[i] < 0 || parent[i] >= n_images) {
+                    throw std::runtime_error("stitchPanorama : invalid parent index");
+                }
+                edge_H[i] = homography_builder(imgs[i], imgs[parent[i]]);
+                edge_ready[i] = true;
+            }
+        }
+
+        std::function<void(int)> ensureH = [&](int i) {
+            if (H_ready[i]) {
+                return;
+            }
+
+            const int p = parent[i];
+            if (p == -1) {
+                Hs[i] = cv::Mat::eye(3, 3, CV_64FC1);
+                H_ready[i] = true;
+                return;
+            }
+
+            ensureH(p);
+            Hs[i] = Hs[p] * edge_H[i];
+            H_ready[i] = true;
+        };
+
+        for (int i = 0; i < n_images; ++i) {
+            ensureH(i);
+        }
     }
 
     bbox2<double, cv::Point2d> bbox;
