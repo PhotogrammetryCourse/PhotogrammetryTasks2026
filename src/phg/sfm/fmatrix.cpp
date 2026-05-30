@@ -144,11 +144,8 @@ namespace {
             getNormalizeTransform(m1_t, verbose);
         }
 
-        // https://en.wikipedia.org/wiki/Random_sample_consensus#Parameters
-        // будет отличаться от случая с гомографией
-        const int n_trials = 10000;
-
         const int n_samples = 8;
+        const int n_trials = (int)(std::log(1e-6) / std::log(1 - std::pow(0.3, n_samples)));
         uint64_t seed = 1;
 
         int best_support = 0;

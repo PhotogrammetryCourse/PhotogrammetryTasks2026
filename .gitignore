@@ -1,5 +1,9 @@
 **/*_cl.h
 .idea
+.vscode
 build
 cmake-build*
 data/src/test_sfm/saharov/*.JPG
+data/debug/
+opencv-4.11.0/
+*.zip
