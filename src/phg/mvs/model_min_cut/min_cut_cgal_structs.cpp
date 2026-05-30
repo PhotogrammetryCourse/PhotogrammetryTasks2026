@@ -34,6 +34,8 @@ void vertex_info_t::merge(const vertex_info_t& that)
         rassert(camera_ids[i - 1] < camera_ids[i], 23781274121024);
     }
 
+    color = 0.5 * (color + that.color);
+
     // Take the minimum defined radius
     if (!radius.has_value()) {
         radius = that.radius;

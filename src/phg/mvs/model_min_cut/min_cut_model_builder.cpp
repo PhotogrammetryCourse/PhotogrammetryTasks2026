@@ -66,6 +66,7 @@ void MinCutModelBuilder::appendToTriangulation(
         p_info.radius = r;
         if (to_merge) {
             nearest_vertex->info().merge(p_info);
+            proxy->triangulation.move(nearest_vertex, CGAL::midpoint(nearest_vertex->point(), to_cgal_point(p)));
         } else {
             points_to_insert.push_back(std::make_pair(to_cgal_point(p), p_info));
         }
@@ -572,8 +573,13 @@ void MinCutModelBuilder::buildMesh(std::vector<cv::Vec3i>& mesh_faces, std::vect
 // TODO 3500 Weak support: реализуйте идею из jancosek2011 - Multi-View Reconstruction Preserving Weakly-Supported Surfaces - https://compsciclub.ru/attachments/classes/file_XyLpDjLx/jancosek2011.pdf
 
 // TODO 4001 подвиньте вершины в среднюю координату среди всех точек которые в ней зачлись
+// Считаю нечестное среднее (считаю среднее для двух точек при слиянии), но зато обновляю триангуляцию. Интересно насколько сильно это отличается от честного усреднения.
+// Я бы предположил, что вряд ли это можно заметить.
 // TODO 4002 поэкспериментируйте со значением MERGE_THRESHOLD_RADIUS_KOEF, есть ли интересности? какое значение вы бы предложили использовать в условной финальной версии?
+// Небольшое изменение порога (0.1 -> 0.5) резко снижает количество треугольников (84000->34000). По качеству модели сложно что-либо сказать (она выглядит плохо
+// при любом значении :) ). А дальше даже увеличение в 100 раз не дает такого сильного выигрыша (34000->24000) 
 // TODO 4003 добавьте усреднение цветов среди всех склеившихся вершин, приложите скриншот с/без усреднения
+// Аналогично позициям осредняю цвет при каждом слиянии
 
 // TODO 5001 как в целом можно ускорить реализацию? есть ли идеи? попробуйте это сделать (и запишите какого ускорения получилось добиться, а так же изменился ли результат)
 // подсказки-идеи:
