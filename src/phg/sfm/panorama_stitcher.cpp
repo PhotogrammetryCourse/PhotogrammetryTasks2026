@@ -4,6 +4,18 @@
 #include <libutils/bbox2.h>
 #include <iostream>
 
+void dfs(std::vector<cv::Mat>& Hs,
+             const int p, 
+             const std::vector<std::vector<int>> &mat,
+             const std::vector<cv::Mat> &imgs,
+             const std::function<cv::Mat(const cv::Mat &, const cv::Mat &)> &homography_builder) {
+    for (auto v: mat[p])
+        Hs[v] = homography_builder(imgs[v], imgs[p]) * Hs[p];
+
+    for (auto v: mat[p])
+        dfs(Hs, v, mat, imgs, homography_builder);
+}
+
 /*
  * imgs - список картинок
  * parent - список индексов, каждый индекс указывает, к какой картинке должна быть приклеена текущая картинка
@@ -20,10 +32,26 @@ cv::Mat phg::stitchPanorama(const std::vector<cv::Mat> &imgs,
 
     // вектор гомографий, для каждой картинки описывает преобразование до корня
     std::vector<cv::Mat> Hs(n_images);
+    std::vector<std::vector<int>> mat(n_images);
     {
-        // здесь надо посчитать вектор Hs
-        // при этом можно обойтись n_images - 1 вызовами функтора homography_builder
-        throw std::runtime_error("not implemented yet");
+        int root = -1;
+        for (int i = 0; i < n_images; ++i) {
+            if (parent[i] == -1) {
+                root = i;
+                continue;
+            }
+
+            mat[parent[i]].push_back(i);
+        }
+
+        Hs[root] = cv::Mat({3, 3}, 
+            { 
+                1.0, 0.0, 0.0, 
+                0.0, 1.0, 0.0, 
+                0.0, 0.0, 1.0 
+            });
+
+        dfs(Hs, root, mat, imgs, homography_builder);
     }
 
     bbox2<double, cv::Point2d> bbox;
